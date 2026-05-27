@@ -1,0 +1,280 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class AppLocalizationsEn extends AppLocalizations {
+  AppLocalizationsEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get appTitle => 'OmTech';
+
+  @override
+  String get navHome => 'Home';
+
+  @override
+  String get navSchedule => 'Schedule';
+
+  @override
+  String get navNews => 'News';
+
+  @override
+  String get navWork => 'Tasks';
+
+  @override
+  String get navProfile => 'Profile';
+
+  @override
+  String get scheduleTitle => 'Schedule';
+
+  @override
+  String get scheduleNoGroup => 'No group selected';
+
+  @override
+  String get scheduleNoGroupMsg =>
+      'Select your study group to see the schedule.';
+
+  @override
+  String get schedulePickGroup => 'Select group';
+
+  @override
+  String get scheduleNoLessons => 'No classes this week';
+
+  @override
+  String get scheduleNoLessonsMsg =>
+      'Enjoy your free time or browse another week.';
+
+  @override
+  String get scheduleLoadError => 'Failed to load';
+
+  @override
+  String get scheduleLoadErrorMsg =>
+      'Check your internet connection and try again.';
+
+  @override
+  String get scheduleRetry => 'Retry';
+
+  @override
+  String get lessonDetailSubgroup => 'subgroup';
+
+  @override
+  String get lessonDetailNote => 'Your note';
+
+  @override
+  String get lessonDetailShare => 'Share note';
+
+  @override
+  String get lessonDetailTeacherOptions => 'Teacher actions';
+
+  @override
+  String get lessonDetailContacts => 'Show contacts';
+
+  @override
+  String get lessonDetailReviews => 'Reviews';
+
+  @override
+  String get lessonDetailOpenMaps => 'Open in maps';
+
+  @override
+  String get lessonDetailStream => 'stream';
+
+  @override
+  String get newsTitle => 'News';
+
+  @override
+  String get newsLoadError => 'Failed to load news';
+
+  @override
+  String get newsEmpty => 'No news yet';
+
+  @override
+  String get newsOpenFull => 'Read on website';
+
+  @override
+  String get gradesTitle => 'Grades';
+
+  @override
+  String get gradesSemester => 'sem';
+
+  @override
+  String get gradesDemoNote =>
+      'Demo data. Real grades will appear after connecting your personal account.';
+
+  @override
+  String get materialsTitle => 'Materials';
+
+  @override
+  String get materialsDemoNote =>
+      'Demo data. Real materials will appear after connecting your personal account.';
+
+  @override
+  String get workTitle => 'Tasks';
+
+  @override
+  String get workSearch => 'Discipline';
+
+  @override
+  String get workTaskCount => 'tasks';
+
+  @override
+  String get workTaskNumber => 'Number';
+
+  @override
+  String get workTaskComment => 'Comment';
+
+  @override
+  String get workTaskFiles => 'Files';
+
+  @override
+  String get workTaskDate => 'Created';
+
+  @override
+  String get workTaskTeacher => 'Teacher';
+
+  @override
+  String get workTaskNoFiles => 'No files';
+
+  @override
+  String get workDemoNote =>
+      'Demo data. Real tasks will appear after connecting your personal account.';
+
+  @override
+  String get workTeachers => 'Teachers';
+
+  @override
+  String get profileTitle => 'Profile';
+
+  @override
+  String get profileNameHint => 'Your full name';
+
+  @override
+  String get profileNameLabel => 'Enter full name';
+
+  @override
+  String get profileNameEdit => 'Edit name';
+
+  @override
+  String get profileGroup => 'Group';
+
+  @override
+  String get profileGroupNotSelected => 'No group selected';
+
+  @override
+  String get profileGroupTap => 'Tap to select';
+
+  @override
+  String get profileUniversity => 'Omsk State Technical University';
+
+  @override
+  String get profileServices => 'University services';
+
+  @override
+  String get profileSiteOmgtu => 'OMGTU website';
+
+  @override
+  String get profileSiteSchedule => 'Schedule (website)';
+
+  @override
+  String get profileSiteNews => 'News';
+
+  @override
+  String get profileSettings => 'Settings';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsLangRu => 'Русский';
+
+  @override
+  String get settingsLangEn => 'English';
+
+  @override
+  String get settingsTheme => 'Appearance';
+
+  @override
+  String get settingsThemeDark => 'Dark';
+
+  @override
+  String get settingsThemeLight => 'Light';
+
+  @override
+  String get settingsThemeSystem => 'System';
+
+  @override
+  String get settingsAbout => 'About';
+
+  @override
+  String get settingsVersion => 'Version';
+
+  @override
+  String get settingsAboutApp => 'OmTech';
+
+  @override
+  String get dashboardGreeting => 'Welcome!';
+
+  @override
+  String get dashboardNoGroup => 'No group selected';
+
+  @override
+  String get dashboardNextLesson => 'Next class';
+
+  @override
+  String get dashboardNoNextLesson => 'No classes today';
+
+  @override
+  String get dashboardGrades => 'Grades';
+
+  @override
+  String get dashboardMaterials => 'Materials';
+
+  @override
+  String get dashboardNews => 'News';
+
+  @override
+  String get dashboardAllNews => 'All news';
+
+  @override
+  String get dashboardSelectGroup => 'Select group';
+
+  @override
+  String get groupSearchTitle => 'Search group';
+
+  @override
+  String get groupSearchHint => 'Enter group number...';
+
+  @override
+  String get groupSearchEmpty => 'No groups found';
+
+  @override
+  String get groupSearchLoading => 'Searching...';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get loading => 'Loading...';
+
+  @override
+  String get error => 'Error';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get noInternet => 'No internet connection';
+}
