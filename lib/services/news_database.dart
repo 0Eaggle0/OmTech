@@ -7,7 +7,7 @@ import '../models/news_item.dart';
 
 class NewsDatabase {
   static const _dbName = 'news_cache.db';
-  static const _dbVersion = 1;
+  static const _dbVersion = 2;
   static const _table = 'news_articles';
 
   Database? _db;
@@ -18,6 +18,23 @@ class NewsDatabase {
     _db = await openDatabase(
       join(dbPath, _dbName),
       version: _dbVersion,
+      onUpgrade: (db, oldVersion, _) async {
+        await db.execute('DROP TABLE IF EXISTS $_table');
+        await db.execute('''
+          CREATE TABLE $_table (
+            url TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            summary TEXT,
+            full_text TEXT,
+            date_ms INTEGER,
+            image_url TEXT,
+            extra_images TEXT,
+            is_award INTEGER,
+            cached_at INTEGER,
+            full_fetched INTEGER
+          )
+        ''');
+      },
       onCreate: (db, _) => db.execute('''
         CREATE TABLE $_table (
           url TEXT PRIMARY KEY,
