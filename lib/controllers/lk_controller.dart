@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/student_record.dart';
+import '../services/lk/lk_contact_work_api.dart';
 import '../services/lk/lk_credentials_storage.dart';
 import '../services/lk/lk_grades_api.dart';
 import '../services/lk/lk_session.dart';
@@ -15,6 +16,7 @@ class LkController extends ChangeNotifier {
   final LkSession _session;
   final LkCredentialsStorage _credentials;
   late final LkGradesApi gradesApi = LkGradesApi(_session);
+  late final LkContactWorkApi contactWorkApi = LkContactWorkApi(_session);
 
   LkStatus _status = LkStatus.disconnected;
   StudentProfile? _profile;
@@ -30,6 +32,7 @@ class LkController extends ChangeNotifier {
   StudentProfile? get profile => _profile;
   String? get errorMessage => _errorMessage;
   bool get isConnected => _status == LkStatus.connected;
+  LkSession get session => _session;
 
   /// Пытается восстановить сессию: читает креды из secure storage и логинится.
   /// Запускается из main.dart при старте приложения.
@@ -84,6 +87,7 @@ class LkController extends ChangeNotifier {
     await _session.logout();
     await _credentials.clear();
     await gradesApi.clearCache();
+    await contactWorkApi.clearCache();
     _status = LkStatus.disconnected;
     _profile = null;
     _errorMessage = null;

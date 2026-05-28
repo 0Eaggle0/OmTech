@@ -245,6 +245,47 @@ class LkSession {
     return _decodeBody(res);
   }
 
+  /// Скачивает произвольный файл с up.omgtu.ru с использованием
+  /// активной сессионной cookie. Возвращает байты тела ответа.
+  ///
+  /// `relativeOrAbsoluteUrl` может быть как полным URL
+  /// (`https://up.omgtu.ru/index.php?r=remote/read/downloadFile&id=...`),
+  /// так и относительным (`/index.php?r=...` или `index.php?r=...`).
+  Future<List<int>> downloadBytes(String relativeOrAbsoluteUrl,
+      {String? referer}) async {
+    final url = relativeOrAbsoluteUrl.startsWith('http')
+        ? relativeOrAbsoluteUrl
+        : relativeOrAbsoluteUrl.startsWith('/')
+            ? '$_upBaseUrl$relativeOrAbsoluteUrl'
+            : '$_upBaseUrl/$relativeOrAbsoluteUrl';
+
+    final res = await _dio.get<List<int>>(
+      url,
+      options: Options(
+        responseType: ResponseType.bytes,
+        headers: {
+          'Referer': ?referer,
+        },
+      ),
+    );
+
+    final finalUrl = res.realUri.toString();
+    if (finalUrl.contains('/ecab/')) {
+      throw LkLoginException(
+          LkLoginResult.invalidCredentials, 'Сессия истекла');
+    }
+    if (res.statusCode != 200) {
+      throw LkLoginException(
+          LkLoginResult.networkError, 'HTTP ${res.statusCode} для файла');
+    }
+    final data = res.data;
+    if (data == null || data.isEmpty) {
+      throw LkLoginException(
+          LkLoginResult.networkError, 'Пустой ответ для файла');
+    }
+    return data;
+  }
+
   bool _looksLikeLoginPage(String html) {
     return html.contains('USER_LOGIN') &&
         html.contains('USER_PASSWORD') &&
