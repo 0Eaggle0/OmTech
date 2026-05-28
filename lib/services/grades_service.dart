@@ -1,12 +1,81 @@
+import '../controllers/lk_controller.dart';
 import '../models/grade.dart';
+import '../models/student_record.dart';
 
+/// Результат загрузки оценок — содержит данные и флаг, демо это или реальные.
+class GradesResult {
+  final StudentRecord? record;
+  final bool isDemo;
+  final bool fromCache;
+
+  const GradesResult({
+    required this.record,
+    required this.isDemo,
+    this.fromCache = false,
+  });
+}
+
+/// Адаптер: если ЛК подключён — берёт из LkGradesApi, иначе отдаёт демо.
 class GradesService {
-  Future<List<Semester>> fetchSemesters() async {
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    return _demo;
+  final LkController? lk;
+
+  GradesService({this.lk});
+
+  /// Поток: сначала кэш (если есть), затем свежие данные.
+  Stream<GradesResult> watch({bool forceRefresh = false}) async* {
+    final controller = lk;
+    if (controller != null && controller.isConnected) {
+      // Сначала кэш.
+      final cached = await controller.gradesApi.readCache();
+      if (cached != null && !forceRefresh) {
+        yield GradesResult(record: cached, isDemo: false, fromCache: true);
+      }
+      try {
+        final fresh = await controller.gradesApi.fetchFresh();
+        yield GradesResult(record: fresh, isDemo: false);
+      } catch (_) {
+        // Если свежие не пришли, а кэша не было — отдаём демо как заглушку.
+        if (cached == null) {
+          yield GradesResult(record: _demoRecord, isDemo: true);
+        }
+        rethrow;
+      }
+    } else {
+      yield GradesResult(record: _demoRecord, isDemo: true);
+    }
   }
 
-  static const List<Semester> _demo = [
+  /// Старый API для обратной совместимости (Dashboard и пр.).
+  Future<List<Semester>> fetchSemesters() async {
+    final controller = lk;
+    if (controller != null && controller.isConnected) {
+      final cached = await controller.gradesApi.readCache();
+      if (cached != null) return cached.sections;
+      try {
+        final fresh = await controller.gradesApi.fetchFresh();
+        return fresh.sections;
+      } catch (_) {
+        return _demoRecord.sections;
+      }
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+    return _demoRecord.sections;
+  }
+
+  static final StudentRecord _demoRecord = StudentRecord(
+    profile: const StudentProfile(
+      fullName: '',
+      bookNumber: '',
+      specialty: '',
+      groupLabel: '',
+      studyForm: '',
+      libraryCardNumber: '',
+    ),
+    semesters: const [],
+    sections: _demoSections,
+  );
+
+  static const List<Semester> _demoSections = [
     Semester(
       title: '1 семестр (Осень 2022/2023)',
       grades: [

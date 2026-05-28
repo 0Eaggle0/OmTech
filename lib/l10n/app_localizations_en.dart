@@ -183,6 +183,64 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSettings => 'Settings';
 
   @override
+  String get lkSection => 'OmGTU personal account';
+
+  @override
+  String get lkNotConnected => 'Not connected';
+
+  @override
+  String get lkConnect => 'Connect';
+
+  @override
+  String get lkDisconnect => 'Disconnect';
+
+  @override
+  String get lkLoginTitle => 'Sign in to personal account';
+
+  @override
+  String get lkLoginHint => 'Use the same credentials as on up.omgtu.ru';
+
+  @override
+  String get lkUsername => 'Username';
+
+  @override
+  String get lkPassword => 'Password';
+
+  @override
+  String get lkLoginButton => 'Sign in';
+
+  @override
+  String get lkInvalidCredentials => 'Invalid username or password';
+
+  @override
+  String get lkNetworkError => 'Failed to reach the portal';
+
+  @override
+  String get lkConnected => 'Connected';
+
+  @override
+  String get lkBookNumber => 'Record book No.';
+
+  @override
+  String get lkLoadError => 'Failed to refresh data';
+
+  @override
+  String get lkCacheShown => 'Showing last saved data';
+
+  @override
+  String get lkDisconnectConfirm =>
+      'Disconnect the account? Password will be removed from this device.';
+
+  @override
+  String get lkExamsSection => 'Exams';
+
+  @override
+  String get lkCreditsSection => 'Credits';
+
+  @override
+  String get lkCourseworkSection => 'Coursework';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override

@@ -184,6 +184,65 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileSettings => 'Настройки';
 
   @override
+  String get lkSection => 'Личный кабинет ОмГТУ';
+
+  @override
+  String get lkNotConnected => 'Не подключён';
+
+  @override
+  String get lkConnect => 'Подключить';
+
+  @override
+  String get lkDisconnect => 'Отключить';
+
+  @override
+  String get lkLoginTitle => 'Вход в личный кабинет';
+
+  @override
+  String get lkLoginHint =>
+      'Используются те же логин и пароль, что и на up.omgtu.ru';
+
+  @override
+  String get lkUsername => 'Логин';
+
+  @override
+  String get lkPassword => 'Пароль';
+
+  @override
+  String get lkLoginButton => 'Войти';
+
+  @override
+  String get lkInvalidCredentials => 'Неверный логин или пароль';
+
+  @override
+  String get lkNetworkError => 'Не удалось подключиться к ЛК';
+
+  @override
+  String get lkConnected => 'Подключён';
+
+  @override
+  String get lkBookNumber => 'Зачётная книжка №';
+
+  @override
+  String get lkLoadError => 'Не удалось обновить данные';
+
+  @override
+  String get lkCacheShown => 'Показаны последние сохранённые данные';
+
+  @override
+  String get lkDisconnectConfirm =>
+      'Отключить личный кабинет? Пароль будет удалён с устройства.';
+
+  @override
+  String get lkExamsSection => 'Экзамены';
+
+  @override
+  String get lkCreditsSection => 'Зачёты';
+
+  @override
+  String get lkCourseworkSection => 'Курсовые';
+
+  @override
   String get settingsTitle => 'Настройки';
 
   @override

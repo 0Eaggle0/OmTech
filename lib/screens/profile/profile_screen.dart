@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/group_controller.dart';
+import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/student_record.dart';
 import '../../services/link_launcher.dart';
 import '../../widgets/group_search_sheet.dart';
+import '../../widgets/lk_login_dialog.dart';
 import '../settings/settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -105,6 +108,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          _sectionTitle(context, l.lkSection),
+          _lkCard(context, l),
+          const SizedBox(height: 16),
           _sectionTitle(context, l.profileServices),
           Card(
             child: Column(
@@ -120,6 +126,96 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+
+  Widget _lkCard(BuildContext context, AppLocalizations l) {
+    final lk = context.watch<LkController>();
+    final theme = Theme.of(context);
+
+    if (lk.isConnected) {
+      final profile = lk.profile;
+      return Card(
+        child: Column(
+          children: [
+            ListTile(
+              leading: Icon(Icons.verified_user_outlined, color: theme.colorScheme.primary),
+              title: Text(profile?.fullName.isNotEmpty == true
+                  ? profile!.fullName
+                  : l.lkConnected),
+              subtitle: profile == null
+                  ? null
+                  : Text(_lkSubtitle(l, profile)),
+              isThreeLine: profile != null,
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.logout_outlined),
+              title: Text(l.lkDisconnect),
+              onTap: () => _confirmDisconnect(l, lk),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final connecting = lk.status == LkStatus.connecting;
+    return Card(
+      child: ListTile(
+        leading: connecting
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.login_outlined),
+        title: Text(l.lkNotConnected),
+        subtitle: Text(lk.errorMessage ?? l.lkLoginHint),
+        trailing: TextButton(
+          onPressed: connecting
+              ? null
+              : () async {
+                  final ok = await LkLoginDialog.show(context);
+                  if (ok == true && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l.lkConnected)),
+                    );
+                  }
+                },
+          child: Text(l.lkConnect),
+        ),
+      ),
+    );
+  }
+
+  String _lkSubtitle(AppLocalizations l, StudentProfile profile) {
+    final parts = <String>[];
+    if (profile.groupLabel.isNotEmpty) parts.add(profile.groupLabel);
+    if (profile.bookNumber.isNotEmpty) {
+      parts.add('${l.lkBookNumber} ${profile.bookNumber}');
+    }
+    return parts.join(' · ');
+  }
+
+  Future<void> _confirmDisconnect(AppLocalizations l, LkController lk) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: Text(l.lkDisconnectConfirm),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l.cancel)),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.lkDisconnect),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await lk.logout();
+    }
   }
 
   Widget _header(BuildContext context, AppLocalizations l, String? groupLabel) {

@@ -434,6 +434,120 @@ abstract class AppLocalizations {
   /// **'Настройки'**
   String get profileSettings;
 
+  /// No description provided for @lkSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'Личный кабинет ОмГТУ'**
+  String get lkSection;
+
+  /// No description provided for @lkNotConnected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не подключён'**
+  String get lkNotConnected;
+
+  /// No description provided for @lkConnect.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подключить'**
+  String get lkConnect;
+
+  /// No description provided for @lkDisconnect.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отключить'**
+  String get lkDisconnect;
+
+  /// No description provided for @lkLoginTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вход в личный кабинет'**
+  String get lkLoginTitle;
+
+  /// No description provided for @lkLoginHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Используются те же логин и пароль, что и на up.omgtu.ru'**
+  String get lkLoginHint;
+
+  /// No description provided for @lkUsername.
+  ///
+  /// In ru, this message translates to:
+  /// **'Логин'**
+  String get lkUsername;
+
+  /// No description provided for @lkPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пароль'**
+  String get lkPassword;
+
+  /// No description provided for @lkLoginButton.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти'**
+  String get lkLoginButton;
+
+  /// No description provided for @lkInvalidCredentials.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неверный логин или пароль'**
+  String get lkInvalidCredentials;
+
+  /// No description provided for @lkNetworkError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось подключиться к ЛК'**
+  String get lkNetworkError;
+
+  /// No description provided for @lkConnected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подключён'**
+  String get lkConnected;
+
+  /// No description provided for @lkBookNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'Зачётная книжка №'**
+  String get lkBookNumber;
+
+  /// No description provided for @lkLoadError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось обновить данные'**
+  String get lkLoadError;
+
+  /// No description provided for @lkCacheShown.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показаны последние сохранённые данные'**
+  String get lkCacheShown;
+
+  /// No description provided for @lkDisconnectConfirm.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отключить личный кабинет? Пароль будет удалён с устройства.'**
+  String get lkDisconnectConfirm;
+
+  /// No description provided for @lkExamsSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'Экзамены'**
+  String get lkExamsSection;
+
+  /// No description provided for @lkCreditsSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'Зачёты'**
+  String get lkCreditsSection;
+
+  /// No description provided for @lkCourseworkSection.
+  ///
+  /// In ru, this message translates to:
+  /// **'Курсовые'**
+  String get lkCourseworkSection;
+
   /// No description provided for @settingsTitle.
   ///
   /// In ru, this message translates to:
