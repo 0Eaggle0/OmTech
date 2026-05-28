@@ -74,9 +74,10 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected ? scheme.primary : scheme.onSurface.withValues(alpha: 0.6),
+            overflow: TextOverflow.ellipsis,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {

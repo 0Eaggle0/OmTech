@@ -97,7 +97,7 @@ class _GroupSearchSheetState extends State<GroupSearchSheet> {
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(height: 320, child: _buildResults()),
+          Flexible(child: _buildResults()),
         ],
       ),
     );
