@@ -17,23 +17,16 @@ class GradesScreen extends StatefulWidget {
   State<GradesScreen> createState() => _GradesScreenState();
 }
 
-class _GradesScreenState extends State<GradesScreen>
-    with SingleTickerProviderStateMixin {
+class _GradesScreenState extends State<GradesScreen> {
   GradesResult? _result;
   bool _loading = true;
   String? _error;
-  TabController? _tabController;
+  int? _selectedSemester;
 
   @override
   void initState() {
     super.initState();
     _load();
-  }
-
-  @override
-  void dispose() {
-    _tabController?.dispose();
-    super.dispose();
   }
 
   Future<void> _load({bool forceRefresh = false}) async {
@@ -49,6 +42,7 @@ class _GradesScreenState extends State<GradesScreen>
         setState(() {
           _result = r;
           _loading = false;
+          _selectedSemester ??= _defaultSemester(r);
         });
       }
     } catch (e) {
@@ -60,11 +54,20 @@ class _GradesScreenState extends State<GradesScreen>
     }
   }
 
+  /// По умолчанию открываем тот, что помечен active в HTML; иначе — первый.
+  int? _defaultSemester(GradesResult r) {
+    final panels = r.record?.panels ?? const <SemesterPanel>[];
+    if (panels.isEmpty) return null;
+    final active = panels.firstWhere(
+      (p) => p.isActive,
+      orElse: () => panels.first,
+    );
+    return active.number;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-
-    // Перерисовка при изменении состояния ЛК.
     context.watch<LkController>();
 
     return Scaffold(
@@ -91,15 +94,15 @@ class _GradesScreenState extends State<GradesScreen>
     }
 
     final record = result.record;
-    final sections = record?.sections ?? const <Semester>[];
+    final panels = record?.panels ?? const <SemesterPanel>[];
+    final selected = panels
+        .where((p) => p.number == _selectedSemester)
+        .cast<SemesterPanel?>()
+        .firstWhere((_) => true, orElse: () => null);
 
-    if (_tabController == null || _tabController!.length != sections.length) {
-      _tabController?.dispose();
-      _tabController = TabController(length: sections.length, vsync: this);
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 24),
       children: [
         if (result.isDemo)
           Padding(
@@ -115,49 +118,15 @@ class _GradesScreenState extends State<GradesScreen>
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: _errorBanner(context, l),
           ),
+        if (panels.isNotEmpty) _semesterTabs(context, panels),
         const SizedBox(height: 8),
-        if (sections.isEmpty)
-          Expanded(
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: [
-                const SizedBox(height: 80),
-                Icon(Icons.school_outlined,
-                    size: 48,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.3)),
-                const SizedBox(height: 12),
-                Center(
-                  child: Text(
-                    l.newsEmpty,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.6),
-                        ),
-                  ),
-                ),
-              ],
-            ),
+        if (selected == null)
+          Padding(
+            padding: const EdgeInsets.all(40),
+            child: Center(child: Text(l.newsEmpty)),
           )
-        else ...[
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabs: sections
-                .map((s) => Tab(text: _shortTitle(s.title, l)))
-                .toList(),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController!,
-              children: sections.map((s) => _section(context, s)).toList(),
-            ),
-          ),
-        ],
+        else
+          _semesterContent(context, l, selected),
       ],
     );
   }
@@ -181,8 +150,8 @@ class _GradesScreenState extends State<GradesScreen>
                   Expanded(
                     child: Text(
                       profile.fullName,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700),
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                   if (fromCache)
@@ -220,7 +189,9 @@ class _GradesScreenState extends State<GradesScreen>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
+        Icon(icon,
+            size: 14,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
         const SizedBox(width: 4),
         Text(text,
             style: theme.textTheme.labelMedium?.copyWith(
@@ -233,28 +204,28 @@ class _GradesScreenState extends State<GradesScreen>
   Widget _semesterAccessStrip(
       BuildContext context, List<SemesterAccess> semesters) {
     final theme = Theme.of(context);
-    return SizedBox(
-      height: 38,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: semesters.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final s = semesters[i];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: semesters.map((s) {
           final color = s.hasAccess
               ? const Color(0xFF49C18B)
               : const Color(0xFFE05A6B);
           return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  s.hasAccess ? Icons.check_circle_outline : Icons.block_outlined,
+                  s.hasAccess
+                      ? Icons.check_circle_outline
+                      : Icons.block_outlined,
                   size: 14,
                   color: color,
                 ),
@@ -269,7 +240,42 @@ class _GradesScreenState extends State<GradesScreen>
               ],
             ),
           );
-        },
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _semesterTabs(BuildContext context, List<SemesterPanel> panels) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context)!;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 2),
+      child: SizedBox(
+        height: 42,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          itemCount: panels.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 6),
+          itemBuilder: (_, i) {
+            final p = panels[i];
+            final selected = p.number == _selectedSemester;
+            return ChoiceChip(
+              label: Text('${p.number} ${l.gradesSemester}'),
+              selected: selected,
+              onSelected: (_) =>
+                  setState(() => _selectedSemester = p.number),
+              selectedColor:
+                  theme.colorScheme.primary.withValues(alpha: 0.18),
+              labelStyle: TextStyle(
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.onSurface.withValues(alpha: 0.75),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -292,27 +298,88 @@ class _GradesScreenState extends State<GradesScreen>
     );
   }
 
-  Widget _section(BuildContext context, Semester semester) {
-    final theme = Theme.of(context);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      children: [
-        Text(
-          semester.title,
-          style: theme.textTheme.titleSmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-            fontWeight: FontWeight.w600,
-          ),
+  Widget _semesterContent(
+      BuildContext context, AppLocalizations l, SemesterPanel panel) {
+    if (panel.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
+        child: Column(
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 48,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${panel.number} ${l.gradesSemester}: пока нет оценок',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+            ),
+          ],
         ),
-        const SizedBox(height: 10),
-        ...semester.grades.asMap().entries.map((entry) {
-          return _gradeTile(context, entry.value)
-              .animate(delay: (entry.key * 50).ms)
-              .fadeIn(duration: 240.ms)
-              .slideY(begin: 0.05, curve: Curves.easeOut);
-        }),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final section in panel.sections) ...[
+          if (section.grades.isNotEmpty) _section(context, section),
+        ],
       ],
     );
+  }
+
+  Widget _section(BuildContext context, Semester section) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(_sectionIcon(section.title),
+                  size: 16,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
+              const SizedBox(width: 6),
+              Text(
+                section.title,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...section.grades.asMap().entries.map((entry) {
+            return _gradeTile(context, entry.value)
+                .animate(delay: (entry.key * 40).ms)
+                .fadeIn(duration: 220.ms)
+                .slideY(begin: 0.04, curve: Curves.easeOut);
+          }),
+        ],
+      ),
+    );
+  }
+
+  IconData _sectionIcon(String title) {
+    final t = title.toLowerCase();
+    if (t.contains('экзам')) return Icons.fact_check_outlined;
+    if (t.contains('дифференц')) return Icons.verified_outlined;
+    if (t.contains('зач')) return Icons.check_circle_outline;
+    if (t.contains('курс')) return Icons.menu_book_outlined;
+    if (t.contains('практ')) return Icons.engineering_outlined;
+    return Icons.grade_outlined;
   }
 
   Widget _gradeTile(BuildContext context, Grade g) {
@@ -341,15 +408,16 @@ class _GradesScreenState extends State<GradesScreen>
                         Icon(
                           _controlIcon(g.controlType),
                           size: 13,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.4),
                         ),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
                             g.controlType,
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color:
-                                  theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.5),
                             ),
                           ),
                         ),
@@ -357,12 +425,14 @@ class _GradesScreenState extends State<GradesScreen>
                           const SizedBox(width: 8),
                           Icon(Icons.event,
                               size: 12,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.4)),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.4)),
                           const SizedBox(width: 3),
                           Text(
                             DateFormat('dd.MM.yyyy').format(g.date!),
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -373,7 +443,8 @@ class _GradesScreenState extends State<GradesScreen>
                       Text(
                         g.teacher!,
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.45),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -387,7 +458,8 @@ class _GradesScreenState extends State<GradesScreen>
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: markColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
@@ -406,7 +478,8 @@ class _GradesScreenState extends State<GradesScreen>
                     Text(
                       '${g.score} б.',
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.45),
                       ),
                     ),
                   ],
@@ -415,7 +488,8 @@ class _GradesScreenState extends State<GradesScreen>
                     Text(
                       '${g.hours} ч.',
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.4),
                       ),
                     ),
                   ],
@@ -428,14 +502,6 @@ class _GradesScreenState extends State<GradesScreen>
     );
   }
 
-  String _shortTitle(String title, AppLocalizations l) {
-    final t = title.toLowerCase();
-    if (t.contains('экзам')) return l.lkExamsSection;
-    if (t.contains('зач')) return l.lkCreditsSection;
-    if (t.contains('курс')) return l.lkCourseworkSection;
-    return title;
-  }
-
   Color _markColor(String mark, GradeStatus status) {
     if (status == GradeStatus.success) return const Color(0xFF49C18B);
     if (status == GradeStatus.warning) return const Color(0xFFE0A03A);
@@ -445,14 +511,17 @@ class _GradesScreenState extends State<GradesScreen>
     if (m.contains('хор')) return const Color(0xFF4F9DDE);
     if (m.contains('удовл')) return const Color(0xFFE0A03A);
     if (m.contains('зачт')) return const Color(0xFF8B5CF6);
-    if (m.contains('незачт') || m.contains('неуд')) return const Color(0xFFE05A6B);
+    if (m.contains('незачт') || m.contains('неуд')) {
+      return const Color(0xFFE05A6B);
+    }
     return const Color(0xFF9A97A8);
   }
 
   IconData _controlIcon(String type) {
     final t = type.toLowerCase();
     if (t.contains('экзам')) return Icons.fact_check_outlined;
-    if (t.contains('зачёт') || t.contains('зачет')) return Icons.check_circle_outline;
+    if (t.contains('дифф')) return Icons.verified_outlined;
+    if (t.contains('зач')) return Icons.check_circle_outline;
     if (t.contains('курс')) return Icons.menu_book_outlined;
     if (t.contains('вкр')) return Icons.school_outlined;
     return Icons.grade_outlined;

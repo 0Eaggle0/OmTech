@@ -50,16 +50,16 @@ class GradesService {
     final controller = lk;
     if (controller != null && controller.isConnected) {
       final cached = await controller.gradesApi.readCache();
-      if (cached != null) return cached.sections;
+      if (cached != null) return cached.allSections;
       try {
         final fresh = await controller.gradesApi.fetchFresh();
-        return fresh.sections;
+        return fresh.allSections;
       } catch (_) {
-        return _demoRecord.sections;
+        return _demoRecord.allSections;
       }
     }
     await Future<void>.delayed(const Duration(milliseconds: 250));
-    return _demoRecord.sections;
+    return _demoRecord.allSections;
   }
 
   static final StudentRecord _demoRecord = StudentRecord(
@@ -72,7 +72,21 @@ class GradesService {
       libraryCardNumber: '',
     ),
     semesters: const [],
-    sections: _demoSections,
+    panels: _demoPanels,
+  );
+
+  // Превращаем плоский демо-список секций в по-семестровый формат:
+  // в демо каждая «Semester» с заголовком вида «N семестр» становится
+  // отдельной панелью с единственной обобщённой секцией.
+  static final List<SemesterPanel> _demoPanels = List.generate(
+    _demoSections.length,
+    (i) => SemesterPanel(
+      number: i + 1,
+      isActive: i == 0,
+      sections: [
+        Semester(title: 'Оценки', grades: _demoSections[i].grades),
+      ],
+    ),
   );
 
   static const List<Semester> _demoSections = [

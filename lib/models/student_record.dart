@@ -73,22 +73,58 @@ class SemesterAccess {
       );
 }
 
-/// Полная выписка из ЛК: профиль + допуски + сгруппированные оценки.
+/// Данные одного семестра: его номер, флаг "был активным в HTML"
+/// и список секций (Экзамены / Зачёты / Дифф. зачёт / Курсовые работы).
+class SemesterPanel {
+  final int number;
+  final bool isActive;
+  final List<Semester> sections;
+
+  const SemesterPanel({
+    required this.number,
+    this.isActive = false,
+    this.sections = const [],
+  });
+
+  bool get isEmpty => sections.every((s) => s.grades.isEmpty);
+
+  Map<String, dynamic> toJson() => {
+        'number': number,
+        'isActive': isActive,
+        'sections': sections.map((s) => s.toJson()).toList(),
+      };
+
+  factory SemesterPanel.fromJson(Map<String, dynamic> json) => SemesterPanel(
+        number: (json['number'] as num?)?.toInt() ?? 0,
+        isActive: json['isActive'] as bool? ?? false,
+        sections: (json['sections'] as List?)
+                ?.whereType<Map>()
+                .map((j) => Semester.fromJson(j.cast<String, dynamic>()))
+                .toList() ??
+            const [],
+      );
+}
+
+/// Полная выписка из ЛК: профиль + допуски по семестрам + сами семестры.
 class StudentRecord {
   final StudentProfile profile;
   final List<SemesterAccess> semesters;
-  final List<Semester> sections;
+  final List<SemesterPanel> panels;
 
   const StudentRecord({
     required this.profile,
     required this.semesters,
-    required this.sections,
+    required this.panels,
   });
+
+  /// Сглаженный список секций — для дашборда и обратной совместимости.
+  List<Semester> get allSections =>
+      panels.expand((p) => p.sections).toList(growable: false);
 
   Map<String, dynamic> toJson() => {
         'profile': profile.toJson(),
         'semesters': semesters.map((s) => s.toJson()).toList(),
-        'sections': sections.map((s) => s.toJson()).toList(),
+        'panels': panels.map((s) => s.toJson()).toList(),
       };
 
   factory StudentRecord.fromJson(Map<String, dynamic> json) => StudentRecord(
@@ -99,9 +135,9 @@ class StudentRecord {
                 .map((j) => SemesterAccess.fromJson(j.cast<String, dynamic>()))
                 .toList() ??
             const [],
-        sections: (json['sections'] as List?)
+        panels: (json['panels'] as List?)
                 ?.whereType<Map>()
-                .map((j) => Semester.fromJson(j.cast<String, dynamic>()))
+                .map((j) => SemesterPanel.fromJson(j.cast<String, dynamic>()))
                 .toList() ??
             const [],
       );

@@ -10,52 +10,58 @@ StudentRecord parseStudentRecord(String html) {
   final doc = html_parser.parse(html);
 
   final profile = _parseProfile(doc);
-  final semesters = _parseSemesterAccess(doc);
-  final sections = _parseSections(doc);
+  final accessList = _parseSemesterAccess(doc);
+  final panels = _parsePanels(doc);
+
+  // Достраиваем «пустые» семестры по правой колонке допусков, чтобы
+  // в UI всегда были видны все доступные семестры, даже без оценок.
+  final byNumber = {for (final p in panels) p.number: p};
+  for (final a in accessList) {
+    byNumber.putIfAbsent(
+      a.number,
+      () => SemesterPanel(number: a.number),
+    );
+  }
+  final allPanels = byNumber.values.toList()
+    ..sort((a, b) => a.number.compareTo(b.number));
 
   return StudentRecord(
     profile: profile,
-    semesters: semesters,
-    sections: sections,
+    semesters: accessList,
+    panels: allPanels,
   );
 }
 
+// ───────────────────────────── PROFILE ──────────────────────────────
+
 StudentProfile _parseProfile(Document doc) {
-  // ФИО — обычно крупным заголовком сверху.
-  String fullName = _firstNonEmpty([
+  final fullName = _firstNonEmpty([
+    doc.querySelector('.jumbotron h1')?.text,
     doc.querySelector('h1')?.text,
     doc.querySelector('h2')?.text,
   ]);
-
-  String bookNumber = _extractAfterLabel(doc, ['Номер книжки']);
-  String specialty = _extractAfterLabel(doc, ['Специальность']);
-  String groupLabel = _extractAfterLabel(doc, ['Группа']);
-  String studyForm = _extractAfterLabel(doc, ['Форма обучения']);
-  String libraryCard = _extractLibraryCard(doc);
-
   return StudentProfile(
     fullName: _normalize(fullName),
-    bookNumber: _normalize(bookNumber),
-    specialty: _normalize(specialty),
-    groupLabel: _normalize(groupLabel),
-    studyForm: _normalize(studyForm),
-    libraryCardNumber: _normalize(libraryCard),
+    bookNumber: _normalize(_extractAfterLabel(doc, ['Номер книжки'])),
+    specialty: _normalize(_extractAfterLabel(doc, ['Специальность'])),
+    groupLabel: _normalize(_extractAfterLabel(doc, ['Группа'])),
+    studyForm: _normalize(_extractAfterLabel(doc, ['Форма обучения'])),
+    libraryCardNumber: _normalize(_extractLibraryCard(doc)),
   );
 }
 
-/// Ищет шаблон `<b>Label:</b> value` и возвращает value.
 String _extractAfterLabel(Document doc, List<String> labels) {
   for (final b in doc.querySelectorAll('b, strong')) {
     final t = b.text.trim().replaceAll(':', '');
     if (!labels.any((l) => t.contains(l))) continue;
-    // Берём текст у родителя, отрезаем сам лейбл.
     final parent = b.parent;
     if (parent == null) continue;
+    // Берём текст у родителя, отрезаем сам лейбл и всё до него,
+    // а потом останавливаемся на следующем переводе строки/<br>.
     final raw = parent.text;
     final idx = raw.indexOf(b.text);
     if (idx < 0) continue;
     final after = raw.substring(idx + b.text.length);
-    // Останавливаемся на следующем переводе строки или метке.
     final cut = after.split(RegExp(r'(?:\r?\n|\s{2,})')).first;
     return cut.trim();
   }
@@ -63,16 +69,16 @@ String _extractAfterLabel(Document doc, List<String> labels) {
 }
 
 String _extractLibraryCard(Document doc) {
-  // Шаблон: "Читательский билет: № 54297 для доступа в ЭБС"
   final text = doc.body?.text ?? '';
   final m = RegExp(r'Читательский билет:\s*№?\s*(\d+)').firstMatch(text);
   return m?.group(1) ?? '';
 }
 
+// ──────────────────────── SEMESTER ACCESS (right) ────────────────────
+
 List<SemesterAccess> _parseSemesterAccess(Document doc) {
   final result = <SemesterAccess>[];
   final seen = <int>{};
-  // Ищем все элементы, чей текст начинается с "Семестр N".
   for (final el in doc.querySelectorAll('a, li, div, span')) {
     final raw = el.text.trim();
     final m = RegExp(r'^Семестр\s+(\d+)\s*\(([^)]+)\)').firstMatch(raw);
@@ -88,26 +94,43 @@ List<SemesterAccess> _parseSemesterAccess(Document doc) {
   return result;
 }
 
-List<Semester> _parseSections(Document doc) {
-  final sections = <Semester>[];
+// ───────────────────── SEMESTER PANELS (.tab-pane) ───────────────────
 
-  // Ищем все <h3> в основной части страницы и берём ближайшую таблицу после.
-  for (final h3 in doc.querySelectorAll('h3')) {
+List<SemesterPanel> _parsePanels(Document doc) {
+  final panels = <SemesterPanel>[];
+  // На сайте id="semestr1", "semestr2" и т.д. (русский транслит, без 'e').
+  final regex = RegExp(r'^semestr(\d+)$', caseSensitive: false);
+  for (final el in doc.querySelectorAll('div.tab-pane[id]')) {
+    final id = el.attributes['id'] ?? '';
+    final m = regex.firstMatch(id);
+    if (m == null) continue;
+    final number = int.tryParse(m.group(1)!);
+    if (number == null) continue;
+    final sections = _parseSections(el);
+    panels.add(SemesterPanel(
+      number: number,
+      isActive: el.classes.contains('active'),
+      sections: sections,
+    ));
+  }
+  panels.sort((a, b) => a.number.compareTo(b.number));
+  return panels;
+}
+
+List<Semester> _parseSections(Element panel) {
+  final result = <Semester>[];
+  for (final h3 in panel.querySelectorAll('h3')) {
     final title = h3.text.trim().replaceAll(RegExp(r':\s*$'), '');
     if (title.isEmpty) continue;
     final table = _nextTable(h3);
     if (table == null) continue;
     final rows = _parseTable(table, title);
-    if (rows.isEmpty) continue;
-    sections.add(Semester(title: title, grades: rows));
+    result.add(Semester(title: title, grades: rows));
   }
-
-  return sections;
+  return result;
 }
 
 Element? _nextTable(Element start) {
-  // Поднимаемся по предкам, ищем таблицу среди следующих сиблингов на каждом
-  // уровне. Это устойчиво к тому, что таблица обёрнута в .table-responsive.
   Element? cur = start;
   while (cur != null) {
     final parent = cur.parent;
@@ -126,45 +149,81 @@ Element? _nextTable(Element start) {
   return null;
 }
 
+// ───────────────────────── TABLE PARSING ─────────────────────────────
+
+/// Парсим таблицу по заголовкам колонок, а не по фиксированным индексам,
+/// потому что у "Курсовые работы" появляется колонка "Тип работ" вместо
+/// "Рейтинг по КН" — индексы съезжают.
 List<Grade> _parseTable(Element table, String sectionTitle) {
-  final rows = <Grade>[];
+  final headers = table
+      .querySelectorAll('thead th')
+      .map((th) => _normalize(th.text).toLowerCase())
+      .toList();
+  if (headers.isEmpty) return const [];
+
+  int? colOf(List<String> needles) {
+    for (var i = 0; i < headers.length; i++) {
+      final h = headers[i];
+      if (needles.any((n) => h.contains(n))) return i;
+    }
+    return null;
+  }
+
+  final iName = colOf(['название']);
+  final iHours = colOf(['кол. час', 'часов']);
+  final iRank = colOf(['рейтинг', 'балл']);
+  // Берём первое вхождение «рейтинг», а второе (если оно отдельное) — score.
+  // Чаще на сайте две колонки: «Рейтинг по КН» и «Рейтинг».
+  int? iRankCK = colOf(['рейтинг по кн']);
+  int? iScore;
+  if (iRankCK != null) {
+    // Ищем «рейтинг» после iRankCK как итоговый балл.
+    for (var i = iRankCK + 1; i < headers.length; i++) {
+      if (headers[i].contains('рейтинг')) {
+        iScore = i;
+        break;
+      }
+    }
+  } else {
+    iScore = iRank;
+  }
+  final iMark = colOf(['оценка']);
+  final iDate = colOf(['дата']);
+  final iTeacher = colOf(['преподават']);
+  final iDiploma = colOf(['в дип']);
+
   final controlType = _controlTypeForSection(sectionTitle);
+  final rows = <Grade>[];
 
   for (final tr in table.querySelectorAll('tbody tr')) {
     final cells = tr.children
         .where((c) => c.localName == 'td' || c.localName == 'th')
         .toList();
-    if (cells.length < 2) continue;
+    if (cells.length < headers.length - 1) continue;
 
-    // Ожидаемая структура: # | Название | Кол.часов | Рейтинг по КН |
-    // Рейтинг | Оценка | Дата сдачи | Преподаватель | В дип
-    // Первая ячейка — порядковый номер (<th scope="row">), пропускаем.
-    final startIdx = cells.first.localName == 'th' ? 1 : 0;
-    final data = cells.sublist(startIdx);
-    if (data.isEmpty) continue;
+    String cell(int? i) =>
+        (i == null || i >= cells.length) ? '' : _normalize(cells[i].text);
 
-    String at(int i) => i < data.length ? _normalize(data[i].text) : '';
-
-    final discipline = at(0);
+    final discipline = cell(iName);
     if (discipline.isEmpty) continue;
 
-    final hours = int.tryParse(at(1));
-    final rankByCK = int.tryParse(at(2));
-    final rank = int.tryParse(at(3));
-    final mark = at(4);
-    final date = _parseDate(at(5));
-    final teacher = at(6);
-    final inDiploma = at(7).toLowerCase().contains('да');
+    final hours = int.tryParse(cell(iHours));
+    final rankByCK = iRankCK == null ? null : int.tryParse(cell(iRankCK));
+    final score = int.tryParse(cell(iScore));
+    final mark = cell(iMark);
+    final date = _parseDate(cell(iDate));
+    final teacher = cell(iTeacher);
+    final inDiploma = cell(iDiploma).toLowerCase().contains('да');
 
     final status = gradeStatusFromCss(
-      data.expand((c) => c.classes).toSet(),
+      cells.expand((c) => c.classes).toSet(),
     );
 
     rows.add(Grade(
       discipline: discipline,
       controlType: controlType,
       mark: mark.isEmpty ? '—' : mark,
-      score: rank,
+      score: score,
       hours: hours,
       rankByCK: rankByCK,
       date: date,
@@ -180,6 +239,7 @@ List<Grade> _parseTable(Element table, String sectionTitle) {
 String _controlTypeForSection(String title) {
   final t = title.toLowerCase();
   if (t.contains('экзам')) return 'Экзамен';
+  if (t.contains('дифференц')) return 'Дифф. зачёт';
   if (t.contains('зач')) return 'Зачёт';
   if (t.contains('курс')) return 'Курсовая';
   if (t.contains('практ')) return 'Практика';
