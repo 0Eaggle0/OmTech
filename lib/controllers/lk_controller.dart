@@ -4,6 +4,7 @@ import '../models/student_record.dart';
 import '../services/lk/lk_contact_work_api.dart';
 import '../services/lk/lk_credentials_storage.dart';
 import '../services/lk/lk_grades_api.dart';
+import '../services/lk/lk_report_work_api.dart';
 import '../services/lk/lk_session.dart';
 
 enum LkStatus { disconnected, connecting, connected, error }
@@ -17,6 +18,7 @@ class LkController extends ChangeNotifier {
   final LkCredentialsStorage _credentials;
   late final LkGradesApi gradesApi = LkGradesApi(_session);
   late final LkContactWorkApi contactWorkApi = LkContactWorkApi(_session);
+  late final LkReportWorkApi reportWorkApi = LkReportWorkApi(_session);
 
   LkStatus _status = LkStatus.disconnected;
   StudentProfile? _profile;
@@ -88,6 +90,7 @@ class LkController extends ChangeNotifier {
     await _credentials.clear();
     await gradesApi.clearCache();
     await contactWorkApi.clearCache();
+    await reportWorkApi.clearCache();
     _status = LkStatus.disconnected;
     _profile = null;
     _errorMessage = null;

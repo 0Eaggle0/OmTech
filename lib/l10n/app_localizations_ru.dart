@@ -144,6 +144,58 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workTeachers => 'Преподаватели';
 
   @override
+  String get reportWorksTitle => 'Отчётные работы';
+
+  @override
+  String get reportWorksDashboardTile => 'Отчётные работы';
+
+  @override
+  String get reportCourseWorks => 'Курсовые работы';
+
+  @override
+  String get reportOtherWorks => 'Прочие работы';
+
+  @override
+  String get reportStatusPending => 'На проверке';
+
+  @override
+  String get reportStatusAccepted => 'Принята';
+
+  @override
+  String get reportStatusRejected => 'Отклонена';
+
+  @override
+  String get reportFilterAll => 'Все';
+
+  @override
+  String get reportSearch => 'Поиск по названию или предмету';
+
+  @override
+  String get reportTeacher => 'Преподаватель';
+
+  @override
+  String get reportComment => 'Комментарий';
+
+  @override
+  String get reportEmpty => 'Загруженных работ пока нет';
+
+  @override
+  String get reportUploadStub => 'Загрузка работ — в разработке';
+
+  @override
+  String get reportDemoNote =>
+      'Демонстрационные данные. Реальный список работ появится после подключения личного кабинета.';
+
+  @override
+  String get reportWorkNumberLabel => '№';
+
+  @override
+  String get reportSemesterLabel => 'семестр';
+
+  @override
+  String get reportAcademicYear => 'Учебный год';
+
+  @override
   String get profileTitle => 'Профиль';
 
   @override
@@ -292,6 +344,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dashboardMaterials => 'Материалы';
+
+  @override
+  String get dashboardReportWorks => 'Отчётные работы';
 
   @override
   String get dashboardNews => 'Новости';

@@ -356,6 +356,108 @@ abstract class AppLocalizations {
   /// **'Преподаватели'**
   String get workTeachers;
 
+  /// No description provided for @reportWorksTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчётные работы'**
+  String get reportWorksTitle;
+
+  /// No description provided for @reportWorksDashboardTile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчётные работы'**
+  String get reportWorksDashboardTile;
+
+  /// No description provided for @reportCourseWorks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Курсовые работы'**
+  String get reportCourseWorks;
+
+  /// No description provided for @reportOtherWorks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Прочие работы'**
+  String get reportOtherWorks;
+
+  /// No description provided for @reportStatusPending.
+  ///
+  /// In ru, this message translates to:
+  /// **'На проверке'**
+  String get reportStatusPending;
+
+  /// No description provided for @reportStatusAccepted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Принята'**
+  String get reportStatusAccepted;
+
+  /// No description provided for @reportStatusRejected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отклонена'**
+  String get reportStatusRejected;
+
+  /// No description provided for @reportFilterAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все'**
+  String get reportFilterAll;
+
+  /// No description provided for @reportSearch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск по названию или предмету'**
+  String get reportSearch;
+
+  /// No description provided for @reportTeacher.
+  ///
+  /// In ru, this message translates to:
+  /// **'Преподаватель'**
+  String get reportTeacher;
+
+  /// No description provided for @reportComment.
+  ///
+  /// In ru, this message translates to:
+  /// **'Комментарий'**
+  String get reportComment;
+
+  /// No description provided for @reportEmpty.
+  ///
+  /// In ru, this message translates to:
+  /// **'Загруженных работ пока нет'**
+  String get reportEmpty;
+
+  /// No description provided for @reportUploadStub.
+  ///
+  /// In ru, this message translates to:
+  /// **'Загрузка работ — в разработке'**
+  String get reportUploadStub;
+
+  /// No description provided for @reportDemoNote.
+  ///
+  /// In ru, this message translates to:
+  /// **'Демонстрационные данные. Реальный список работ появится после подключения личного кабинета.'**
+  String get reportDemoNote;
+
+  /// No description provided for @reportWorkNumberLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'№'**
+  String get reportWorkNumberLabel;
+
+  /// No description provided for @reportSemesterLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'семестр'**
+  String get reportSemesterLabel;
+
+  /// No description provided for @reportAcademicYear.
+  ///
+  /// In ru, this message translates to:
+  /// **'Учебный год'**
+  String get reportAcademicYear;
+
   /// No description provided for @profileTitle.
   ///
   /// In ru, this message translates to:
@@ -649,6 +751,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Материалы'**
   String get dashboardMaterials;
+
+  /// No description provided for @dashboardReportWorks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчётные работы'**
+  String get dashboardReportWorks;
 
   /// No description provided for @dashboardNews.
   ///

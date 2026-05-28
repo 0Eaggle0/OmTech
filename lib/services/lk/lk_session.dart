@@ -4,6 +4,8 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 
+import 'cp1251.dart';
+
 /// Возможные исходы попытки логина.
 enum LkLoginResult { ok, invalidCredentials, networkError }
 
@@ -243,6 +245,75 @@ class LkSession {
           LkLoginResult.invalidCredentials, 'Сессия истекла');
     }
     return _decodeBody(res);
+  }
+
+  /// GET страницы под `/ecab/...` на bitrix-портале omgtu.ru.
+  /// Эти страницы отдаются в **windows-1251**, поэтому забираем байтами
+  /// и декодим через таблицу [decodeCp1251].
+  ///
+  /// Cookie-jar после login уже содержит сессионную cookie на `.omgtu.ru`,
+  /// так что отдельной авторизации не требуется. Если же страница
+  /// внезапно вернула форму логина — кидаем «сессия истекла».
+  Future<String> fetchEcabHtml(String path) async {
+    final url = _ecabUrl(path);
+    final res = await _dio.get<List<int>>(
+      url,
+      options: Options(
+        responseType: ResponseType.bytes,
+        headers: {
+          'Referer': '$_ecabHost/ecab/',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      ),
+    );
+    if (res.statusCode != 200) {
+      throw LkLoginException(
+          LkLoginResult.networkError, 'HTTP ${res.statusCode} для $path');
+    }
+    final bytes = res.data ?? const <int>[];
+    final html = decodeCp1251(bytes);
+    if (_looksLikeLoginPage(html)) {
+      throw LkLoginException(
+          LkLoginResult.invalidCredentials, 'Сессия истекла');
+    }
+    return html;
+  }
+
+  /// POST формы под `/ecab/...` (для AJAX-эндпоинтов Bitrix-портала).
+  /// Используется для подгрузки секций vkr2.php, которые рендерятся
+  /// jQuery `.load(url, data)` — а это именно POST с form-encoded телом.
+  Future<String> postEcabForm(
+      String path, Map<String, String> form) async {
+    final url = _ecabUrl(path);
+    final res = await _dio.post<List<int>>(
+      url,
+      data: _encodeForm(form),
+      options: Options(
+        contentType: Headers.formUrlEncodedContentType,
+        responseType: ResponseType.bytes,
+        headers: {
+          'Referer': '$_ecabHost/ecab/vkr2.php',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      ),
+    );
+    if (res.statusCode != 200) {
+      throw LkLoginException(
+          LkLoginResult.networkError, 'HTTP ${res.statusCode} для $path');
+    }
+    final bytes = res.data ?? const <int>[];
+    final html = decodeCp1251(bytes);
+    if (_looksLikeLoginPage(html)) {
+      throw LkLoginException(
+          LkLoginResult.invalidCredentials, 'Сессия истекла');
+    }
+    return html;
+  }
+
+  String _ecabUrl(String path) {
+    if (path.startsWith('http')) return path;
+    final clean = path.startsWith('/') ? path.substring(1) : path;
+    return '$_ecabHost/ecab/$clean';
   }
 
   /// Скачивает произвольный файл с up.omgtu.ru с использованием

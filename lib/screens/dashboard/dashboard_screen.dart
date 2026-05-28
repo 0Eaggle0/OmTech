@@ -22,6 +22,7 @@ import '../../widgets/tilt_card.dart';
 import '../grades/grades_screen.dart';
 import '../materials/materials_screen.dart';
 import '../news/news_detail_screen.dart';
+import '../reports/report_work_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final ValueChanged<int> onOpenTab;
@@ -272,40 +273,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _tiles(BuildContext context, AppLocalizations l) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: TiltCard(
-            child: _Tile(
-              icon: Icons.grade_outlined,
-              label: l.dashboardGrades,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4F9DDE), Color(0xFF6C5CE7)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              neonColor: const Color(0xFF4F9DDE),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const GradesScreen()),
+        Row(
+          children: [
+            Expanded(
+              child: TiltCard(
+                child: _Tile(
+                  icon: Icons.grade_outlined,
+                  label: l.dashboardGrades,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4F9DDE), Color(0xFF6C5CE7)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  neonColor: const Color(0xFF4F9DDE),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const GradesScreen()),
+                  ),
+                ),
               ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TiltCard(
+                child: _Tile(
+                  icon: Icons.folder_outlined,
+                  label: l.dashboardMaterials,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF49C18B), Color(0xFF38A169)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  neonColor: const Color(0xFF49C18B),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const MaterialsScreen()),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: TiltCard(
-            child: _Tile(
-              icon: Icons.folder_outlined,
-              label: l.dashboardMaterials,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF49C18B), Color(0xFF38A169)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              neonColor: const Color(0xFF49C18B),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const MaterialsScreen()),
-              ),
+        const SizedBox(height: 12),
+        TiltCard(
+          child: _Tile(
+            icon: Icons.assignment_turned_in_outlined,
+            label: l.dashboardReportWorks,
+            gradient: const LinearGradient(
+              colors: [Color(0xFFE08F4F), Color(0xFFE05A6B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            neonColor: const Color(0xFFE08F4F),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ReportWorkScreen()),
             ),
           ),
         ),

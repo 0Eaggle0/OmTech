@@ -144,6 +144,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workTeachers => 'Teachers';
 
   @override
+  String get reportWorksTitle => 'Submitted works';
+
+  @override
+  String get reportWorksDashboardTile => 'Submitted works';
+
+  @override
+  String get reportCourseWorks => 'Course works';
+
+  @override
+  String get reportOtherWorks => 'Other works';
+
+  @override
+  String get reportStatusPending => 'In review';
+
+  @override
+  String get reportStatusAccepted => 'Accepted';
+
+  @override
+  String get reportStatusRejected => 'Rejected';
+
+  @override
+  String get reportFilterAll => 'All';
+
+  @override
+  String get reportSearch => 'Search by title or subject';
+
+  @override
+  String get reportTeacher => 'Teacher';
+
+  @override
+  String get reportComment => 'Comment';
+
+  @override
+  String get reportEmpty => 'No submitted works yet';
+
+  @override
+  String get reportUploadStub => 'Upload is under development';
+
+  @override
+  String get reportDemoNote =>
+      'Demo data. Real list of works will appear after connecting your personal account.';
+
+  @override
+  String get reportWorkNumberLabel => 'No.';
+
+  @override
+  String get reportSemesterLabel => 'semester';
+
+  @override
+  String get reportAcademicYear => 'Academic year';
+
+  @override
   String get profileTitle => 'Profile';
 
   @override
@@ -290,6 +342,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardMaterials => 'Materials';
+
+  @override
+  String get dashboardReportWorks => 'Submitted works';
 
   @override
   String get dashboardNews => 'News';
