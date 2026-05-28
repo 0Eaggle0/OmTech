@@ -68,15 +68,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
-    // Легаси: user_name — попробуем разбить.
+    // Легаси: user_name — попробуем разбить и авто-мигрировать в новые ключи.
     final legacy = prefs.getString(_legacyNameKey) ?? '';
     if (legacy.isNotEmpty) {
       final parts = legacy.trim().split(' ');
+      final ln = parts.isNotEmpty ? parts[0] : '';
+      final fn = parts.length >= 2 ? parts[1] : '';
+      final pt = parts.length >= 3 ? parts.sublist(2).join(' ') : '';
+      // Сохраняем в новые ключи сразу, не ждём нажатия «Сохранить».
+      await prefs.setString(_lastNameKey, ln);
+      await prefs.setString(_firstNameKey, fn);
+      await prefs.setString(_patronymicKey, pt);
       if (!mounted) return;
       setState(() {
-        _lastName = parts.isNotEmpty ? parts[0] : '';
-        _firstName = parts.length >= 2 ? parts[1] : '';
-        _patronymic = parts.length >= 3 ? parts.sublist(2).join(' ') : '';
+        _lastName = ln;
+        _firstName = fn;
+        _patronymic = pt;
         _avatarPath = avatarPath;
       });
       return;

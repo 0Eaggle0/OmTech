@@ -53,29 +53,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
-    // Сначала пробуем user_first_name (новый формат).
+    // Новый формат: отдельное поле имени.
     final firstName = prefs.getString('user_first_name') ?? '';
     if (firstName.isNotEmpty) {
       if (mounted) setState(() { _firstName = firstName; });
       return;
     }
-    // Легаси: user_name — берём первое слово.
+    // Легаси: user_name.
+    // Формат из ЛК: «РОГОЗА Владислав Юрьевич» — первое слово CAPS = фамилия,
+    // имя на второй позиции. Ручной ввод обычно начинается с имени.
     final saved = prefs.getString('user_name') ?? '';
     if (saved.isNotEmpty) {
       final parts = saved.trim().split(' ');
+      final name = parts.length >= 2 ? parts[1] : (parts.isNotEmpty ? parts[0] : '');
+      // Авто-мигрируем: сохраняем имя в новый ключ чтобы следующий запуск был быстрее.
+      if (name.isNotEmpty) {
+        await prefs.setString('user_first_name', name);
+      }
       if (!mounted) return;
-      setState(() { _firstName = parts.isNotEmpty ? parts[0] : ''; });
+      setState(() { _firstName = name; });
       return;
     }
-    // Нет сохранённого имени — пробуем подтянуть из ЛК.
+    // Нет сохранённого — пробуем из ЛК.
     if (!mounted) return;
     final lk = context.read<LkController>();
     final lkName = lk.profile?.fullName ?? '';
     if (lkName.isNotEmpty) {
       final parts = lkName.trim().split(' ');
-      setState(() {
-        _firstName = parts.length >= 2 ? parts[1] : parts.first;
-      });
+      // Формат ЛК: Фамилия Имя Отчество → берём parts[1].
+      final name = parts.length >= 2 ? parts[1] : parts.first;
+      await prefs.setString('user_first_name', name);
+      if (!mounted) return;
+      setState(() { _firstName = name; });
     }
   }
 
