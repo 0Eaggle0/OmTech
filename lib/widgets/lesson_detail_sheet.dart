@@ -140,7 +140,9 @@ class _LessonDetailSheetState extends State<LessonDetailSheet> {
 
           // Инфо-строки
           if (e.stream.isNotEmpty)
-            _infoRow(context, Icons.group_outlined, '${_subgroupLabel(e.stream)} ${l.lessonDetailSubgroup}', accent),
+            _infoRow(context, Icons.groups_2_outlined, '${l.lessonDetailStream}: ${e.stream}', accent),
+          if (e.subgroupLabel.isNotEmpty)
+            _infoRow(context, Icons.people_outline, '${l.lessonDetailSubgroup}: ${e.subgroupLabel}', accent),
 
           if (e.auditorium.isNotEmpty)
             _infoRow(context, Icons.door_front_door_outlined, e.auditorium, accent),
@@ -328,9 +330,4 @@ class _LessonDetailSheetState extends State<LessonDetailSheet> {
     );
   }
 
-  String _subgroupLabel(String stream) {
-    if (stream.isEmpty) return '1';
-    final match = RegExp(r'\d+').firstMatch(stream);
-    return match?.group(0) ?? stream;
-  }
 }

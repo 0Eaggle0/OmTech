@@ -362,7 +362,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dashboardNoGroup => 'Группа не выбрана';
 
   @override
-  String get dashboardNextLesson => 'Ближайшая пара';
+  String get dashboardNextLesson => 'Текущая/ближайшая пара';
 
   @override
   String get dashboardNoNextLesson => 'Пар на сегодня нет';
@@ -372,6 +372,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get dashboardMaterials => 'Материалы';
+
+  @override
+  String get dashboardTasks => 'Задания';
 
   @override
   String get dashboardReportWorks => 'Отчётные работы';
@@ -396,6 +399,74 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get groupSearchLoading => 'Поиск...';
+
+  @override
+  String get scheduleMySubgroup => 'Моя подгруппа';
+
+  @override
+  String get scheduleSubgroup => 'Подгруппа';
+
+  @override
+  String get scheduleStream => 'Поток';
+
+  @override
+  String get scheduleWeekView => 'Неделя';
+
+  @override
+  String get scheduleDayView => 'День';
+
+  @override
+  String get scheduleNoLessonsToday => 'Иди трогать траву!\nСегодня пар нет 🌿';
+
+  @override
+  String get scheduleNoLessonsTodayMsg =>
+      'Наслаждайся свободным временем или посмотри другой день.';
+
+  @override
+  String get scheduleShowWeek => 'Показать всю неделю';
+
+  @override
+  String get schedulePickDate => 'Выбрать дату';
+
+  @override
+  String get profileFirstName => 'Имя';
+
+  @override
+  String get profileLastName => 'Фамилия';
+
+  @override
+  String get profilePatronymic => 'Отчество';
+
+  @override
+  String get profileSubgroup => 'Подгруппа';
+
+  @override
+  String get profileSubgroupAll => 'Все';
+
+  @override
+  String get profileSubgroupHint =>
+      'Укажите подгруппу для фильтрации расписания';
+
+  @override
+  String get profileGroupAutoFilled => 'Группа заполнена из личного кабинета';
+
+  @override
+  String get reportSubjectFilter => 'Предмет';
+
+  @override
+  String get reportSemesterFilter => 'Семестр';
+
+  @override
+  String get reportDownload => 'Скачать';
+
+  @override
+  String get reportDownloading => 'Скачивание...';
+
+  @override
+  String get reportNoFiles => 'Файл недоступен';
+
+  @override
+  String get reportAllSubjects => 'Все предметы';
 
   @override
   String get cancel => 'Отмена';

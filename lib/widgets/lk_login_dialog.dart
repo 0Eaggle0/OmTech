@@ -61,6 +61,7 @@ class _LkLoginDialogState extends State<LkLoginDialog> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return AlertDialog(
+      scrollable: true,
       title: Text(l.lkLoginTitle),
       content: SizedBox(
         width: 360,

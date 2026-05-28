@@ -24,12 +24,23 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  static const _nameKey = 'user_name';
+  static const _firstNameKey = 'user_first_name';
+  static const _lastNameKey = 'user_last_name';
+  static const _patronymicKey = 'user_patronymic';
+  static const _legacyNameKey = 'user_name';
   static const _avatarKey = 'user_avatar_path';
 
-  String _userName = '';
-  bool _nameIsFromLk = false;
+  String _firstName = '';
+  String _lastName = '';
+  String _patronymic = '';
   String? _avatarPath;
+
+  String get _displayName {
+    final parts = [_lastName, _firstName, _patronymic]
+        .where((s) => s.isNotEmpty)
+        .toList();
+    return parts.isNotEmpty ? parts.join(' ') : '';
+  }
 
   @override
   void initState() {
@@ -39,32 +50,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_nameKey) ?? '';
     final avatarPath = prefs.getString(_avatarKey);
-    if (!mounted) return;
 
-    if (saved.isNotEmpty) {
+    // Новый формат: три отдельных поля.
+    final fn = prefs.getString(_firstNameKey) ?? '';
+    final ln = prefs.getString(_lastNameKey) ?? '';
+    final pt = prefs.getString(_patronymicKey) ?? '';
+
+    if (fn.isNotEmpty || ln.isNotEmpty) {
+      if (!mounted) return;
       setState(() {
-        _userName = saved;
-        _nameIsFromLk = false;
+        _firstName = fn;
+        _lastName = ln;
+        _patronymic = pt;
         _avatarPath = avatarPath;
       });
       return;
     }
 
+    // Легаси: user_name — попробуем разбить.
+    final legacy = prefs.getString(_legacyNameKey) ?? '';
+    if (legacy.isNotEmpty) {
+      final parts = legacy.trim().split(' ');
+      if (!mounted) return;
+      setState(() {
+        _lastName = parts.isNotEmpty ? parts[0] : '';
+        _firstName = parts.length >= 2 ? parts[1] : '';
+        _patronymic = parts.length >= 3 ? parts.sublist(2).join(' ') : '';
+        _avatarPath = avatarPath;
+      });
+      return;
+    }
+
+    // Нет сохранённого — пробуем из ЛК.
+    if (!mounted) return;
     final lk = context.read<LkController>();
     final lkName = lk.profile?.fullName ?? '';
-    setState(() {
-      _userName = lkName;
-      _nameIsFromLk = lkName.isNotEmpty;
-      _avatarPath = avatarPath;
-    });
+    if (lkName.isNotEmpty) {
+      final parts = lkName.trim().split(' ');
+      if (!mounted) return;
+      setState(() {
+        _lastName = parts.isNotEmpty ? parts[0] : '';
+        _firstName = parts.length >= 2 ? parts[1] : '';
+        _patronymic = parts.length >= 3 ? parts.sublist(2).join(' ') : '';
+        _avatarPath = avatarPath;
+      });
+    } else if (!mounted) {
+      return;
+    } else {
+      setState(() { _avatarPath = avatarPath; });
+    }
   }
 
-  Future<void> _saveName(String name) async {
+  Future<void> _saveName(String lastName, String firstName, String patronymic) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_nameKey, name);
-    if (mounted) setState(() { _userName = name; _nameIsFromLk = false; });
+    await prefs.setString(_lastNameKey, lastName);
+    await prefs.setString(_firstNameKey, firstName);
+    await prefs.setString(_patronymicKey, patronymic);
+    // Обновляем legacy-ключ для совместимости с дашбордом.
+    final full = [lastName, firstName, patronymic]
+        .where((s) => s.isNotEmpty)
+        .join(' ');
+    await prefs.setString(_legacyNameKey, full);
+    if (mounted) {
+      setState(() {
+        _lastName = lastName;
+        _firstName = firstName;
+        _patronymic = patronymic;
+      });
+    }
   }
 
   Future<void> _pickAvatar(ImageSource source) async {
@@ -86,7 +140,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showEditProfileSheet(BuildContext context, AppLocalizations l) {
-    final nameController = TextEditingController(text: _userName);
+    final lastCtrl = TextEditingController(text: _lastName);
+    final firstCtrl = TextEditingController(text: _firstName);
+    final patronymicCtrl = TextEditingController(text: _patronymic);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -95,8 +152,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
-          final avatarFile =
-              _avatarPath != null ? File(_avatarPath!) : null;
+          final avatarFile = _avatarPath != null ? File(_avatarPath!) : null;
           return Padding(
             padding: EdgeInsets.only(
               left: 24,
@@ -110,12 +166,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   l.profileEditTitle,
-                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 24),
-                // Аватар
                 Center(
                   child: GestureDetector(
                     onTap: () => _showAvatarPickerMenu(ctx, l,
@@ -143,8 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 width: 2,
                               ),
                             ),
-                            child: const Icon(Icons.camera_alt,
-                                size: 14, color: Colors.white),
+                            child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
                           ),
                         ),
                       ],
@@ -152,32 +204,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Поле имени
                 TextField(
-                  controller: nameController,
+                  controller: lastCtrl,
                   decoration: InputDecoration(
-                    labelText: l.profileNameLabel,
-                    hintText: l.profileNameHint,
+                    labelText: l.profileLastName,
+                    hintText: 'Иванов',
                     border: const OutlineInputBorder(),
                   ),
+                  textInputAction: TextInputAction.next,
                 ),
-                if (_nameIsFromLk) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    l.profileNameFromLk,
-                    style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(ctx)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.8),
-                    ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: firstCtrl,
+                  decoration: InputDecoration(
+                    labelText: l.profileFirstName,
+                    hintText: 'Иван',
+                    border: const OutlineInputBorder(),
                   ),
-                ],
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: patronymicCtrl,
+                  decoration: InputDecoration(
+                    labelText: l.profilePatronymic,
+                    hintText: 'Иванович',
+                    border: const OutlineInputBorder(),
+                  ),
+                  textInputAction: TextInputAction.done,
+                ),
                 const SizedBox(height: 20),
                 FilledButton(
                   onPressed: () {
-                    final name = nameController.text.trim();
-                    _saveName(name);
+                    _saveName(
+                      lastCtrl.text.trim(),
+                      firstCtrl.text.trim(),
+                      patronymicCtrl.text.trim(),
+                    );
                     Navigator.pop(ctx);
                   },
                   child: Text(l.save),
@@ -233,16 +296,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildAvatar(File? file, double radius) {
     final theme = Theme.of(context);
     if (file != null && file.existsSync()) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundImage: FileImage(file),
-      );
+      return CircleAvatar(radius: radius, backgroundImage: FileImage(file));
     }
+    final initials = _firstName.isNotEmpty
+        ? _firstName[0].toUpperCase()
+        : _lastName.isNotEmpty
+            ? _lastName[0].toUpperCase()
+            : '?';
     return CircleAvatar(
       radius: radius,
       backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
       child: Text(
-        _userName.isNotEmpty ? _userName[0].toUpperCase() : '?',
+        initials,
         style: TextStyle(
           fontSize: radius * 0.75,
           fontWeight: FontWeight.w700,
@@ -263,6 +328,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final group = context.watch<GroupController>().group;
+    final groupCtrl = context.watch<GroupController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -295,7 +361,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onTap: _changeGroup,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          // Подгруппа — показывается только если группа выбрана.
+          if (group != null) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l.profileSubgroup,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l.profileSubgroupHint,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SegmentedButton<int?>(
+                      style: SegmentedButton.styleFrom(
+                        textStyle: const TextStyle(fontSize: 13),
+                      ),
+                      segments: [
+                        ButtonSegment<int?>(value: null, label: Text(l.profileSubgroupAll)),
+                        const ButtonSegment<int?>(value: 1, label: Text('1')),
+                        const ButtonSegment<int?>(value: 2, label: Text('2')),
+                      ],
+                      selected: {groupCtrl.subgroup},
+                      onSelectionChanged: (s) => groupCtrl.setSubgroup(s.first),
+                      showSelectedIcon: false,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 8),
           _sectionTitle(context, l.lkSection),
           _lkCard(context, l),
           const SizedBox(height: 16),
@@ -319,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _header(BuildContext context, AppLocalizations l, String? groupLabel) {
     final theme = Theme.of(context);
     final avatarFile = _avatarPath != null ? File(_avatarPath!) : null;
-    final displayName = _userName.isNotEmpty ? _userName : l.profileNameHint;
+    final displayName = _displayName.isNotEmpty ? _displayName : l.profileNameHint;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -421,10 +530,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Card(
       child: ListTile(
         leading: connecting
-            ? const SizedBox(
-                width: 22, height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
+            ? const SizedBox(width: 22, height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2))
             : const Icon(Icons.login_outlined),
         title: Text(l.lkNotConnected),
         subtitle: Text(lk.errorMessage ?? l.lkLoginHint),
@@ -438,6 +545,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       SnackBar(content: Text(l.lkConnected)),
                     );
                     _loadProfile();
+                    // Автозаполнение группы после логина.
+                    if (context.mounted) {
+                      context.read<LkController>().autoFillGroupIfNeeded(
+                        context.read<GroupController>(),
+                      );
+                    }
                   }
                 },
           child: Text(l.lkConnect),
@@ -484,9 +597,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
+          fontWeight: FontWeight.w700,
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:html/parser.dart' as html_parser;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../models/contact_work.dart';
 import '../../models/report_work.dart';
 import 'lk_report_work_parser.dart';
 import 'lk_session.dart';
@@ -109,5 +110,47 @@ class LkReportWorkApi {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_cacheKey);
     await prefs.remove(_cacheTimeKey);
+  }
+
+  /// Возвращает список файлов для «прочей» работы по её [fileId].
+  /// Парсит модальную страницу `modules/vkr2/otherpage.php?id=<fileId>`.
+  Future<List<WorkFile>> fetchOtherWorkFiles(String fileId) async {
+    if (fileId.isEmpty) return const [];
+    final html = await _session.fetchEcabHtml(
+      'modules/vkr2/otherpage.php?id=$fileId',
+    );
+    final doc = html_parser.parse(html);
+    final files = <WorkFile>[];
+    for (final a in doc.querySelectorAll('a[href]')) {
+      final href = a.attributes['href'] ?? '';
+      if (href.isEmpty) { continue; }
+      // Ищем ссылки на файлы или download-эндпоинты.
+      final lower = href.toLowerCase();
+      if (!lower.contains('/files/') &&
+          !lower.contains('download') &&
+          !lower.contains('.pdf') &&
+          !lower.contains('.doc') &&
+          !lower.contains('.zip') &&
+          !lower.contains('.rar') &&
+          !lower.contains('.xlsx') &&
+          !lower.contains('.pptx')) {
+        continue;
+      }
+      final name = a.text.trim().isNotEmpty
+          ? a.text.trim()
+          : href.split('/').last.split('?').first;
+      final url = href.startsWith('http')
+          ? href
+          : 'https://omgtu.ru${href.startsWith('/') ? '' : '/ecab/'}$href';
+      final type = lower.endsWith('.pdf')
+          ? 'pdf'
+          : lower.endsWith('.docx') || lower.endsWith('.doc')
+              ? 'docx'
+              : lower.endsWith('.pptx')
+                  ? 'pptx'
+                  : 'link';
+      files.add(WorkFile(name: name, url: url, type: type));
+    }
+    return files;
   }
 }

@@ -27,6 +27,8 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
   final _searchController = TextEditingController();
   String _query = '';
   ReportWorkStatus? _statusFilter;
+  int? _semesterFilter;
+  String? _disciplineFilter;
 
   @override
   void initState() {
@@ -106,7 +108,21 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
     }
 
     final result = out.result;
-    final filteredOther = _applyFilters(result.otherWorks);
+    final allOther = result.otherWorks;
+    final semesters = allOther
+        .map((w) => w.semester)
+        .whereType<int>()
+        .toSet()
+        .toList()
+      ..sort((a, b) => b.compareTo(a));
+    final disciplines = allOther
+        .map((w) => w.discipline)
+        .where((d) => d.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+
+    final filteredOther = _applyFilters(allOther);
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -142,8 +158,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
           const SizedBox(height: 8),
           ...result.courseWorks.asMap().entries.map(
                 (e) => Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: _courseWorkCard(context, e.value, e.key),
                 ),
               ),
@@ -154,6 +169,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
           child: SectionHeader(title: l.reportOtherWorks),
         ),
         const SizedBox(height: 8),
+        // Поиск
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: TextField(
@@ -175,6 +191,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
           ),
         ),
         const SizedBox(height: 8),
+        // Фильтр по статусу
         SizedBox(
           height: 44,
           child: ListView(
@@ -182,15 +199,35 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             children: [
               _filterChip(context, l.reportFilterAll, null),
-              _filterChip(
-                  context, l.reportStatusAccepted, ReportWorkStatus.accepted),
-              _filterChip(
-                  context, l.reportStatusRejected, ReportWorkStatus.rejected),
-              _filterChip(
-                  context, l.reportStatusPending, ReportWorkStatus.pending),
+              _filterChip(context, l.reportStatusAccepted, ReportWorkStatus.accepted),
+              _filterChip(context, l.reportStatusRejected, ReportWorkStatus.rejected),
+              _filterChip(context, l.reportStatusPending, ReportWorkStatus.pending),
             ],
           ),
         ),
+        // Фильтр по семестру
+        if (semesters.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 44,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              children: [
+                _semesterChip(context, l, null),
+                for (final s in semesters) _semesterChip(context, l, s),
+              ],
+            ),
+          ),
+        ],
+        // Фильтр по предмету
+        if (disciplines.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _disciplineButton(context, l, disciplines),
+          ),
+        ],
         const SizedBox(height: 8),
         if (filteredOther.isEmpty)
           Padding(
@@ -200,8 +237,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
         else
           ...filteredOther.asMap().entries.map(
                 (e) => Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: _otherWorkCard(context, l, e.value, e.key),
                 ),
               ),
@@ -211,18 +247,23 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
 
   List<ReportWork> _applyFilters(List<ReportWork> items) {
     final q = _query.trim().toLowerCase();
-    return items.where((w) {
+    var filtered = items.where((w) {
       if (_statusFilter != null && w.status != _statusFilter) return false;
+      if (_semesterFilter != null && w.semester != _semesterFilter) return false;
+      if (_disciplineFilter != null && w.discipline != _disciplineFilter) return false;
       if (q.isEmpty) return true;
       return w.title.toLowerCase().contains(q) ||
           w.discipline.toLowerCase().contains(q);
     }).toList();
+    // Сортируем: новые сверху.
+    filtered.sort((a, b) =>
+        (b.date ?? DateTime(0)).compareTo(a.date ?? DateTime(0)));
+    return filtered;
   }
 
-  // ───────────── pieces ─────────────
+  // ───────────── chips / filters ─────────────
 
-  Widget _filterChip(
-      BuildContext context, String label, ReportWorkStatus? value) {
+  Widget _filterChip(BuildContext context, String label, ReportWorkStatus? value) {
     final selected = _statusFilter == value;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -233,6 +274,95 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
       ),
     );
   }
+
+  Widget _semesterChip(BuildContext context, AppLocalizations l, int? value) {
+    final selected = _semesterFilter == value;
+    final label = value == null
+        ? '${l.reportFilterAll} ${l.reportSemesterLabel}'
+        : '$value ${l.reportSemesterLabel}';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: FilterChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => setState(() => _semesterFilter = value),
+      ),
+    );
+  }
+
+  Widget _disciplineButton(
+      BuildContext context, AppLocalizations l, List<String> disciplines) {
+    final theme = Theme.of(context);
+    final hasFilter = _disciplineFilter != null;
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: hasFilter ? theme.colorScheme.primary : null,
+        side: hasFilter
+            ? BorderSide(color: theme.colorScheme.primary)
+            : null,
+      ),
+      icon: const Icon(Icons.menu_book_outlined, size: 16),
+      label: Text(
+        _disciplineFilter ?? l.reportSubjectFilter,
+        overflow: TextOverflow.ellipsis,
+      ),
+      onPressed: () => _showDisciplineSheet(context, l, disciplines),
+    );
+  }
+
+  void _showDisciplineSheet(
+      BuildContext context, AppLocalizations l, List<String> disciplines) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (_, ctrl) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Text(l.reportSubjectFilter,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.clear_all),
+              title: Text(l.reportAllSubjects),
+              selected: _disciplineFilter == null,
+              onTap: () {
+                setState(() => _disciplineFilter = null);
+                Navigator.pop(context);
+              },
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                controller: ctrl,
+                itemCount: disciplines.length,
+                itemBuilder: (_, i) {
+                  final d = disciplines[i];
+                  return ListTile(
+                    title: Text(d),
+                    selected: _disciplineFilter == d,
+                    onTap: () {
+                      setState(() => _disciplineFilter = d);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ───────────── cards ─────────────
 
   Widget _yearChip(BuildContext context, int yearStart) {
     final theme = Theme.of(context);
@@ -253,8 +383,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
     );
   }
 
-  Widget _courseWorkCard(
-      BuildContext context, ReportCourseWork cw, int index) {
+  Widget _courseWorkCard(BuildContext context, ReportCourseWork cw, int index) {
     final theme = Theme.of(context);
     return Card(
       child: Padding(
@@ -265,11 +394,9 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color:
-                        theme.colorScheme.primary.withValues(alpha: 0.12),
+                    color: theme.colorScheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -296,8 +423,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
             const SizedBox(height: 8),
             Text(
               cw.title,
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -329,8 +455,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
                   Expanded(
                     child: Text(
                       w.title,
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -359,8 +484,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.5),
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -385,30 +509,16 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
     final parts = <String>[];
     parts.add(w.discipline);
     if (w.semester != null) parts.add('${w.semester} ${l.reportSemesterLabel}');
-    if (w.workNumber.isNotEmpty) {
-      parts.add('${l.reportWorkNumberLabel} ${w.workNumber}');
-    }
-    if (w.date != null) {
-      parts.add(DateFormat('dd.MM.yyyy').format(w.date!));
-    }
+    if (w.workNumber.isNotEmpty) parts.add('${l.reportWorkNumberLabel} ${w.workNumber}');
+    if (w.date != null) parts.add(DateFormat('dd.MM.yyyy').format(w.date!));
     return parts.join(' · ');
   }
 
-  Widget _statusBadge(
-      BuildContext context, AppLocalizations l, ReportWorkStatus status) {
+  Widget _statusBadge(BuildContext context, AppLocalizations l, ReportWorkStatus status) {
     final (color, label) = switch (status) {
-      ReportWorkStatus.accepted => (
-          const Color(0xFF2EA04A),
-          l.reportStatusAccepted,
-        ),
-      ReportWorkStatus.rejected => (
-          const Color(0xFFE05A6B),
-          l.reportStatusRejected,
-        ),
-      ReportWorkStatus.pending => (
-          const Color(0xFFB58A14),
-          l.reportStatusPending,
-        ),
+      ReportWorkStatus.accepted => (const Color(0xFF2EA04A), l.reportStatusAccepted),
+      ReportWorkStatus.rejected => (const Color(0xFFE05A6B), l.reportStatusRejected),
+      ReportWorkStatus.pending  => (const Color(0xFFB58A14), l.reportStatusPending),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
@@ -419,11 +529,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
-        ),
+        style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 11),
       ),
     );
   }
@@ -432,8 +538,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Icon(Icons.offline_pin_outlined,
-            size: 16,
+        Icon(Icons.offline_pin_outlined, size: 16,
             color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
         const SizedBox(width: 6),
         Expanded(
@@ -457,8 +562,7 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline,
-              size: 18, color: Theme.of(context).colorScheme.error),
+          Icon(Icons.error_outline, size: 18, color: Theme.of(context).colorScheme.error),
           const SizedBox(width: 8),
           Expanded(child: Text(_error ?? l.error)),
         ],

@@ -785,7 +785,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardNextLesson.
   ///
   /// In ru, this message translates to:
-  /// **'Ближайшая пара'**
+  /// **'Текущая/ближайшая пара'**
   String get dashboardNextLesson;
 
   /// No description provided for @dashboardNoNextLesson.
@@ -805,6 +805,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Материалы'**
   String get dashboardMaterials;
+
+  /// No description provided for @dashboardTasks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Задания'**
+  String get dashboardTasks;
 
   /// No description provided for @dashboardReportWorks.
   ///
@@ -853,6 +859,138 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Поиск...'**
   String get groupSearchLoading;
+
+  /// No description provided for @scheduleMySubgroup.
+  ///
+  /// In ru, this message translates to:
+  /// **'Моя подгруппа'**
+  String get scheduleMySubgroup;
+
+  /// No description provided for @scheduleSubgroup.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подгруппа'**
+  String get scheduleSubgroup;
+
+  /// No description provided for @scheduleStream.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поток'**
+  String get scheduleStream;
+
+  /// No description provided for @scheduleWeekView.
+  ///
+  /// In ru, this message translates to:
+  /// **'Неделя'**
+  String get scheduleWeekView;
+
+  /// No description provided for @scheduleDayView.
+  ///
+  /// In ru, this message translates to:
+  /// **'День'**
+  String get scheduleDayView;
+
+  /// No description provided for @scheduleNoLessonsToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'Иди трогать траву!\nСегодня пар нет 🌿'**
+  String get scheduleNoLessonsToday;
+
+  /// No description provided for @scheduleNoLessonsTodayMsg.
+  ///
+  /// In ru, this message translates to:
+  /// **'Наслаждайся свободным временем или посмотри другой день.'**
+  String get scheduleNoLessonsTodayMsg;
+
+  /// No description provided for @scheduleShowWeek.
+  ///
+  /// In ru, this message translates to:
+  /// **'Показать всю неделю'**
+  String get scheduleShowWeek;
+
+  /// No description provided for @schedulePickDate.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать дату'**
+  String get schedulePickDate;
+
+  /// No description provided for @profileFirstName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя'**
+  String get profileFirstName;
+
+  /// No description provided for @profileLastName.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фамилия'**
+  String get profileLastName;
+
+  /// No description provided for @profilePatronymic.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчество'**
+  String get profilePatronymic;
+
+  /// No description provided for @profileSubgroup.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подгруппа'**
+  String get profileSubgroup;
+
+  /// No description provided for @profileSubgroupAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все'**
+  String get profileSubgroupAll;
+
+  /// No description provided for @profileSubgroupHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Укажите подгруппу для фильтрации расписания'**
+  String get profileSubgroupHint;
+
+  /// No description provided for @profileGroupAutoFilled.
+  ///
+  /// In ru, this message translates to:
+  /// **'Группа заполнена из личного кабинета'**
+  String get profileGroupAutoFilled;
+
+  /// No description provided for @reportSubjectFilter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Предмет'**
+  String get reportSubjectFilter;
+
+  /// No description provided for @reportSemesterFilter.
+  ///
+  /// In ru, this message translates to:
+  /// **'Семестр'**
+  String get reportSemesterFilter;
+
+  /// No description provided for @reportDownload.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скачать'**
+  String get reportDownload;
+
+  /// No description provided for @reportDownloading.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скачивание...'**
+  String get reportDownloading;
+
+  /// No description provided for @reportNoFiles.
+  ///
+  /// In ru, this message translates to:
+  /// **'Файл недоступен'**
+  String get reportNoFiles;
+
+  /// No description provided for @reportAllSubjects.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все предметы'**
+  String get reportAllSubjects;
 
   /// No description provided for @cancel.
   ///

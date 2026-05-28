@@ -360,7 +360,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardNoGroup => 'No group selected';
 
   @override
-  String get dashboardNextLesson => 'Next class';
+  String get dashboardNextLesson => 'Current/next class';
 
   @override
   String get dashboardNoNextLesson => 'No classes today';
@@ -370,6 +370,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardMaterials => 'Materials';
+
+  @override
+  String get dashboardTasks => 'Tasks';
 
   @override
   String get dashboardReportWorks => 'Submitted works';
@@ -394,6 +397,74 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get groupSearchLoading => 'Searching...';
+
+  @override
+  String get scheduleMySubgroup => 'My subgroup';
+
+  @override
+  String get scheduleSubgroup => 'Subgroup';
+
+  @override
+  String get scheduleStream => 'Stream';
+
+  @override
+  String get scheduleWeekView => 'Week';
+
+  @override
+  String get scheduleDayView => 'Day';
+
+  @override
+  String get scheduleNoLessonsToday =>
+      'Go touch some grass!\nNo classes today 🌿';
+
+  @override
+  String get scheduleNoLessonsTodayMsg =>
+      'Enjoy your free time or check another day.';
+
+  @override
+  String get scheduleShowWeek => 'Show full week';
+
+  @override
+  String get schedulePickDate => 'Pick date';
+
+  @override
+  String get profileFirstName => 'First name';
+
+  @override
+  String get profileLastName => 'Last name';
+
+  @override
+  String get profilePatronymic => 'Patronymic';
+
+  @override
+  String get profileSubgroup => 'Subgroup';
+
+  @override
+  String get profileSubgroupAll => 'All';
+
+  @override
+  String get profileSubgroupHint => 'Set your subgroup to filter the schedule';
+
+  @override
+  String get profileGroupAutoFilled => 'Group filled from personal account';
+
+  @override
+  String get reportSubjectFilter => 'Subject';
+
+  @override
+  String get reportSemesterFilter => 'Semester';
+
+  @override
+  String get reportDownload => 'Download';
+
+  @override
+  String get reportDownloading => 'Downloading...';
+
+  @override
+  String get reportNoFiles => 'File not available';
+
+  @override
+  String get reportAllSubjects => 'All subjects';
 
   @override
   String get cancel => 'Cancel';

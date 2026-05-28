@@ -1,11 +1,14 @@
 import 'package:flutter/foundation.dart';
 
+import '../models/group.dart';
 import '../models/student_record.dart';
 import '../services/lk/lk_contact_work_api.dart';
 import '../services/lk/lk_credentials_storage.dart';
 import '../services/lk/lk_grades_api.dart';
 import '../services/lk/lk_report_work_api.dart';
 import '../services/lk/lk_session.dart';
+import '../services/schedule_api.dart';
+import 'group_controller.dart';
 
 enum LkStatus { disconnected, connecting, connected, error }
 
@@ -82,6 +85,29 @@ class LkController extends ChangeNotifier {
       _errorMessage = e.toString();
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Если профиль ЛК содержит группу и пользователь ещё не выбрал группу,
+  /// ищет группу в API расписания и автоматически выбирает её.
+  Future<void> autoFillGroupIfNeeded(GroupController groupController) async {
+    if (!isConnected) return;
+    if (groupController.hasGroup) return;
+    final label = _profile?.groupLabel ?? '';
+    if (label.isEmpty) return;
+    try {
+      final api = ScheduleApi();
+      final results = await api.searchGroups(label);
+      final match = results.where((g) => g.label == label).firstOrNull;
+      if (match != null) {
+        await groupController.select(Group(
+          id: match.id,
+          label: match.label,
+          description: match.description,
+        ));
+      }
+    } catch (_) {
+      // Не критично — пользователь выберет группу вручную.
     }
   }
 

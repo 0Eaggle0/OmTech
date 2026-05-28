@@ -114,6 +114,10 @@ class LessonCard extends StatelessWidget {
                       _row(context, Icons.place_outlined, event.location, accent),
                     if (event.lecturer.isNotEmpty)
                       _row(context, Icons.person_outline, event.lecturer, accent),
+                    if (event.stream.isNotEmpty)
+                      _row(context, Icons.groups_2_outlined, event.stream, accent),
+                    if (event.subgroupLabel.isNotEmpty)
+                      _row(context, Icons.people_outline, event.subgroupLabel, accent),
                   ],
                 ),
               ),

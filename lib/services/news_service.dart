@@ -295,7 +295,22 @@ class NewsService {
         t.contains('место') ||
         t.contains('чемпион') ||
         t.contains('лауреат') ||
-        t.contains('награда');
+        t.contains('награда') ||
+        t.contains('лучш') ||
+        t.contains('финал') ||
+        t.contains('призёр') ||
+        t.contains('призер') ||
+        t.contains('кубок') ||
+        t.contains('диплом') ||
+        t.contains('медал') ||
+        t.contains('трофей') ||
+        t.contains('звани') ||
+        t.contains('рекорд') ||
+        t.contains('триумф') ||
+        t.contains('гран-при') ||
+        t.contains('гран при') ||
+        t.contains('олимпиад') ||
+        t.contains('конкурс');
   }
 
   // Детектирует кодировку из заголовка Content-Type и мета-тега charset.

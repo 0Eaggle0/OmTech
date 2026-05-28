@@ -45,6 +45,19 @@ class ScheduleEvent {
     return '$auditorium · $building';
   }
 
+  /// Номер подгруппы из поля stream, если указан (например «ИСТ-241/1» → «1»).
+  /// Возвращает пустую строку если пара для всех подгрупп.
+  String get subgroupNumber {
+    final m = RegExp(r'/(\d)').firstMatch(stream);
+    return m?.group(1) ?? '';
+  }
+
+  /// Отображаемый лейбл подгруппы. Пустой если пара для всех.
+  String get subgroupLabel {
+    final n = subgroupNumber;
+    return n.isEmpty ? '' : '$n-я подгруппа';
+  }
+
   static DateTime _parseDate(String? raw) {
     if (raw == null || raw.isEmpty) return DateTime.now();
     final parts = raw.split(RegExp(r'[.\-/]'));

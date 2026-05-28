@@ -21,9 +21,9 @@ import '../../widgets/section_header.dart';
 import '../../widgets/shimmer_placeholder.dart';
 import '../../widgets/tilt_card.dart';
 import '../grades/grades_screen.dart';
-import '../materials/materials_screen.dart';
 import '../news/news_detail_screen.dart';
 import '../reports/report_work_screen.dart';
+import '../work/work_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final ValueChanged<int> onOpenTab;
@@ -41,8 +41,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   late Future<List<NewsItem>> _newsFuture;
   Future<List<ScheduleEvent>>? _scheduleFuture;
   int? _loadedGroupId;
-  String _userName = '';
-  bool _nameIsFromLk = false;
+  String _firstName = '';
   LkStatus? _lastLkStatus;
 
   @override
@@ -54,22 +53,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
+    // Сначала пробуем user_first_name (новый формат).
+    final firstName = prefs.getString('user_first_name') ?? '';
+    if (firstName.isNotEmpty) {
+      if (mounted) setState(() { _firstName = firstName; });
+      return;
+    }
+    // Легаси: user_name — берём первое слово.
     final saved = prefs.getString('user_name') ?? '';
-    if (!mounted) return;
     if (saved.isNotEmpty) {
-      setState(() {
-        _userName = saved;
-        _nameIsFromLk = false;
-      });
+      final parts = saved.trim().split(' ');
+      if (!mounted) return;
+      setState(() { _firstName = parts.isNotEmpty ? parts[0] : ''; });
       return;
     }
     // Нет сохранённого имени — пробуем подтянуть из ЛК.
+    if (!mounted) return;
     final lk = context.read<LkController>();
     final lkName = lk.profile?.fullName ?? '';
-    setState(() {
-      _userName = lkName;
-      _nameIsFromLk = lkName.isNotEmpty;
-    });
+    if (lkName.isNotEmpty) {
+      final parts = lkName.trim().split(' ');
+      setState(() {
+        _firstName = parts.length >= 2 ? parts[1] : parts.first;
+      });
+    }
   }
 
   @override
@@ -89,33 +96,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final lk = context.watch<LkController>();
     if (_lastLkStatus != lk.status) {
       _lastLkStatus = lk.status;
-      if (lk.isConnected && _userName.isEmpty) {
+      if (lk.isConnected && _firstName.isEmpty) {
         final lkName = lk.profile?.fullName ?? '';
         if (lkName.isNotEmpty) {
+          final parts = lkName.trim().split(' ');
           setState(() {
-            _userName = lkName;
-            _nameIsFromLk = true;
+            _firstName = parts.length >= 2 ? parts[1] : parts.first;
           });
         }
+        // Автозаполнение группы из ЛК.
+        lk.autoFillGroupIfNeeded(context.read<GroupController>());
       }
     }
   }
 
-  /// Имя для приветствия: если из ЛК (Фамилия Имя Отчество) — берём второе слово,
-  /// если введено вручную — первое слово.
   String get _greetingName {
-    final trimmed = _userName.trim();
-    if (trimmed.isEmpty) return 'Студент';
-    final parts = trimmed.split(' ');
-    if (_nameIsFromLk && parts.length >= 2) return parts[1];
-    return parts.first;
+    if (_firstName.isNotEmpty) return _firstName;
+    return 'Студент';
   }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    // Горизонтальный padding убран с ListView — каждый элемент сам добавляет отступы,
-    // чтобы NewsCarousel мог занять всю ширину без overflow.
     return Scaffold(
       body: AnimatedMeshBackground(
         child: SafeArea(
@@ -154,7 +156,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ).animate(delay: 180.ms).fadeIn(duration: 300.ms),
               ),
               const SizedBox(height: 8),
-              // Carousel — без горизонтального padding, занимает всю ширину
               _newsPreview(context)
                   .animate(delay: 220.ms)
                   .fadeIn(duration: 300.ms),
@@ -178,11 +179,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Stack(
         children: [
           Positioned(
-            right: -20,
-            top: -20,
+            right: -20, top: -20,
             child: Container(
-              width: 100,
-              height: 100,
+              width: 100, height: 100,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white.withValues(alpha: 0.08),
@@ -190,11 +189,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Positioned(
-            right: 30,
-            bottom: -30,
+            right: 30, bottom: -30,
             child: Container(
-              width: 70,
-              height: 70,
+              width: 70, height: 70,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white.withValues(alpha: 0.06),
@@ -205,8 +202,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(20),
@@ -238,16 +234,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 GestureDetector(
                   onTap: () => widget.onOpenTab(1),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 7),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       l.dashboardSelectGroup,
-                      style: TextStyle(
-                        color: const Color(0xFF6C5CE7),
+                      style: const TextStyle(
+                        color: Color(0xFF6C5CE7),
                         fontWeight: FontWeight.w700,
                         fontSize: 13,
                       ),
@@ -272,7 +267,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const ShimmerGreeting();
         }
-        final next = _findNext(snapshot.data ?? []);
+        final next = _findNextOrCurrent(snapshot.data ?? []);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -295,71 +290,84 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  ScheduleEvent? _findNext(List<ScheduleEvent> events) {
+  /// Сначала ищет текущую пару (идёт прямо сейчас), затем ближайшую.
+  ScheduleEvent? _findNextOrCurrent(List<ScheduleEvent> events) {
     final now = DateTime.now();
+    // 1) Пара, идущая прямо сейчас.
     for (final e in events) {
-      final dayEnd =
-          DateTime(e.date.year, e.date.month, e.date.day, 23, 59);
-      if (dayEnd.isAfter(now)) return e;
+      final begin = _parseTime(e.date, e.beginLesson);
+      final end = _parseTime(e.date, e.endLesson);
+      if (!now.isBefore(begin) && now.isBefore(end)) return e;
+    }
+    // 2) Следующая предстоящая пара.
+    for (final e in events) {
+      final begin = _parseTime(e.date, e.beginLesson);
+      if (begin.isAfter(now)) return e;
     }
     return events.isNotEmpty ? events.first : null;
   }
 
+  DateTime _parseTime(DateTime date, String hhmm) {
+    final parts = hhmm.split(':');
+    if (parts.length < 2) return date;
+    final h = int.tryParse(parts[0]) ?? 0;
+    final m = int.tryParse(parts[1]) ?? 0;
+    return DateTime(date.year, date.month, date.day, h, m);
+  }
+
   Widget _tiles(BuildContext context, AppLocalizations l) {
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: TiltCard(
-                child: _Tile(
-                  icon: Icons.grade_outlined,
-                  label: l.dashboardGrades,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4F9DDE), Color(0xFF6C5CE7)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  neonColor: const Color(0xFF4F9DDE),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const GradesScreen()),
-                  ),
-                ),
+        Expanded(
+          child: TiltCard(
+            child: _Tile(
+              icon: Icons.grade_outlined,
+              label: l.dashboardGrades,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4F9DDE), Color(0xFF6C5CE7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              neonColor: const Color(0xFF4F9DDE),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const GradesScreen()),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TiltCard(
-                child: _Tile(
-                  icon: Icons.folder_outlined,
-                  label: l.dashboardMaterials,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF49C18B), Color(0xFF38A169)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  neonColor: const Color(0xFF49C18B),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const MaterialsScreen()),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-        const SizedBox(height: 12),
-        TiltCard(
-          child: _Tile(
-            icon: Icons.assignment_turned_in_outlined,
-            label: l.dashboardReportWorks,
-            gradient: const LinearGradient(
-              colors: [Color(0xFFE08F4F), Color(0xFFE05A6B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+        const SizedBox(width: 10),
+        Expanded(
+          child: TiltCard(
+            child: _Tile(
+              icon: Icons.assignment_outlined,
+              label: l.dashboardTasks,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF26C6DA), Color(0xFF00ACC1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              neonColor: const Color(0xFF26C6DA),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const WorkListScreen()),
+              ),
             ),
-            neonColor: const Color(0xFFE08F4F),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ReportWorkScreen()),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: TiltCard(
+            child: _Tile(
+              icon: Icons.assignment_turned_in_outlined,
+              label: l.dashboardReportWorks,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFE08F4F), Color(0xFFE05A6B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              neonColor: const Color(0xFFE08F4F),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ReportWorkScreen()),
+              ),
             ),
           ),
         ),
@@ -393,8 +401,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-            color: theme.colorScheme.primary.withValues(alpha: 0.15)),
+        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
@@ -403,8 +410,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Expanded(
             child: Text(
               text,
-              style: TextStyle(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+              style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
             ),
           ),
         ],
@@ -440,9 +446,9 @@ class _Tile extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: neonColor.withValues(alpha: 0.45),
-            blurRadius: 24,
+            blurRadius: 20,
             spreadRadius: 1,
-            offset: const Offset(0, 6),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -454,24 +460,28 @@ class _Tile extends StatelessWidget {
           onTap: onTap,
           splashColor: Colors.white.withValues(alpha: 0.15),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 22),
+            padding: const EdgeInsets.symmetric(vertical: 18),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 32, color: Colors.white)
+                Icon(icon, size: 26, color: Colors.white)
                     .animate(onPlay: (c) => c.repeat())
                     .shimmer(
                       duration: 2200.ms,
                       color: Colors.white.withValues(alpha: 0.4),
                       delay: 800.ms,
                     ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Text(
                   label,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    fontSize: 14,
+                    fontSize: 11,
                   ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
