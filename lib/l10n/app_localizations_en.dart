@@ -293,6 +293,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lkCourseworkSection => 'Coursework';
 
   @override
+  String get lkRequired => 'Sign in required';
+
+  @override
+  String get lkRequiredMsg =>
+      'Sign in to your personal account to access this data.';
+
+  @override
+  String get lkRequiredAction => 'Sign in';
+
+  @override
+  String get profileEditTitle => 'Edit profile';
+
+  @override
+  String get profilePhotoChange => 'Change photo';
+
+  @override
+  String get profilePhotoRemove => 'Remove photo';
+
+  @override
+  String get profilePhotoGallery => 'Gallery';
+
+  @override
+  String get profilePhotoCamera => 'Camera';
+
+  @override
+  String get profileNameFromLk => 'Name pulled from personal account';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override

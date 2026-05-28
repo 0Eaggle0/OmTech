@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 
+import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/course_material.dart';
 import '../../services/link_launcher.dart';
 import '../../services/materials_service.dart';
 import '../../widgets/demo_banner.dart';
+import '../../widgets/lk_required_state.dart';
 
 class MaterialsScreen extends StatefulWidget {
   const MaterialsScreen({super.key});
@@ -21,32 +24,36 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
+    final lk = context.watch<LkController>();
+
     return Scaffold(
       appBar: AppBar(title: Text(l.materialsTitle)),
-      body: FutureBuilder<List<CourseMaterial>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final courses = snapshot.data!;
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            children: [
-              DemoBanner(text: l.materialsDemoNote),
-              const SizedBox(height: 12),
-              for (var i = 0; i < courses.length; i++)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _courseCard(context, courses[i])
-                      .animate(delay: (i * 70).ms)
-                      .fadeIn(duration: 280.ms)
-                      .slideY(begin: 0.05, curve: Curves.easeOut),
-                ),
-            ],
-          );
-        },
-      ),
+      body: !lk.isConnected
+          ? const LkRequiredState()
+          : FutureBuilder<List<CourseMaterial>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final courses = snapshot.data!;
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  children: [
+                    DemoBanner(text: l.materialsDemoNote),
+                    const SizedBox(height: 12),
+                    for (var i = 0; i < courses.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _courseCard(context, courses[i])
+                            .animate(key: ValueKey(courses[i].discipline))
+                            .fadeIn(duration: 180.ms)
+                            .slideY(begin: 0.05, curve: Curves.easeOut),
+                      ),
+                  ],
+                );
+              },
+            ),
     );
   }
 

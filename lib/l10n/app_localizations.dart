@@ -650,6 +650,60 @@ abstract class AppLocalizations {
   /// **'Курсовые'**
   String get lkCourseworkSection;
 
+  /// No description provided for @lkRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Только для авторизованных'**
+  String get lkRequired;
+
+  /// No description provided for @lkRequiredMsg.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войдите в личный кабинет, чтобы получить доступ к этим данным.'**
+  String get lkRequiredMsg;
+
+  /// No description provided for @lkRequiredAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войти в ЛК'**
+  String get lkRequiredAction;
+
+  /// No description provided for @profileEditTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Редактировать профиль'**
+  String get profileEditTitle;
+
+  /// No description provided for @profilePhotoChange.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменить фото'**
+  String get profilePhotoChange;
+
+  /// No description provided for @profilePhotoRemove.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить фото'**
+  String get profilePhotoRemove;
+
+  /// No description provided for @profilePhotoGallery.
+  ///
+  /// In ru, this message translates to:
+  /// **'Галерея'**
+  String get profilePhotoGallery;
+
+  /// No description provided for @profilePhotoCamera.
+  ///
+  /// In ru, this message translates to:
+  /// **'Камера'**
+  String get profilePhotoCamera;
+
+  /// No description provided for @profileNameFromLk.
+  ///
+  /// In ru, this message translates to:
+  /// **'Имя подтянуто из личного кабинета'**
+  String get profileNameFromLk;
+
   /// No description provided for @settingsTitle.
   ///
   /// In ru, this message translates to:

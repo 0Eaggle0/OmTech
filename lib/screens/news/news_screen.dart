@@ -124,10 +124,9 @@ class _NewsScreenState extends State<NewsScreen> {
                           AppRoutes.fadeScale(NewsDetailScreen(item: item)),
                         ),
                       )
-                          .animate(delay: (i * 60).ms)
-                          .fadeIn(duration: 280.ms)
-                          .slideY(
-                              begin: 0.04, curve: Curves.easeOut);
+                          .animate(key: ValueKey(item.url))
+                          .fadeIn(duration: 180.ms)
+                          .slideY(begin: 0.04, curve: Curves.easeOut);
                     },
                   ),
                 ),

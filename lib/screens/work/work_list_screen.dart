@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/contact_work.dart';
 import '../../services/contact_work_service.dart';
 import '../../widgets/demo_banner.dart';
+import '../../widgets/lk_required_state.dart';
 import 'work_detail_screen.dart';
 
 class WorkListScreen extends StatefulWidget {
@@ -106,17 +107,18 @@ class _WorkListScreenState extends State<WorkListScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    // подписываемся на статус ЛК
-    context.watch<LkController>();
+    final lk = context.watch<LkController>();
 
     return Scaffold(
       appBar: AppBar(title: Text(l.workTitle)),
-      body: _loading && _result == null
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: () => _load(forceRefresh: true),
-              child: _content(context, l),
-            ),
+      body: !lk.isConnected
+          ? const LkRequiredState()
+          : _loading && _result == null
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: () => _load(forceRefresh: true),
+                  child: _content(context, l),
+                ),
     );
   }
 
@@ -334,8 +336,8 @@ class _WorkListScreenState extends State<WorkListScreen> {
           ),
         ),
       )
-          .animate(delay: (index * 60).ms)
-          .fadeIn(duration: 280.ms)
+          .animate(key: ValueKey(d.discipline))
+          .fadeIn(duration: 180.ms)
           .slideY(begin: 0.05, curve: Curves.easeOut),
     );
   }

@@ -9,6 +9,7 @@ import '../../models/grade.dart';
 import '../../models/student_record.dart';
 import '../../services/grades_service.dart';
 import '../../widgets/demo_banner.dart';
+import '../../widgets/lk_required_state.dart';
 
 class GradesScreen extends StatefulWidget {
   const GradesScreen({super.key});
@@ -68,16 +69,18 @@ class _GradesScreenState extends State<GradesScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    context.watch<LkController>();
+    final lk = context.watch<LkController>();
 
     return Scaffold(
       appBar: AppBar(title: Text(l.gradesTitle)),
-      body: _loading && _result == null
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: () => _load(forceRefresh: true),
-              child: _content(context, l),
-            ),
+      body: !lk.isConnected
+          ? const LkRequiredState()
+          : _loading && _result == null
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: () => _load(forceRefresh: true),
+                  child: _content(context, l),
+                ),
     );
   }
 

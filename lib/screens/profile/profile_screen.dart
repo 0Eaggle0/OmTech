@@ -1,4 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,48 +25,231 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   static const _nameKey = 'user_name';
+  static const _avatarKey = 'user_avatar_path';
+
   String _userName = '';
+  bool _nameIsFromLk = false;
+  String? _avatarPath;
 
   @override
   void initState() {
     super.initState();
-    _loadName();
+    _loadProfile();
   }
 
-  Future<void> _loadName() async {
+  Future<void> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() => _userName = prefs.getString(_nameKey) ?? '');
+    final saved = prefs.getString(_nameKey) ?? '';
+    final avatarPath = prefs.getString(_avatarKey);
+    if (!mounted) return;
+
+    if (saved.isNotEmpty) {
+      setState(() {
+        _userName = saved;
+        _nameIsFromLk = false;
+        _avatarPath = avatarPath;
+      });
+      return;
+    }
+
+    final lk = context.read<LkController>();
+    final lkName = lk.profile?.fullName ?? '';
+    setState(() {
+      _userName = lkName;
+      _nameIsFromLk = lkName.isNotEmpty;
+      _avatarPath = avatarPath;
+    });
   }
 
-  Future<void> _editName() async {
-    final l = AppLocalizations.of(context)!;
-    final controller = TextEditingController(text: _userName);
-    final result = await showDialog<String>(
+  Future<void> _saveName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_nameKey, name);
+    if (mounted) setState(() { _userName = name; _nameIsFromLk = false; });
+  }
+
+  Future<void> _pickAvatar(ImageSource source) async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: source, imageQuality: 85);
+    if (picked == null || !mounted) return;
+    final dir = await getApplicationDocumentsDirectory();
+    final dest = File(p.join(dir.path, 'avatar${p.extension(picked.path)}'));
+    await File(picked.path).copy(dest.path);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_avatarKey, dest.path);
+    if (mounted) setState(() => _avatarPath = dest.path);
+  }
+
+  Future<void> _removeAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_avatarKey);
+    if (mounted) setState(() => _avatarPath = null);
+  }
+
+  void _showEditProfileSheet(BuildContext context, AppLocalizations l) {
+    final nameController = TextEditingController(text: _userName);
+    showModalBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.profileNameEdit),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: l.profileNameHint,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l.cancel)),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: Text(l.save),
-          ),
-        ],
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          final avatarFile =
+              _avatarPath != null ? File(_avatarPath!) : null;
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: MediaQuery.viewInsetsOf(ctx).bottom + 24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l.profileEditTitle,
+                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 24),
+                // Аватар
+                Center(
+                  child: GestureDetector(
+                    onTap: () => _showAvatarPickerMenu(ctx, l,
+                        onPick: (source) async {
+                      await _pickAvatar(source);
+                      setSheetState(() {});
+                    }, onRemove: () async {
+                      await _removeAvatar();
+                      setSheetState(() {});
+                    }),
+                    child: Stack(
+                      children: [
+                        _buildAvatar(avatarFile, 52),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: Theme.of(ctx).colorScheme.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(ctx).colorScheme.surface,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(Icons.camera_alt,
+                                size: 14, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Поле имени
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: l.profileNameLabel,
+                    hintText: l.profileNameHint,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                if (_nameIsFromLk) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    l.profileNameFromLk,
+                    style: Theme.of(ctx).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(ctx)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    _saveName(name);
+                    Navigator.pop(ctx);
+                  },
+                  child: Text(l.save),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
-    if (result != null && mounted) {
-      setState(() => _userName = result);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_nameKey, result);
+  }
+
+  void _showAvatarPickerMenu(
+    BuildContext ctx,
+    AppLocalizations l, {
+    required Future<void> Function(ImageSource) onPick,
+    required Future<void> Function() onRemove,
+  }) {
+    showModalBottomSheet(
+      context: ctx,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(l.profilePhotoGallery),
+              onTap: () { Navigator.pop(ctx); onPick(ImageSource.gallery); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: Text(l.profilePhotoCamera),
+              onTap: () { Navigator.pop(ctx); onPick(ImageSource.camera); },
+            ),
+            if (_avatarPath != null)
+              ListTile(
+                leading: Icon(Icons.delete_outline,
+                    color: Theme.of(ctx).colorScheme.error),
+                title: Text(l.profilePhotoRemove,
+                    style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
+                onTap: () { Navigator.pop(ctx); onRemove(); },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar(File? file, double radius) {
+    final theme = Theme.of(context);
+    if (file != null && file.existsSync()) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage: FileImage(file),
+      );
     }
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+      child: Text(
+        _userName.isNotEmpty ? _userName[0].toUpperCase() : '?',
+        style: TextStyle(
+          fontSize: radius * 0.75,
+          fontWeight: FontWeight.w700,
+          color: theme.colorScheme.primary,
+        ),
+      ),
+    );
   }
 
   Future<void> _changeGroup() async {
@@ -128,6 +316,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _header(BuildContext context, AppLocalizations l, String? groupLabel) {
+    final theme = Theme.of(context);
+    final avatarFile = _avatarPath != null ? File(_avatarPath!) : null;
+    final displayName = _userName.isNotEmpty ? _userName : l.profileNameHint;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => _showAvatarPickerMenu(context, l,
+              onPick: _pickAvatar, onRemove: _removeAvatar),
+          child: Stack(
+            children: [
+              _buildAvatar(avatarFile, 36),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: theme.colorScheme.surface, width: 1.5),
+                  ),
+                  child: const Icon(Icons.camera_alt, size: 11, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                displayName,
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              if (groupLabel != null)
+                Text(
+                  groupLabel,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              Text(
+                l.profileUniversity,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => _showEditProfileSheet(context, l),
+                icon: const Icon(Icons.edit_outlined, size: 16),
+                label: Text(l.profileEditTitle),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: theme.textTheme.labelMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _lkCard(BuildContext context, AppLocalizations l) {
     final lk = context.watch<LkController>();
     final theme = Theme.of(context);
@@ -142,9 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               title: Text(profile?.fullName.isNotEmpty == true
                   ? profile!.fullName
                   : l.lkConnected),
-              subtitle: profile == null
-                  ? null
-                  : Text(_lkSubtitle(l, profile)),
+              subtitle: profile == null ? null : Text(_lkSubtitle(l, profile)),
               isThreeLine: profile != null,
             ),
             const Divider(height: 1),
@@ -163,8 +422,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: ListTile(
         leading: connecting
             ? const SizedBox(
-                width: 22,
-                height: 22,
+                width: 22, height: 22,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : const Icon(Icons.login_outlined),
@@ -179,6 +437,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(l.lkConnected)),
                     );
+                    _loadProfile();
                   }
                 },
           child: Text(l.lkConnect),
@@ -215,74 +474,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (ok == true) {
       await lk.logout();
+      if (mounted) _loadProfile();
     }
-  }
-
-  Widget _header(BuildContext context, AppLocalizations l, String? groupLabel) {
-    final theme = Theme.of(context);
-    final displayName = _userName.isNotEmpty ? _userName : l.profileNameHint;
-    return Row(
-      children: [
-        Stack(
-          children: [
-            CircleAvatar(
-              radius: 36,
-              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-              child: Text(
-                _userName.isNotEmpty ? _userName[0].toUpperCase() : '?',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: GestureDetector(
-                onTap: _editName,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.edit, size: 13, color: Colors.white),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                displayName,
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              if (groupLabel != null)
-                Text(
-                  groupLabel,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              Text(
-                l.profileUniversity,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _sectionTitle(BuildContext context, String title) {

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/group_controller.dart';
+import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/news_item.dart';
 import '../../models/schedule_event.dart';
@@ -41,6 +42,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<List<ScheduleEvent>>? _scheduleFuture;
   int? _loadedGroupId;
   String _userName = '';
+  bool _nameIsFromLk = false;
+  LkStatus? _lastLkStatus;
 
   @override
   void initState() {
@@ -51,9 +54,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() => _userName = prefs.getString('user_name') ?? '');
+    final saved = prefs.getString('user_name') ?? '';
+    if (!mounted) return;
+    if (saved.isNotEmpty) {
+      setState(() {
+        _userName = saved;
+        _nameIsFromLk = false;
+      });
+      return;
     }
+    // Нет сохранённого имени — пробуем подтянуть из ЛК.
+    final lk = context.read<LkController>();
+    final lkName = lk.profile?.fullName ?? '';
+    setState(() {
+      _userName = lkName;
+      _nameIsFromLk = lkName.isNotEmpty;
+    });
   }
 
   @override
@@ -69,13 +85,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
         finish: now.add(const Duration(days: 7)),
       );
     }
+    // Подхватываем имя из ЛК когда авто-логин завершается.
+    final lk = context.watch<LkController>();
+    if (_lastLkStatus != lk.status) {
+      _lastLkStatus = lk.status;
+      if (lk.isConnected && _userName.isEmpty) {
+        final lkName = lk.profile?.fullName ?? '';
+        if (lkName.isNotEmpty) {
+          setState(() {
+            _userName = lkName;
+            _nameIsFromLk = true;
+          });
+        }
+      }
+    }
   }
 
-  /// Имя для приветствия: первое слово из ФИО, иначе «Студент»
+  /// Имя для приветствия: если из ЛК (Фамилия Имя Отчество) — берём второе слово,
+  /// если введено вручную — первое слово.
   String get _greetingName {
     final trimmed = _userName.trim();
     if (trimmed.isEmpty) return 'Студент';
-    return trimmed.split(' ').first;
+    final parts = trimmed.split(' ');
+    if (_nameIsFromLk && parts.length >= 2) return parts[1];
+    return parts.first;
   }
 
   @override
@@ -339,10 +372,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       future: _newsFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: ShimmerNewsCard(),
-          );
+          return const ShimmerCarousel();
         }
         final items = snapshot.data!.take(4).toList();
         return NewsCarousel(

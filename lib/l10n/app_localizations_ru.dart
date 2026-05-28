@@ -295,6 +295,34 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lkCourseworkSection => 'Курсовые';
 
   @override
+  String get lkRequired => 'Только для авторизованных';
+
+  @override
+  String get lkRequiredMsg =>
+      'Войдите в личный кабинет, чтобы получить доступ к этим данным.';
+
+  @override
+  String get lkRequiredAction => 'Войти в ЛК';
+
+  @override
+  String get profileEditTitle => 'Редактировать профиль';
+
+  @override
+  String get profilePhotoChange => 'Изменить фото';
+
+  @override
+  String get profilePhotoRemove => 'Удалить фото';
+
+  @override
+  String get profilePhotoGallery => 'Галерея';
+
+  @override
+  String get profilePhotoCamera => 'Камера';
+
+  @override
+  String get profileNameFromLk => 'Имя подтянуто из личного кабинета';
+
+  @override
   String get settingsTitle => 'Настройки';
 
   @override

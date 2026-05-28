@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/report_work.dart';
 import '../../services/report_work_service.dart';
 import '../../widgets/demo_banner.dart';
+import '../../widgets/lk_required_state.dart';
 import '../../widgets/section_header.dart';
 import 'report_work_detail_screen.dart';
 
@@ -66,25 +67,29 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    context.watch<LkController>();
+    final lk = context.watch<LkController>();
 
     return Scaffold(
       appBar: AppBar(title: Text(l.reportWorksTitle)),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l.reportUploadStub)),
-          );
-        },
-        icon: const Icon(Icons.upload_file),
-        label: const Text('+'),
-      ),
-      body: _loading && _outcome == null
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: () => _load(forceRefresh: true),
-              child: _content(context, l),
-            ),
+      floatingActionButton: lk.isConnected
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(l.reportUploadStub)),
+                );
+              },
+              icon: const Icon(Icons.upload_file),
+              label: const Text('+'),
+            )
+          : null,
+      body: !lk.isConnected
+          ? const LkRequiredState()
+          : _loading && _outcome == null
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: () => _load(forceRefresh: true),
+                  child: _content(context, l),
+                ),
     );
   }
 
@@ -298,8 +303,8 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
         ),
       ),
     )
-        .animate(delay: (index * 50).ms)
-        .fadeIn(duration: 240.ms)
+        .animate(key: ValueKey(cw.title))
+        .fadeIn(duration: 180.ms)
         .slideY(begin: 0.04, curve: Curves.easeOut);
   }
 
@@ -371,8 +376,8 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
         ),
       ),
     )
-        .animate(delay: (index * 40).ms)
-        .fadeIn(duration: 220.ms)
+        .animate(key: ValueKey(w.title))
+        .fadeIn(duration: 180.ms)
         .slideY(begin: 0.04, curve: Curves.easeOut);
   }
 

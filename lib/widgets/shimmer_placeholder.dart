@@ -71,6 +71,32 @@ class _ShimmerCard extends StatelessWidget {
   }
 }
 
+class ShimmerCarousel extends StatelessWidget {
+  const ShimmerCarousel({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? const Color(0xFF2A2736) : const Color(0xFFE0E0E0);
+    final highlight = isDark ? const Color(0xFF3D3952) : const Color(0xFFF5F5F5);
+
+    return Shimmer.fromColors(
+      baseColor: base,
+      highlightColor: highlight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Container(
+          height: 220,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class ShimmerGreeting extends StatelessWidget {
   const ShimmerGreeting({super.key});
 
