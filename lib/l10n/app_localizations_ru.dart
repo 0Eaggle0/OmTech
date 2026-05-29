@@ -359,6 +359,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dashboardGreeting => 'Добро пожаловать!';
 
   @override
+  String dashboardHello(String name) {
+    return 'Привет, $name!';
+  }
+
+  @override
   String get dashboardNoGroup => 'Группа не выбрана';
 
   @override
@@ -415,7 +420,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get scheduleWeekView => 'Неделя';
 
   @override
-  String get scheduleDayView => 'Сегодня';
+  String get scheduleDayView => 'День';
 
   @override
   String get scheduleNoLessonsToday => 'Иди трогать траву!\nСегодня пар нет 🌿';

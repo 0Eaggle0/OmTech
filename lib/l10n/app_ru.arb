@@ -125,6 +125,10 @@
   "settingsAboutApp": "OmTech",
 
   "dashboardGreeting": "Добро пожаловать!",
+  "dashboardHello": "Привет, {name}!",
+  "@dashboardHello": {
+    "placeholders": { "name": { "type": "String" } }
+  },
   "dashboardNoGroup": "Группа не выбрана",
   "dashboardNextLesson": "Текущая/ближайшая пара",
   "dashboardNoNextLesson": "Пар на сегодня нет",
@@ -148,7 +152,7 @@
   "scheduleSubgroup": "Подгруппа",
   "scheduleStream": "Поток",
   "scheduleWeekView": "Неделя",
-  "scheduleDayView": "Сегодня",
+  "scheduleDayView": "День",
   "scheduleNoLessonsToday": "Иди трогать траву!\nСегодня пар нет 🌿",
   "scheduleNoLessonsTodayMsg": "Наслаждайся свободным временем или посмотри другой день.",
   "scheduleShowWeek": "Показать всю неделю",

@@ -776,6 +776,12 @@ abstract class AppLocalizations {
   /// **'Добро пожаловать!'**
   String get dashboardGreeting;
 
+  /// No description provided for @dashboardHello.
+  ///
+  /// In ru, this message translates to:
+  /// **'Привет, {name}!'**
+  String dashboardHello(String name);
+
   /// No description provided for @dashboardNoGroup.
   ///
   /// In ru, this message translates to:
@@ -887,7 +893,7 @@ abstract class AppLocalizations {
   /// No description provided for @scheduleDayView.
   ///
   /// In ru, this message translates to:
-  /// **'Сегодня'**
+  /// **'День'**
   String get scheduleDayView;
 
   /// No description provided for @scheduleNoLessonsToday.

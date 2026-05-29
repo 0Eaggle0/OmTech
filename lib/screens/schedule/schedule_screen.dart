@@ -245,15 +245,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           // Переключатель вида: день / неделя
           _viewToggle(l),
           // Выбор даты через календарь
-          IconButton(
-            onPressed: _pickDate,
-            icon: const Icon(Icons.calendar_today_outlined),
-            tooltip: l.schedulePickDate,
+          _appBarAction(
+            icon: Icons.calendar_today_outlined,
+            label: l.schedulePickDate,
+            onTap: _pickDate,
           ),
-          IconButton(
-            onPressed: _openUniversalSearch,
-            icon: const Icon(Icons.search),
-            tooltip: 'Общий поиск',
+          _appBarAction(
+            icon: Icons.search,
+            label: 'Поиск',
+            onTap: _openUniversalSearch,
           ),
           TextButton.icon(
             onPressed: _pickEntity,
@@ -438,7 +438,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55)),
           const SizedBox(width: 8),
           FilterChip(
-            label: Text(l.scheduleOnlyMySubgroup(mySubgroup)),
+            label: Text(
+              _showOnlyMySubgroup
+                  ? l.scheduleOnlyMySubgroup(mySubgroup)
+                  : 'Все подгруппы',
+            ),
             selected: _showOnlyMySubgroup,
             onSelected: (v) => setState(() => _showOnlyMySubgroup = v),
             visualDensity: VisualDensity.compact,
@@ -448,19 +452,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  /// Кнопка переключения вида: иконка + подпись («Неделя» / «Сегодня»).
-  /// При повторном клике возвращает к текущему дню (с reload, если сменилась неделя).
-  Widget _viewToggle(AppLocalizations l) {
-    final isWeek = _weekView;
-    final icon = isWeek ? Icons.today_outlined : Icons.view_week_outlined;
-    final label = isWeek ? l.scheduleDayView : l.scheduleWeekView;
+  /// Иконка AppBar с подписью под ней — единый стиль для всех action-кнопок.
+  Widget _appBarAction({required IconData icon, required String label, required VoidCallback onTap}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Tooltip(
         message: label,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: _toggleView,
+          onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Column(
@@ -478,6 +478,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _viewToggle(AppLocalizations l) {
+    return _appBarAction(
+      icon: _weekView ? Icons.today_outlined : Icons.view_week_outlined,
+      label: _weekView ? l.scheduleDayView : l.scheduleWeekView,
+      onTap: _toggleView,
     );
   }
 

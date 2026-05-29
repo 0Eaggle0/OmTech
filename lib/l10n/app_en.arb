@@ -125,6 +125,10 @@
   "settingsAboutApp": "OmTech",
 
   "dashboardGreeting": "Welcome!",
+  "dashboardHello": "Hi, {name}!",
+  "@dashboardHello": {
+    "placeholders": { "name": { "type": "String" } }
+  },
   "dashboardNoGroup": "No group selected",
   "dashboardNextLesson": "Current/next class",
   "dashboardNoNextLesson": "No classes today",
@@ -148,7 +152,7 @@
   "scheduleSubgroup": "Subgroup",
   "scheduleStream": "Stream",
   "scheduleWeekView": "Week",
-  "scheduleDayView": "Today",
+  "scheduleDayView": "Day",
   "scheduleNoLessonsToday": "Go touch some grass!\nNo classes today 🌿",
   "scheduleNoLessonsTodayMsg": "Enjoy your free time or check another day.",
   "scheduleShowWeek": "Show full week",
