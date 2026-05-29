@@ -399,7 +399,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupSearchLoading => 'Searching...';
 
   @override
-  String get scheduleMySubgroup => 'My subgroup';
+  String scheduleOnlyMySubgroup(int n) {
+    return 'Only subgroup $n';
+  }
 
   @override
   String get scheduleSubgroup => 'Subgroup';
@@ -411,7 +413,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleWeekView => 'Week';
 
   @override
-  String get scheduleDayView => 'Day';
+  String get scheduleDayView => 'Today';
 
   @override
   String get scheduleNoLessonsToday =>

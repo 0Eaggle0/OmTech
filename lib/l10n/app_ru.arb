@@ -141,11 +141,14 @@
   "groupSearchEmpty": "Группы не найдены",
   "groupSearchLoading": "Поиск...",
 
-  "scheduleMySubgroup": "Моя подгруппа",
+  "scheduleOnlyMySubgroup": "Только {n}-я подгруппа",
+  "@scheduleOnlyMySubgroup": {
+    "placeholders": { "n": { "type": "int" } }
+  },
   "scheduleSubgroup": "Подгруппа",
   "scheduleStream": "Поток",
   "scheduleWeekView": "Неделя",
-  "scheduleDayView": "День",
+  "scheduleDayView": "Сегодня",
   "scheduleNoLessonsToday": "Иди трогать траву!\nСегодня пар нет 🌿",
   "scheduleNoLessonsTodayMsg": "Наслаждайся свободным временем или посмотри другой день.",
   "scheduleShowWeek": "Показать всю неделю",

@@ -860,11 +860,11 @@ abstract class AppLocalizations {
   /// **'Поиск...'**
   String get groupSearchLoading;
 
-  /// No description provided for @scheduleMySubgroup.
+  /// No description provided for @scheduleOnlyMySubgroup.
   ///
   /// In ru, this message translates to:
-  /// **'Моя подгруппа'**
-  String get scheduleMySubgroup;
+  /// **'Только {n}-я подгруппа'**
+  String scheduleOnlyMySubgroup(int n);
 
   /// No description provided for @scheduleSubgroup.
   ///
@@ -887,7 +887,7 @@ abstract class AppLocalizations {
   /// No description provided for @scheduleDayView.
   ///
   /// In ru, this message translates to:
-  /// **'День'**
+  /// **'Сегодня'**
   String get scheduleDayView;
 
   /// No description provided for @scheduleNoLessonsToday.

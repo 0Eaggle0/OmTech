@@ -401,7 +401,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get groupSearchLoading => 'Поиск...';
 
   @override
-  String get scheduleMySubgroup => 'Моя подгруппа';
+  String scheduleOnlyMySubgroup(int n) {
+    return 'Только $n-я подгруппа';
+  }
 
   @override
   String get scheduleSubgroup => 'Подгруппа';
@@ -413,7 +415,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get scheduleWeekView => 'Неделя';
 
   @override
-  String get scheduleDayView => 'День';
+  String get scheduleDayView => 'Сегодня';
 
   @override
   String get scheduleNoLessonsToday => 'Иди трогать траву!\nСегодня пар нет 🌿';

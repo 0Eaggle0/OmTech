@@ -114,10 +114,10 @@ class LessonCard extends StatelessWidget {
                       _row(context, Icons.place_outlined, event.location, accent),
                     if (event.lecturer.isNotEmpty)
                       _row(context, Icons.person_outline, event.lecturer, accent),
-                    if (event.stream.isNotEmpty)
-                      _row(context, Icons.groups_2_outlined, event.stream, accent),
+                    if (event.streamDisplay.isNotEmpty)
+                      _row(context, Icons.groups_2_outlined, event.streamDisplay, accent),
                     if (event.subgroupLabel.isNotEmpty)
-                      _row(context, Icons.people_outline, event.subgroupLabel, accent),
+                      _subgroupChip(context, event.subgroupLabel, accent),
                   ],
                 ),
               ),
@@ -135,6 +135,38 @@ class LessonCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _subgroupChip(BuildContext context, String label, Color accent) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 5),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.people, size: 12, color: accent),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

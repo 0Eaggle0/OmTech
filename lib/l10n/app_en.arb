@@ -141,11 +141,14 @@
   "groupSearchEmpty": "No groups found",
   "groupSearchLoading": "Searching...",
 
-  "scheduleMySubgroup": "My subgroup",
+  "scheduleOnlyMySubgroup": "Only subgroup {n}",
+  "@scheduleOnlyMySubgroup": {
+    "placeholders": { "n": { "type": "int" } }
+  },
   "scheduleSubgroup": "Subgroup",
   "scheduleStream": "Stream",
   "scheduleWeekView": "Week",
-  "scheduleDayView": "Day",
+  "scheduleDayView": "Today",
   "scheduleNoLessonsToday": "Go touch some grass!\nNo classes today 🌿",
   "scheduleNoLessonsTodayMsg": "Enjoy your free time or check another day.",
   "scheduleShowWeek": "Show full week",

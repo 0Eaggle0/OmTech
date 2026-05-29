@@ -223,10 +223,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     // Фильтр по подгруппе.
     final groupCtrl = context.read<GroupController>();
     if (_showOnlyMySubgroup && groupCtrl.subgroup != null) {
+      final mySg = groupCtrl.subgroup.toString();
       filtered = filtered.where((e) {
         if (e.subgroupNumber.isEmpty) return true; // общие для всех
-        final sg = int.tryParse(e.subgroupNumber);
-        return sg == null || sg == groupCtrl.subgroup;
+        return e.subgroupNumber == mySg;
       }).toList();
     }
     return filtered;
@@ -243,14 +243,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         title: Text(l.scheduleTitle),
         actions: [
           // Переключатель вида: день / неделя
-          IconButton(
-            onPressed: () => setState(() {
-              _weekView = !_weekView;
-              if (_weekView) _dateFilter = null;
-            }),
-            icon: Icon(_weekView ? Icons.view_day_outlined : Icons.view_week_outlined),
-            tooltip: _weekView ? l.scheduleDayView : l.scheduleWeekView,
-          ),
+          _viewToggle(l),
           // Выбор даты через календарь
           IconButton(
             onPressed: _pickDate,
@@ -443,16 +436,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         children: [
           Icon(Icons.people_outline, size: 16,
               color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55)),
-          const SizedBox(width: 6),
-          Text(
-            '${l.scheduleSubgroup} $mySubgroup',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.65),
-            ),
-          ),
           const SizedBox(width: 8),
           FilterChip(
-            label: Text(l.scheduleMySubgroup),
+            label: Text(l.scheduleOnlyMySubgroup(mySubgroup)),
             selected: _showOnlyMySubgroup,
             onSelected: (v) => setState(() => _showOnlyMySubgroup = v),
             visualDensity: VisualDensity.compact,
@@ -460,6 +446,59 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         ],
       ),
     );
+  }
+
+  /// Кнопка переключения вида: иконка + подпись («Неделя» / «Сегодня»).
+  /// При повторном клике возвращает к текущему дню (с reload, если сменилась неделя).
+  Widget _viewToggle(AppLocalizations l) {
+    final isWeek = _weekView;
+    final icon = isWeek ? Icons.today_outlined : Icons.view_week_outlined;
+    final label = isWeek ? l.scheduleDayView : l.scheduleWeekView;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Tooltip(
+        message: label,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: _toggleView,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 20),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _toggleView() {
+    if (_weekView) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final todayMonday = _mondayOf(today);
+      final weekChanged = todayMonday != _weekStart;
+      setState(() {
+        _weekView = false;
+        _weekStart = todayMonday;
+        _dateFilter = today;
+      });
+      if (weekChanged) _reload();
+    } else {
+      setState(() {
+        _weekView = true;
+        _dateFilter = null;
+      });
+    }
   }
 
   Widget _buildContent(AppLocalizations l) {
@@ -501,11 +540,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         if (filtered.isEmpty) {
           final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
           final isToday = _dateFilter == today;
+          final isSunday = _dateFilter?.weekday == DateTime.sunday;
           return EmptyState(
-            icon: isToday ? Icons.nature_people_outlined : Icons.filter_list_off,
-            title: isToday ? l.scheduleNoLessonsToday.split('\n').first : 'Нет занятий',
-            message: isToday
-                ? l.scheduleNoLessonsTodayMsg
+            icon: (isToday || isSunday) ? Icons.nature_people_outlined : Icons.filter_list_off,
+            title: isSunday && !isToday
+                ? 'Воскресенье!'
+                : isToday
+                    ? l.scheduleNoLessonsToday.split('\n').first
+                    : 'Нет занятий',
+            message: (isToday || isSunday)
+                ? (isSunday && !isToday
+                    ? 'Законный выходной — трогай траву! 🌿'
+                    : l.scheduleNoLessonsTodayMsg)
                 : 'В выбранный день пар нет',
             actionLabel: l.scheduleShowWeek,
             onAction: () => setState(() {

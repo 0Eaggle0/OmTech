@@ -9,6 +9,7 @@ class ScheduleEvent {
   final String building;
   final String kindOfWork;
   final String stream;
+  final String rawSubgroup;
 
   const ScheduleEvent({
     required this.date,
@@ -20,6 +21,7 @@ class ScheduleEvent {
     required this.building,
     required this.kindOfWork,
     required this.stream,
+    this.rawSubgroup = '',
   });
 
   /// API отдаёт дату в формате `YYYY.MM.DD`.
@@ -34,6 +36,7 @@ class ScheduleEvent {
       building: (json['building'] ?? '').toString(),
       kindOfWork: (json['kindOfWork'] ?? '').toString(),
       stream: (json['stream'] ?? '').toString(),
+      rawSubgroup: (json['subGroup'] ?? json['subgroupNumber'] ?? '').toString(),
     );
   }
 
@@ -45,9 +48,14 @@ class ScheduleEvent {
     return '$auditorium · $building';
   }
 
-  /// Номер подгруппы из поля stream, если указан (например «ИСТ-241/1» → «1»).
-  /// Возвращает пустую строку если пара для всех подгрупп.
+  /// Номер подгруппы (1 или 2). Пустая строка = пара для всех подгрупп.
+  /// API возвращает subGroup как "ИВТ-241/2" — нужна цифра ПОСЛЕ слэша,
+  /// иначе первая цифра в строке попадёт из номера группы (241 → 2).
   String get subgroupNumber {
+    if (rawSubgroup.isNotEmpty) {
+      final m = RegExp(r'/(\d)').firstMatch(rawSubgroup);
+      if (m != null) return m.group(1)!;
+    }
     final m = RegExp(r'/(\d)').firstMatch(stream);
     return m?.group(1) ?? '';
   }
@@ -56,6 +64,11 @@ class ScheduleEvent {
   String get subgroupLabel {
     final n = subgroupNumber;
     return n.isEmpty ? '' : '$n-я подгруппа';
+  }
+
+  /// Stream без суффикса подгруппы для отображения («ИСТ-241/1-я подгруппа» → «ИСТ-241»).
+  String get streamDisplay {
+    return stream.replaceAll(RegExp(r'/\d.*$'), '').trim();
   }
 
   static DateTime _parseDate(String? raw) {

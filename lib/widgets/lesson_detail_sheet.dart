@@ -139,8 +139,8 @@ class _LessonDetailSheetState extends State<LessonDetailSheet> {
           const SizedBox(height: 20),
 
           // Инфо-строки
-          if (e.stream.isNotEmpty)
-            _infoRow(context, Icons.groups_2_outlined, '${l.lessonDetailStream}: ${e.stream}', accent),
+          if (e.streamDisplay.isNotEmpty)
+            _infoRow(context, Icons.groups_2_outlined, '${l.lessonDetailStream}: ${e.streamDisplay}', accent),
           if (e.subgroupLabel.isNotEmpty)
             _infoRow(context, Icons.people_outline, '${l.lessonDetailSubgroup}: ${e.subgroupLabel}', accent),
 
