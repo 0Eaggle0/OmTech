@@ -55,15 +55,10 @@ class _GradesScreenState extends State<GradesScreen> {
     }
   }
 
-  /// По умолчанию открываем тот, что помечен active в HTML; иначе — первый.
   int? _defaultSemester(GradesResult r) {
     final panels = r.record?.panels ?? const <SemesterPanel>[];
     if (panels.isEmpty) return null;
-    final active = panels.firstWhere(
-      (p) => p.isActive,
-      orElse: () => panels.first,
-    );
-    return active.number;
+    return panels.first.number;
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -13,7 +15,6 @@ import '../../services/app_routes.dart';
 import '../../services/news_service.dart';
 import '../../services/schedule_api.dart';
 import '../../widgets/animated_mesh_background.dart';
-import '../../theme/app_colors.dart';
 import '../../widgets/lesson_card.dart';
 import '../../widgets/lesson_detail_sheet.dart';
 import '../../widgets/news_carousel.dart';
@@ -187,9 +188,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onTap: () => widget.onOpenTab(4),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
-        child: Container(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
           decoration: BoxDecoration(
-            gradient: AppColors.accentGradient,
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xA36C5CE7),
+                Color(0x8C8B5CF6),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: Colors.white.withValues(alpha: 0.22),
@@ -276,6 +286,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       ),
+        ),
       ),
     );
   }
