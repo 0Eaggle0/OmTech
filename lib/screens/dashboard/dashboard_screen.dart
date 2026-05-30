@@ -469,24 +469,25 @@ class _Tile extends StatelessWidget {
           onTap: onTap,
           splashColor: Colors.white.withValues(alpha: 0.15),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 18),
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 26, color: Colors.white)
+                Icon(icon, size: 24, color: Colors.white)
                     .animate(onPlay: (c) => c.repeat())
                     .shimmer(
                       duration: 2200.ms,
                       color: Colors.white.withValues(alpha: 0.4),
                       delay: 800.ms,
                     ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 7),
                 Text(
                   label,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    fontSize: 11,
+                    fontSize: 10.5,
+                    height: 1.25,
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 2,

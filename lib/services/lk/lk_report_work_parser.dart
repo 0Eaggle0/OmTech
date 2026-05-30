@@ -99,8 +99,10 @@ List<ReportWork> parseOtherWorks(Document doc) {
     final tds = tr.children.where((c) => c.localName == 'td').toList();
     if (tds.length < 2) continue;
 
-    final fileId = _extractCallId(tr, 'getotherpage');
-    if (fileId == null) continue;
+    final ids = _extractCallArgs(tr, 'getotherpage', count: 2);
+    if (ids.isEmpty || ids[0].isEmpty) continue;
+    final fileId = ids[0];
+    final fnpp = ids.length > 1 ? ids[1] : '';
 
     final date = _parseDdMmYyyy(_textOneLine(tds[0]));
 
@@ -142,6 +144,7 @@ List<ReportWork> parseOtherWorks(Document doc) {
 
     result.add(ReportWork(
       fileId: fileId,
+      fnpp: fnpp,
       date: date,
       discipline: discipline,
       semester: semester,
@@ -167,12 +170,31 @@ bool _hasInlineCall(Element scope, String fn) {
 }
 
 String? _extractCallId(Element scope, String fn) {
+  final args = _extractCallArgs(scope, fn, count: 1);
+  return args.isEmpty ? null : args.first;
+}
+
+/// Извлекает первые [count] позиционных аргументов из onclick'а вида
+/// `fn('a', 'b', ...)` (одинарные или двойные кавычки). Возвращает пустой
+/// список, если вызов не найден. Если аргументов меньше [count] — возвращает
+/// сколько нашлось.
+List<String> _extractCallArgs(Element scope, String fn, {int count = 1}) {
+  final argRe = RegExp(r"""\s*(?:'([^']*)'|"([^"]*)")\s*""");
+  final callRe = RegExp('$fn\\(([^)]*)\\)');
   for (final el in [scope, ...scope.querySelectorAll('[onclick]')]) {
     final on = el.attributes['onclick'] ?? '';
-    final m = RegExp("$fn\\(\\s*'([^']+)'").firstMatch(on);
-    if (m != null) return m.group(1);
+    final call = callRe.firstMatch(on);
+    if (call == null) continue;
+    final body = call.group(1) ?? '';
+    final parts = body.split(',');
+    final out = <String>[];
+    for (final p in parts.take(count)) {
+      final am = argRe.firstMatch(p);
+      out.add(am == null ? p.trim() : (am.group(1) ?? am.group(2) ?? ''));
+    }
+    return out;
   }
-  return null;
+  return const [];
 }
 
 /// `id="trXXXX"` → `XXXX` (используется в курсовых, где hexnrec кладут в id строки).

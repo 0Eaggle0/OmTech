@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
@@ -72,7 +73,18 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
     final lk = context.watch<LkController>();
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.reportWorksTitle)),
+      appBar: AppBar(
+        title: Text(l.reportWorksTitle),
+        actions: lk.isConnected
+            ? [
+                IconButton(
+                  tooltip: l.reportShareHtml,
+                  icon: const Icon(Icons.bug_report_outlined),
+                  onPressed: () => _shareDebugDumps(context),
+                ),
+              ]
+            : null,
+      ),
       floatingActionButton: lk.isConnected
           ? FloatingActionButton.extended(
               onPressed: () {
@@ -93,6 +105,24 @@ class _ReportWorkScreenState extends State<ReportWorkScreen> {
                   child: _content(context, l),
                 ),
     );
+  }
+
+  Future<void> _shareDebugDumps(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final api = context.read<LkController>().reportWorkApi;
+    final paths = <String>[];
+    for (final name in ['vkr2_shell', 'otherlist']) {
+      final p = await api.lastDumpPath(name);
+      if (p != null) paths.add(p);
+    }
+    if (paths.isEmpty) {
+      messenger.showSnackBar(const SnackBar(
+        content: Text('Дампы пока не сохранены — потяни список вниз для обновления.'),
+      ));
+      return;
+    }
+    await Share.shareXFiles(paths.map((p) => XFile(p)).toList(),
+        subject: 'reports debug dumps');
   }
 
   Widget _content(BuildContext context, AppLocalizations l) {

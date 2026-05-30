@@ -278,13 +278,7 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
                     color:
                         theme.colorScheme.onSurface.withValues(alpha: 0.08)),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: item.files
-                      .map((f) => _fileChip(context, theme, f))
-                      .toList(),
-                ),
+                ...item.files.map((f) => _fileRow(context, l, theme, f)),
               ],
             ],
           ),
@@ -296,35 +290,30 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
     );
   }
 
-  Widget _fileChip(BuildContext context, ThemeData theme, WorkFile file) {
-    final icon = _iconFor(file.type);
-    final color = _colorFor(file.type, theme);
-    return InkWell(
-      onTap: () => _openFile(context, file),
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: color),
-            const SizedBox(width: 6),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 220),
-              child: Text(
-                file.name,
-                style: TextStyle(
-                    color: color, fontWeight: FontWeight.w600, fontSize: 12),
-                overflow: TextOverflow.ellipsis,
+  Widget _fileRow(BuildContext context, AppLocalizations l, ThemeData theme, WorkFile file) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: Icon(_iconFor(file.type), size: 18),
+              label: Text(file.name, overflow: TextOverflow.ellipsis, maxLines: 1),
+              style: OutlinedButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                foregroundColor: theme.colorScheme.primary,
               ),
+              onPressed: () => _openFile(context, file),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          IconButton.outlined(
+            tooltip: l.fileSave,
+            icon: const Icon(Icons.download_outlined, size: 20),
+            onPressed: () => _saveFile(context, file),
+          ),
+        ],
       ),
     );
   }
@@ -335,6 +324,15 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
     // внешние ссылки (или демо) — отдаём браузеру.
     if (lk.isConnected && file.url.contains('up.omgtu.ru')) {
       await openWorkFile(context, lk.session, file);
+    } else {
+      await openExternal(context, file.url);
+    }
+  }
+
+  Future<void> _saveFile(BuildContext context, WorkFile file) async {
+    final lk = context.read<LkController>();
+    if (lk.isConnected && file.url.contains('up.omgtu.ru')) {
+      await saveWorkFile(context, lk.session, file);
     } else {
       await openExternal(context, file.url);
     }
@@ -360,23 +358,4 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
     }
   }
 
-  Color _colorFor(String type, ThemeData theme) {
-    switch (type) {
-      case 'pdf':
-        return const Color(0xFFE05A6B);
-      case 'docx':
-      case 'doc':
-        return const Color(0xFF4F9DDE);
-      case 'pptx':
-      case 'ppt':
-        return const Color(0xFFE0A03A);
-      case 'xlsx':
-      case 'xls':
-        return const Color(0xFF49C18B);
-      case 'link':
-        return const Color(0xFF49C18B);
-      default:
-        return theme.colorScheme.primary;
-    }
-  }
 }

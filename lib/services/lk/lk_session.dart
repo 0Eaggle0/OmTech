@@ -316,34 +316,62 @@ class LkSession {
     return '$_ecabHost/ecab/$clean';
   }
 
-  /// Скачивает произвольный файл с up.omgtu.ru с использованием
-  /// активной сессионной cookie. Возвращает байты тела ответа.
+  /// Скачивает произвольный файл (с up.omgtu.ru или omgtu.ru/ecab) с
+  /// использованием активной сессионной cookie. Возвращает байты тела ответа.
   ///
   /// `relativeOrAbsoluteUrl` может быть как полным URL
-  /// (`https://up.omgtu.ru/index.php?r=remote/read/downloadFile&id=...`),
-  /// так и относительным (`/index.php?r=...` или `index.php?r=...`).
+  /// (`https://up.omgtu.ru/index.php?r=remote/read/downloadFile&id=...`
+  /// либо `https://omgtu.ru/ecab/modules/vkr2/getotherfile.php?id=...`),
+  /// так и относительным (`/index.php?r=...`).
+  ///
+  /// Базу для относительных URL выбираем по содержимому
+  /// (если внутри есть `/ecab/` — берём omgtu.ru, иначе — up.omgtu.ru).
+  /// Referer по умолчанию подставляется под хост файла.
   Future<List<int>> downloadBytes(String relativeOrAbsoluteUrl,
       {String? referer}) async {
+    final isEcab = relativeOrAbsoluteUrl.contains('/ecab/');
+    final base = isEcab ? _ecabHost : _upBaseUrl;
     final url = relativeOrAbsoluteUrl.startsWith('http')
         ? relativeOrAbsoluteUrl
         : relativeOrAbsoluteUrl.startsWith('/')
-            ? '$_upBaseUrl$relativeOrAbsoluteUrl'
-            : '$_upBaseUrl/$relativeOrAbsoluteUrl';
+            ? '$base$relativeOrAbsoluteUrl'
+            : '$base/$relativeOrAbsoluteUrl';
+    final effectiveReferer = referer ??
+        (isEcab
+            ? '$_ecabHost/ecab/vkr2.php'
+            : '$_upBaseUrl/index.php?r=remote/read');
 
     final res = await _dio.get<List<int>>(
       url,
       options: Options(
         responseType: ResponseType.bytes,
         headers: {
-          'Referer': ?referer,
+          'Referer': effectiveReferer,
         },
       ),
     );
 
+    // Проверка истёкшей сессии:
+    //  - для up.omgtu.ru-файла: редирект на /ecab/ означает разлогин;
+    //  - для /ecab/-файла: тело начинается с HTML-формы логина
+    //    (Content-Type обычно text/html, проверяем сигнатуру AUTH_FORM/USER_LOGIN).
     final finalUrl = res.realUri.toString();
-    if (finalUrl.contains('/ecab/')) {
+    if (!isEcab && finalUrl.contains('/ecab/')) {
       throw LkLoginException(
           LkLoginResult.invalidCredentials, 'Сессия истекла');
+    }
+    final ct = (res.headers.value('content-type') ?? '').toLowerCase();
+    if (isEcab && ct.contains('text/html')) {
+      final data = res.data;
+      if (data != null && data.isNotEmpty) {
+        final preview = decodeCp1251(
+          data.length > 4096 ? data.sublist(0, 4096) : data,
+        );
+        if (_looksLikeLoginPage(preview)) {
+          throw LkLoginException(
+              LkLoginResult.invalidCredentials, 'Сессия истекла');
+        }
+      }
     }
     if (res.statusCode != 200) {
       throw LkLoginException(

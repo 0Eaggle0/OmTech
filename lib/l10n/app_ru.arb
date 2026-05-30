@@ -5,7 +5,7 @@
   "navHome": "Главная",
   "navSchedule": "Расписание",
   "navNews": "Новости",
-  "navWork": "Задания",
+  "navWork": "Контактная работа",
   "navProfile": "Профиль",
 
   "scheduleTitle": "Расписание",
@@ -39,7 +39,7 @@
   "materialsTitle": "Материалы",
   "materialsDemoNote": "Демонстрационные данные. Реальные материалы появятся после подключения личного кабинета.",
 
-  "workTitle": "Задания",
+  "workTitle": "Контактная работа",
   "workSearch": "Дисциплина",
   "workTaskCount": "заданий",
   "workTaskNumber": "Номер",
@@ -134,7 +134,7 @@
   "dashboardNoNextLesson": "Пар на сегодня нет",
   "dashboardGrades": "Оценки",
   "dashboardMaterials": "Материалы",
-  "dashboardTasks": "Задания",
+  "dashboardTasks": "Контактная работа",
   "dashboardReportWorks": "Отчётные работы",
   "dashboardNews": "Новости",
   "dashboardAllNews": "Все новости",
@@ -172,6 +172,14 @@
   "reportDownloading": "Скачивание...",
   "reportNoFiles": "Файл недоступен",
   "reportAllSubjects": "Все предметы",
+  "reportShareHtml": "Поделиться HTML страницы",
+
+  "fileOpen": "Открыть",
+  "fileSave": "Сохранить",
+  "fileSavedTo": "Сохранено: {path}",
+  "@fileSavedTo": {
+    "placeholders": { "path": { "type": "String" } }
+  },
 
   "cancel": "Отмена",
   "save": "Сохранить",

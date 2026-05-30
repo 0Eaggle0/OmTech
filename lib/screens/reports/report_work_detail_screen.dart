@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
@@ -34,7 +35,10 @@ class _ReportWorkDetailScreenState extends State<ReportWorkDetailScreen> {
     if (!lk.isConnected) return;
     setState(() { _loadingFiles = true; _filesError = null; });
     try {
-      final files = await lk.reportWorkApi.fetchOtherWorkFiles(widget.work.fileId);
+      final files = await lk.reportWorkApi.fetchOtherWorkFiles(
+        widget.work.fileId,
+        fnpp: widget.work.fnpp,
+      );
       if (!mounted) return;
       setState(() { _files = files; _loadingFiles = false; });
     } catch (e) {
@@ -116,13 +120,19 @@ class _ReportWorkDetailScreenState extends State<ReportWorkDetailScreen> {
               ],
             ),
             const SizedBox(height: 10),
-            if (_filesError != null)
+            if (_filesError != null) ...[
               Text(l.reportNoFiles,
                   style: TextStyle(color: theme.colorScheme.error, fontSize: 13)),
-            if (_files != null && _files!.isEmpty && !_loadingFiles)
+              const SizedBox(height: 6),
+              _shareHtmlButton(context, lk, l),
+            ],
+            if (_files != null && _files!.isEmpty && !_loadingFiles) ...[
               Text(l.reportNoFiles,
                   style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.55))),
+              const SizedBox(height: 6),
+              _shareHtmlButton(context, lk, l),
+            ],
             if (_files != null && _files!.isNotEmpty)
               ..._files!.map((f) => _fileRow(context, l, f, lk)),
           ],
@@ -135,19 +145,52 @@ class _ReportWorkDetailScreenState extends State<ReportWorkDetailScreen> {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: OutlinedButton.icon(
-        icon: Icon(_fileIcon(file.type), size: 18),
-        label: Text(
-          file.name,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-        ),
-        style: OutlinedButton.styleFrom(
-          alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          foregroundColor: theme.colorScheme.primary,
-        ),
-        onPressed: () => openWorkFile(context, lk.session, file),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              icon: Icon(_fileIcon(file.type), size: 18),
+              label: Text(
+                file.name,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+              style: OutlinedButton.styleFrom(
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                foregroundColor: theme.colorScheme.primary,
+              ),
+              onPressed: () => openWorkFile(context, lk.session, file),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton.outlined(
+            tooltip: l.fileSave,
+            icon: const Icon(Icons.download_outlined, size: 20),
+            onPressed: () => saveWorkFile(context, lk.session, file),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _shareHtmlButton(BuildContext context, LkController lk, AppLocalizations l) {
+    if (widget.work.fileId.isEmpty) return const SizedBox.shrink();
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        icon: const Icon(Icons.bug_report_outlined, size: 16),
+        label: Text(l.reportShareHtml, style: const TextStyle(fontSize: 12)),
+        style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
+        onPressed: () async {
+          final messenger = ScaffoldMessenger.of(context);
+          final path = await lk.reportWorkApi.lastDumpPath(widget.work.fileId);
+          if (path == null) {
+            messenger.showSnackBar(const SnackBar(content: Text('Дамп не найден')));
+            return;
+          }
+          await Share.shareXFiles([XFile(path)], subject: 'otherpage_${widget.work.fileId}.html');
+        },
       ),
     );
   }

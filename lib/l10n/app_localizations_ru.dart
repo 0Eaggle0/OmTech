@@ -21,7 +21,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get navNews => 'Новости';
 
   @override
-  String get navWork => 'Задания';
+  String get navWork => 'Контактная работа';
 
   @override
   String get navProfile => 'Профиль';
@@ -110,7 +110,7 @@ class AppLocalizationsRu extends AppLocalizations {
       'Демонстрационные данные. Реальные материалы появятся после подключения личного кабинета.';
 
   @override
-  String get workTitle => 'Задания';
+  String get workTitle => 'Контактная работа';
 
   @override
   String get workSearch => 'Дисциплина';
@@ -379,7 +379,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dashboardMaterials => 'Материалы';
 
   @override
-  String get dashboardTasks => 'Задания';
+  String get dashboardTasks => 'Контактная работа';
 
   @override
   String get dashboardReportWorks => 'Отчётные работы';
@@ -474,6 +474,20 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get reportAllSubjects => 'Все предметы';
+
+  @override
+  String get reportShareHtml => 'Поделиться HTML страницы';
+
+  @override
+  String get fileOpen => 'Открыть';
+
+  @override
+  String get fileSave => 'Сохранить';
+
+  @override
+  String fileSavedTo(String path) {
+    return 'Сохранено: $path';
+  }
 
   @override
   String get cancel => 'Отмена';

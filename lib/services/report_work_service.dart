@@ -58,6 +58,7 @@ class ReportWorkService {
     otherWorks: [
       ReportWork(
         fileId: 'demo-1',
+        fnpp: '',
         date: DateTime(2026, 4, 9),
         discipline: 'История России',
         semester: 4,
@@ -70,6 +71,7 @@ class ReportWorkService {
       ),
       ReportWork(
         fileId: 'demo-2',
+        fnpp: '',
         date: DateTime(2026, 4, 7),
         discipline: 'Game-development',
         semester: 4,
@@ -81,6 +83,7 @@ class ReportWorkService {
       ),
       ReportWork(
         fileId: 'demo-3',
+        fnpp: '',
         date: DateTime(2026, 5, 26),
         discipline: 'Проектирование архитектуры цифровых решений',
         semester: 4,
@@ -92,6 +95,7 @@ class ReportWorkService {
       ),
       ReportWork(
         fileId: 'demo-4',
+        fnpp: '',
         date: DateTime(2024, 11, 8),
         discipline: 'Инфографика',
         semester: 1,

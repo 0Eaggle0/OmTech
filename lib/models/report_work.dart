@@ -22,8 +22,13 @@ enum ReportWorkStatus {
 
 /// «Прочая» отчётная работа — лабораторная, домашняя, презентация и т. п.
 class ReportWork {
-  /// Идентификатор записи (в URL модалки на сайте — `getotherpage('<fileId>',...)`).
+  /// Идентификатор записи (первый аргумент `getotherpage('<fileId>','<fnpp>')`).
   final String fileId;
+
+  /// «Номер портфеля» — второй аргумент `getotherpage`. На сайте это
+  /// идентификатор студента, одинаковый для всех его работ. Нужен в POST'е
+  /// `otherpage.php`, иначе сервер вернёт пустую форму создания.
+  final String fnpp;
 
   /// Дата создания записи (когда загрузили работу), `null` если не распарсилось.
   final DateTime? date;
@@ -51,6 +56,7 @@ class ReportWork {
 
   const ReportWork({
     required this.fileId,
+    required this.fnpp,
     required this.date,
     required this.discipline,
     required this.semester,
@@ -63,6 +69,7 @@ class ReportWork {
 
   Map<String, dynamic> toJson() => {
         'fileId': fileId,
+        'fnpp': fnpp,
         'date': date?.toIso8601String(),
         'discipline': discipline,
         'semester': semester,
@@ -75,6 +82,7 @@ class ReportWork {
 
   factory ReportWork.fromJson(Map<String, dynamic> json) => ReportWork(
         fileId: (json['fileId'] ?? '') as String,
+        fnpp: (json['fnpp'] ?? '') as String,
         date: json['date'] is String
             ? DateTime.tryParse(json['date'] as String)
             : null,

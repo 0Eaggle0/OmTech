@@ -125,7 +125,7 @@ abstract class AppLocalizations {
   /// No description provided for @navWork.
   ///
   /// In ru, this message translates to:
-  /// **'Задания'**
+  /// **'Контактная работа'**
   String get navWork;
 
   /// No description provided for @navProfile.
@@ -293,7 +293,7 @@ abstract class AppLocalizations {
   /// No description provided for @workTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Задания'**
+  /// **'Контактная работа'**
   String get workTitle;
 
   /// No description provided for @workSearch.
@@ -815,7 +815,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardTasks.
   ///
   /// In ru, this message translates to:
-  /// **'Задания'**
+  /// **'Контактная работа'**
   String get dashboardTasks;
 
   /// No description provided for @dashboardReportWorks.
@@ -997,6 +997,30 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Все предметы'**
   String get reportAllSubjects;
+
+  /// No description provided for @reportShareHtml.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поделиться HTML страницы'**
+  String get reportShareHtml;
+
+  /// No description provided for @fileOpen.
+  ///
+  /// In ru, this message translates to:
+  /// **'Открыть'**
+  String get fileOpen;
+
+  /// No description provided for @fileSave.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сохранить'**
+  String get fileSave;
+
+  /// No description provided for @fileSavedTo.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сохранено: {path}'**
+  String fileSavedTo(String path);
 
   /// No description provided for @cancel.
   ///

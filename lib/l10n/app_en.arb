@@ -5,7 +5,7 @@
   "navHome": "Home",
   "navSchedule": "Schedule",
   "navNews": "News",
-  "navWork": "Tasks",
+  "navWork": "Contact work",
   "navProfile": "Profile",
 
   "scheduleTitle": "Schedule",
@@ -39,7 +39,7 @@
   "materialsTitle": "Materials",
   "materialsDemoNote": "Demo data. Real materials will appear after connecting your personal account.",
 
-  "workTitle": "Tasks",
+  "workTitle": "Contact work",
   "workSearch": "Discipline",
   "workTaskCount": "tasks",
   "workTaskNumber": "Number",
@@ -134,7 +134,7 @@
   "dashboardNoNextLesson": "No classes today",
   "dashboardGrades": "Grades",
   "dashboardMaterials": "Materials",
-  "dashboardTasks": "Tasks",
+  "dashboardTasks": "Contact work",
   "dashboardReportWorks": "Submitted works",
   "dashboardNews": "News",
   "dashboardAllNews": "All news",
@@ -172,6 +172,14 @@
   "reportDownloading": "Downloading...",
   "reportNoFiles": "File not available",
   "reportAllSubjects": "All subjects",
+  "reportShareHtml": "Share page HTML",
+
+  "fileOpen": "Open",
+  "fileSave": "Save",
+  "fileSavedTo": "Saved: {path}",
+  "@fileSavedTo": {
+    "placeholders": { "path": { "type": "String" } }
+  },
 
   "cancel": "Cancel",
   "save": "Save",

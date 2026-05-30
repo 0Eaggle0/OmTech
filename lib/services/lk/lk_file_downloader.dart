@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -9,9 +10,9 @@ import '../../models/contact_work.dart';
 import '../link_launcher.dart';
 import 'lk_session.dart';
 
-/// Скачивает файл с up.omgtu.ru через активную сессию ЛК (cookie-jar
-/// уже подкинут к запросу) во временную папку и открывает его в системном
-/// просмотрщике. Если сессии нет — открывает URL во внешнем браузере.
+/// Скачивает файл через активную сессию ЛК (cookie-jar уже подкинут
+/// к запросу) во временную папку и открывает его в системном просмотрщике.
+/// Если сессии нет — открывает URL во внешнем браузере.
 Future<void> openWorkFile(
   BuildContext context,
   LkSession? session,
@@ -26,7 +27,6 @@ Future<void> openWorkFile(
   final messenger = ScaffoldMessenger.of(context);
   final navigator = Navigator.of(context, rootNavigator: true);
 
-  // Неблокирующий диалог с прогрессом.
   showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -34,15 +34,7 @@ Future<void> openWorkFile(
   );
 
   try {
-    final bytes = await session.downloadBytes(
-      file.url,
-      referer: 'https://up.omgtu.ru/index.php?r=remote/read',
-    );
-
-    final dir = await getTemporaryDirectory();
-    final safeName = _safeFileName(file.name);
-    final path = '${dir.path}${Platform.pathSeparator}$safeName';
-    await File(path).writeAsBytes(bytes, flush: true);
+    final path = await _downloadToTemp(session, file);
 
     if (navigator.canPop()) navigator.pop();
 
@@ -60,8 +52,82 @@ Future<void> openWorkFile(
   }
 }
 
+/// Скачивает файл во временную папку и открывает системный диалог
+/// «Save As…», в котором пользователь сам выбирает место (Downloads,
+/// SD-карта, iCloud Drive и т.д.). После сохранения файл становится
+/// виден в системном файловом менеджере.
+Future<void> saveWorkFile(
+  BuildContext context,
+  LkSession? session,
+  WorkFile file,
+) async {
+  if (session == null) {
+    await openExternal(context, file.url);
+    return;
+  }
+
+  final messenger = ScaffoldMessenger.of(context);
+  final navigator = Navigator.of(context, rootNavigator: true);
+
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const _DownloadProgressDialog(),
+  );
+
+  try {
+    final path = await _downloadToTemp(session, file);
+    if (navigator.canPop()) navigator.pop();
+
+    final savedPath = await FlutterFileDialog.saveFile(
+      params: SaveFileDialogParams(
+        sourceFilePath: path,
+        fileName: _safeFileName(file.name),
+      ),
+    );
+
+    if (savedPath == null) return; // пользователь отменил
+    messenger.showSnackBar(
+      SnackBar(content: Text('Сохранено: ${_displayPath(savedPath)}')),
+    );
+  } catch (e) {
+    if (navigator.canPop()) navigator.pop();
+    messenger.showSnackBar(
+      SnackBar(content: Text('Не удалось сохранить файл: $e')),
+    );
+  }
+}
+
+Future<String> _downloadToTemp(LkSession session, WorkFile file) async {
+  // Referer подбираем под хост: для /ecab/-файлов — vkr2.php, иначе
+  // — портал зачётки. Если хост не угадан, передаём null — downloadBytes
+  // подставит дефолт самостоятельно.
+  String? referer;
+  if (file.url.contains('omgtu.ru/ecab/')) {
+    referer = 'https://omgtu.ru/ecab/vkr2.php';
+  } else if (file.url.contains('up.omgtu.ru')) {
+    referer = 'https://up.omgtu.ru/index.php?r=remote/read';
+  }
+  final bytes = await session.downloadBytes(file.url, referer: referer);
+  final dir = await getTemporaryDirectory();
+  final safeName = _safeFileName(file.name);
+  final path = '${dir.path}${Platform.pathSeparator}$safeName';
+  await File(path).writeAsBytes(bytes, flush: true);
+  return path;
+}
+
 String _safeFileName(String name) {
   return name.replaceAll(RegExp(r'[\\/:*?"<>|]+'), '_').trim();
+}
+
+String _displayPath(String path) {
+  // На Android FlutterFileDialog возвращает либо абсолютный путь,
+  // либо `content://`-URI. Показываем хвост — для пользователя
+  // содержательнее «Download/foo.pdf», чем длинный content-URI.
+  final cleaned = path.replaceAll('\\', '/');
+  final segs = cleaned.split('/').where((s) => s.isNotEmpty).toList();
+  if (segs.length <= 2) return path;
+  return segs.sublist(segs.length - 2).join('/');
 }
 
 class _DownloadProgressDialog extends StatelessWidget {

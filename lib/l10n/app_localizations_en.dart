@@ -21,7 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navNews => 'News';
 
   @override
-  String get navWork => 'Tasks';
+  String get navWork => 'Contact work';
 
   @override
   String get navProfile => 'Profile';
@@ -110,7 +110,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Demo data. Real materials will appear after connecting your personal account.';
 
   @override
-  String get workTitle => 'Tasks';
+  String get workTitle => 'Contact work';
 
   @override
   String get workSearch => 'Discipline';
@@ -377,7 +377,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardMaterials => 'Materials';
 
   @override
-  String get dashboardTasks => 'Tasks';
+  String get dashboardTasks => 'Contact work';
 
   @override
   String get dashboardReportWorks => 'Submitted works';
@@ -472,6 +472,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportAllSubjects => 'All subjects';
+
+  @override
+  String get reportShareHtml => 'Share page HTML';
+
+  @override
+  String get fileOpen => 'Open';
+
+  @override
+  String get fileSave => 'Save';
+
+  @override
+  String fileSavedTo(String path) {
+    return 'Saved: $path';
+  }
 
   @override
   String get cancel => 'Cancel';
