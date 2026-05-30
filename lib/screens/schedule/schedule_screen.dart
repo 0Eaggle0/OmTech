@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/group_controller.dart';
 import '../../l10n/app_localizations.dart';
@@ -26,6 +27,9 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
+  static const _prefKeyOnlyMySubgroup = 'schedule_only_my_subgroup';
+  static const _prefKeyHideRetake = 'schedule_hide_retake';
+
   final _api = ScheduleApi();
 
   _ScheduleMode _mode = _ScheduleMode.group;
@@ -47,6 +51,24 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     _weekStart = _mondayOf(now);
     // По умолчанию — сегодняшний день.
     _dateFilter = DateTime(now.year, now.month, now.day);
+    _loadFilterPrefs();
+  }
+
+  Future<void> _loadFilterPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final onlyMy = prefs.getBool(_prefKeyOnlyMySubgroup) ?? false;
+    final hideRetake = prefs.getBool(_prefKeyHideRetake) ?? false;
+    if (!mounted) return;
+    if (onlyMy == _showOnlyMySubgroup && hideRetake == _hideRetake) return;
+    setState(() {
+      _showOnlyMySubgroup = onlyMy;
+      _hideRetake = hideRetake;
+    });
+  }
+
+  Future<void> _saveFilterBool(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
   }
 
   @override
@@ -454,7 +476,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   : 'Все подгруппы',
             ),
             selected: _showOnlyMySubgroup,
-            onSelected: (v) => setState(() => _showOnlyMySubgroup = v),
+            onSelected: (v) {
+              setState(() => _showOnlyMySubgroup = v);
+              _saveFilterBool(_prefKeyOnlyMySubgroup, v);
+            },
             visualDensity: VisualDensity.compact,
           ),
         ],
@@ -473,7 +498,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           FilterChip(
             label: const Text('Скрыть пересдачи'),
             selected: _hideRetake,
-            onSelected: (v) => setState(() => _hideRetake = v),
+            onSelected: (v) {
+              setState(() => _hideRetake = v);
+              _saveFilterBool(_prefKeyHideRetake, v);
+            },
             visualDensity: VisualDensity.compact,
           ),
         ],

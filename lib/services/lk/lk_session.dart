@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import 'cp1251.dart';
 
@@ -55,6 +58,20 @@ class LkSession {
         'Accept-Language': 'ru-RU,ru;q=0.9',
       });
     _dio.interceptors.add(CookieManager(_cookieJar));
+  }
+
+  /// Создаёт сессию с персистентной банкой cookies на диске.
+  /// Cookies лежат в `<appSupportDir>/lk_cookies/`, что переживает перезапуск
+  /// приложения. Доступно как UI-изоляту, так и фоновому worker'у.
+  static Future<LkSession> create({Dio? dio}) async {
+    final dir = await getApplicationSupportDirectory();
+    final cookiesPath = p.join(dir.path, 'lk_cookies');
+    await Directory(cookiesPath).create(recursive: true);
+    final jar = PersistCookieJar(
+      ignoreExpires: false,
+      storage: FileStorage('$cookiesPath${Platform.pathSeparator}'),
+    );
+    return LkSession(dio: dio, cookieJar: jar);
   }
 
   /// Проверка сессии. Дёргаем зачётку и смотрим, куда нас редиректнули:
@@ -169,7 +186,12 @@ class LkSession {
   }
 
   Future<void> logout() async {
-    _cookieJar.deleteAll();
+    final jar = _cookieJar;
+    if (jar is PersistCookieJar) {
+      await jar.deleteAll();
+    } else {
+      jar.deleteAll();
+    }
   }
 
   /// Копирует cookies, установленные на `omgtu.ru`, в jar для `up.omgtu.ru`,

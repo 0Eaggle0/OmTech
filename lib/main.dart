@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
 import 'controllers/group_controller.dart';
 import 'controllers/lk_controller.dart';
 import 'controllers/locale_controller.dart';
 import 'controllers/theme_controller.dart';
+import 'services/background_worker.dart';
 import 'services/news_service.dart';
 import 'services/notification_service.dart';
 
@@ -22,14 +24,18 @@ Future<void> main() async {
   final themeController = ThemeController();
   final groupController = GroupController();
   final localeController = LocaleController();
-  final lkController = LkController();
   final newsService = NewsService();
+  final lkController = await LkController.create();
   await Future.wait([
     themeController.load(),
     groupController.load(),
     localeController.load(),
     newsService.init(),
   ]);
+
+  // Ежечасная фоновая проверка уведомлений. На Android реальная периодичность
+  // соблюдается приближённо (Doze, App Standby). На iOS — best-effort.
+  unawaited(_initBackgroundWorker());
 
   // При первом входе в ЛК — запрашиваем разрешение и проверяем обновления.
   var notifChecked = false;
@@ -56,4 +62,20 @@ Future<void> main() async {
       child: const CampusApp(),
     ),
   );
+}
+
+Future<void> _initBackgroundWorker() async {
+  try {
+    await Workmanager().initialize(backgroundDispatcher);
+    await Workmanager().registerPeriodicTask(
+      hourlyCheckTask,
+      hourlyCheckTask,
+      frequency: const Duration(hours: 1),
+      constraints: Constraints(networkType: NetworkType.connected),
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+    );
+  } catch (_) {
+    // На неподдерживаемых платформах (desktop) workmanager не работает —
+    // это ОК, приложение всё ещё запускается.
+  }
 }

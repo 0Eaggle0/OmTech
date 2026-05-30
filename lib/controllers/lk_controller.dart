@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/group.dart';
@@ -33,6 +35,22 @@ class LkController extends ChangeNotifier {
   })  : _session = session ?? LkSession(),
         _credentials = credentials ?? LkCredentialsStorage();
 
+  /// Создаёт контроллер с персистентной сессией (cookies на диске) и
+  /// сразу подтягивает кэшированный профиль, чтобы UI заполнялся без сети.
+  static Future<LkController> create({
+    LkCredentialsStorage? credentials,
+  }) async {
+    final session = await LkSession.create();
+    final ctrl = LkController(session: session, credentials: credentials);
+    try {
+      final cached = await ctrl.gradesApi.readCache();
+      if (cached != null) {
+        ctrl._profile = cached.profile;
+      }
+    } catch (_) {}
+    return ctrl;
+  }
+
   LkStatus get status => _status;
   StudentProfile? get profile => _profile;
   String? get errorMessage => _errorMessage;
@@ -41,10 +59,38 @@ class LkController extends ChangeNotifier {
 
   /// Пытается восстановить сессию: читает креды из secure storage и логинится.
   /// Запускается из main.dart при старте приложения.
+  ///
+  /// Быстрый путь: если cookies на диске ещё валидны, переходим в `connected`
+  /// после одного HTTP-запроса (~300мс) вместо полного цикла логина (~3 сек).
   Future<void> tryAutoLogin() async {
     final creds = await _credentials.read();
     if (creds == null) return;
+
+    _status = LkStatus.connecting;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (await _session.isAuthenticated()) {
+        _status = LkStatus.connected;
+        notifyListeners();
+        // Подтягиваем профиль в фоне, чтобы обновить кэш.
+        unawaited(_refreshProfileSilently());
+        return;
+      }
+    } catch (_) {
+      // Сеть упала — попробуем полный логин ниже.
+    }
+
     await _doLogin(creds.username, creds.password, persist: false);
+  }
+
+  Future<void> _refreshProfileSilently() async {
+    try {
+      final record = await gradesApi.fetchFresh();
+      _profile = record.profile;
+      notifyListeners();
+    } catch (_) {}
   }
 
   /// Вызывается из UI диалога логина.

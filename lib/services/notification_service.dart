@@ -6,6 +6,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/lk_controller.dart';
 import '../models/report_work.dart';
 import '../models/student_record.dart';
+import 'lk/lk_contact_work_api.dart';
+import 'lk/lk_grades_api.dart';
+import 'lk/lk_report_work_api.dart';
+import 'lk/lk_session.dart';
 
 class NotificationService {
   NotificationService._();
@@ -78,12 +82,41 @@ class NotificationService {
     ]);
   }
 
+  /// Фоновая проверка из изолята WorkManager. Принимает уже залогиненную сессию,
+  /// сам создаёт три API и переиспользует ту же логику, что и foreground-режим.
+  Future<void> runBackgroundChecks(LkSession session) async {
+    final contactWorkApi = LkContactWorkApi(session);
+    final reportWorkApi = LkReportWorkApi(session);
+    final gradesApi = LkGradesApi(session);
+
+    // Для контактных работ и отчётов нужен свежий список с сервера,
+    // потому что мы сравниваем с сохранённым baseline'ом.
+    // Оценки сравниваются по числу в кэше → нужно его обновить.
+    try {
+      await contactWorkApi.fetchDisciplinesFresh();
+    } catch (_) {}
+    try {
+      await reportWorkApi.fetchFresh();
+    } catch (_) {}
+    try {
+      await gradesApi.fetchFresh();
+    } catch (_) {}
+
+    await Future.wait([
+      _checkContactWorkApi(contactWorkApi),
+      _checkReportWorksApi(reportWorkApi),
+      _checkGradesApi(gradesApi),
+    ]);
+  }
+
   /// Проверяет новые задания в контактной работе.
   /// Использует существующий `calcNewCount`, который сам сравнивает
   /// с сохранённым baseline и обновляет его.
-  Future<void> checkContactWork(LkController lk) async {
+  Future<void> checkContactWork(LkController lk) =>
+      _checkContactWorkApi(lk.contactWorkApi);
+
+  Future<void> _checkContactWorkApi(LkContactWorkApi api) async {
     try {
-      final api = lk.contactWorkApi;
       final disciplines = await api.readDisciplinesCache();
       if (disciplines == null || disciplines.isEmpty) return;
 
@@ -119,9 +152,11 @@ class NotificationService {
   }
 
   /// Проверяет изменение статуса отчётных работ.
-  Future<void> checkReportWorks(LkController lk) async {
+  Future<void> checkReportWorks(LkController lk) =>
+      _checkReportWorksApi(lk.reportWorkApi);
+
+  Future<void> _checkReportWorksApi(LkReportWorkApi api) async {
     try {
-      final api = lk.reportWorkApi;
       final result = await api.readCache();
       if (result == null) return;
 
@@ -171,9 +206,11 @@ class NotificationService {
   }
 
   /// Проверяет появление новых оценок.
-  Future<void> checkGrades(LkController lk) async {
+  Future<void> checkGrades(LkController lk) =>
+      _checkGradesApi(lk.gradesApi);
+
+  Future<void> _checkGradesApi(LkGradesApi api) async {
     try {
-      final api = lk.gradesApi;
       final record = await api.readCache();
       if (record == null) return;
 
