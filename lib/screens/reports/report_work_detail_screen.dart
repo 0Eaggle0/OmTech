@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../controllers/lk_controller.dart';
+import '../../widgets/link_text.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/contact_work.dart';
 import '../../models/report_work.dart';
@@ -97,7 +98,7 @@ class _ReportWorkDetailScreenState extends State<ReportWorkDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.15)),
               ),
-              child: Text(widget.work.comment!, style: theme.textTheme.bodyMedium),
+              child: LinkText(text: widget.work.comment!, style: theme.textTheme.bodyMedium),
             ),
           ],
 

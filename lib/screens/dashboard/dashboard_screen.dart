@@ -13,7 +13,7 @@ import '../../services/app_routes.dart';
 import '../../services/news_service.dart';
 import '../../services/schedule_api.dart';
 import '../../widgets/animated_mesh_background.dart';
-import '../../widgets/glass_card.dart';
+import '../../theme/app_colors.dart';
 import '../../widgets/lesson_card.dart';
 import '../../widgets/lesson_detail_sheet.dart';
 import '../../widgets/news_carousel.dart';
@@ -183,9 +183,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final dateStr =
         _capitalize(DateFormat('EEEE, d MMMM', locale).format(DateTime.now()));
 
-    return GlassCard(
-      padding: const EdgeInsets.all(20),
-      child: Stack(
+    return GestureDetector(
+      onTap: () => widget.onOpenTab(4),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: AppColors.accentGradient,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.22),
+              width: 1.2,
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Stack(
         children: [
           Positioned(
             right: -20, top: -20,
@@ -263,6 +275,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
+      ),
+      ),
     );
   }
 
@@ -325,62 +339,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _tiles(BuildContext context, AppLocalizations l) {
-    return Row(
-      children: [
-        Expanded(
-          child: TiltCard(
-            child: _Tile(
-              icon: Icons.grade_outlined,
-              label: l.dashboardGrades,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF4F9DDE), Color(0xFF6C5CE7)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        final w = (constraints.maxWidth - 20) / 3;
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                width: w,
+                child: TiltCard(
+                  child: _Tile(
+                    icon: Icons.grade_outlined,
+                    label: l.dashboardGrades,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF4F9DDE), Color(0xFF6C5CE7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    neonColor: const Color(0xFF4F9DDE),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const GradesScreen()),
+                    ),
+                  ),
+                ),
               ),
-              neonColor: const Color(0xFF4F9DDE),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const GradesScreen()),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: w,
+                child: TiltCard(
+                  child: _Tile(
+                    icon: Icons.assignment_outlined,
+                    label: l.dashboardTasks,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF26C6DA), Color(0xFF00ACC1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    neonColor: const Color(0xFF26C6DA),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const WorkListScreen()),
+                    ),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 10),
+              SizedBox(
+                width: w,
+                child: TiltCard(
+                  child: _Tile(
+                    icon: Icons.assignment_turned_in_outlined,
+                    label: l.dashboardReportWorks,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE08F4F), Color(0xFFE05A6B)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    neonColor: const Color(0xFFE08F4F),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const ReportWorkScreen()),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TiltCard(
-            child: _Tile(
-              icon: Icons.assignment_outlined,
-              label: l.dashboardTasks,
-              gradient: const LinearGradient(
-                colors: [Color(0xFF26C6DA), Color(0xFF00ACC1)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              neonColor: const Color(0xFF26C6DA),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const WorkListScreen()),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: TiltCard(
-            child: _Tile(
-              icon: Icons.assignment_turned_in_outlined,
-              label: l.dashboardReportWorks,
-              gradient: const LinearGradient(
-                colors: [Color(0xFFE08F4F), Color(0xFFE05A6B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              neonColor: const Color(0xFFE08F4F),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ReportWorkScreen()),
-              ),
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 

@@ -34,6 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _lastName = '';
   String _patronymic = '';
   String? _avatarPath;
+  LkStatus? _lastLkStatus;
 
   String get _displayName {
     final parts = [_lastName, _firstName, _patronymic]
@@ -46,6 +47,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final lk = context.watch<LkController>();
+    if (_lastLkStatus != lk.status) {
+      _lastLkStatus = lk.status;
+      if (lk.isConnected && _firstName.isEmpty && _lastName.isEmpty) {
+        _loadProfile();
+      }
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -160,7 +173,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) {
           final avatarFile = _avatarPath != null ? File(_avatarPath!) : null;
-          return Padding(
+          return SingleChildScrollView(
+            child: Padding(
             padding: EdgeInsets.only(
               left: 24,
               right: 24,
@@ -254,6 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
+          ),
           );
         },
       ),

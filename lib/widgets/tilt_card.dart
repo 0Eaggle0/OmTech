@@ -40,10 +40,14 @@ class _TiltCardState extends State<TiltCard>
     super.dispose();
   }
 
-  void _onPanUpdate(DragUpdateDetails d, BoxConstraints c) {
+  void _onPanUpdate(DragUpdateDetails d) {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final size = box.size;
+    if (size.width == 0 || size.height == 0) return;
     setState(() {
-      _rx = (d.localPosition.dy / c.maxHeight - 0.5) * -widget.maxTilt * 2;
-      _ry = (d.localPosition.dx / c.maxWidth - 0.5) * widget.maxTilt * 2;
+      _rx = (d.localPosition.dy / size.height - 0.5) * -widget.maxTilt * 2;
+      _ry = (d.localPosition.dx / size.width - 0.5) * widget.maxTilt * 2;
     });
   }
 
@@ -63,19 +67,17 @@ class _TiltCardState extends State<TiltCard>
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (_, constraints) => GestureDetector(
-        onPanUpdate: (d) => _onPanUpdate(d, constraints),
-        onPanEnd: (_) => _onPanEnd(),
-        onPanCancel: _onPanEnd,
-        child: Transform(
-          transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.001)
-            ..rotateX(_rx)
-            ..rotateY(_ry),
-          alignment: Alignment.center,
-          child: widget.child,
-        ),
+    return GestureDetector(
+      onPanUpdate: _onPanUpdate,
+      onPanEnd: (_) => _onPanEnd(),
+      onPanCancel: _onPanEnd,
+      child: Transform(
+        transform: Matrix4.identity()
+          ..setEntry(3, 2, 0.001)
+          ..rotateX(_rx)
+          ..rotateY(_ry),
+        alignment: Alignment.center,
+        child: widget.child,
       ),
     );
   }

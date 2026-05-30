@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/contact_work.dart';
 import '../../services/contact_work_service.dart';
 import '../../services/link_launcher.dart';
+import '../../widgets/link_text.dart';
 import '../../services/lk/lk_file_downloader.dart';
 
 class WorkDetailScreen extends StatefulWidget {
@@ -246,8 +247,8 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
               ),
               const SizedBox(height: 10),
               if (item.comment.isNotEmpty)
-                Text(
-                  item.comment,
+                LinkText(
+                  text: item.comment,
                   style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
                 ),
               if (item.teacher.isNotEmpty) ...[

@@ -38,6 +38,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime? _dateFilter;
   bool _weekView = false;
   bool _showOnlyMySubgroup = false;
+  bool _hideRetake = false;
 
   @override
   void initState() {
@@ -229,6 +230,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         return e.subgroupNumber == mySg;
       }).toList();
     }
+    // Фильтр пересдач.
+    if (_hideRetake) {
+      filtered = filtered.where((e) {
+        final k = e.kindOfWork.toLowerCase();
+        return !k.contains('пересдач') && !k.contains('допуск') && !k.contains('консультац');
+      }).toList();
+    }
     return filtered;
   }
 
@@ -273,6 +281,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           // Фильтр подгруппы — только если подгруппа задана
           if (groupCtrl.subgroup != null && _mode == _ScheduleMode.group)
             _subgroupFilterRow(l, groupCtrl.subgroup!),
+          if (_mode == _ScheduleMode.group)
+            _retakeFilterRow(),
           Expanded(
             child: GestureDetector(
               onHorizontalDragEnd: (details) {
@@ -445,6 +455,25 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ),
             selected: _showOnlyMySubgroup,
             onSelected: (v) => setState(() => _showOnlyMySubgroup = v),
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _retakeFilterRow() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      child: Row(
+        children: [
+          Icon(Icons.filter_alt_outlined, size: 16,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55)),
+          const SizedBox(width: 8),
+          FilterChip(
+            label: const Text('Скрыть пересдачи'),
+            selected: _hideRetake,
+            onSelected: (v) => setState(() => _hideRetake = v),
             visualDensity: VisualDensity.compact,
           ),
         ],

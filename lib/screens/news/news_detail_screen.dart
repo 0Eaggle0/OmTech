@@ -8,6 +8,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/news_item.dart';
 import '../../services/link_launcher.dart';
+import '../../widgets/link_text.dart';
 import '../../services/news_service.dart';
 
 class NewsDetailScreen extends StatefulWidget {
@@ -404,8 +405,8 @@ class _ParagraphWidget extends StatelessWidget {
       );
     }
 
-    return Text(
-      paragraph.text,
+    return LinkText(
+      text: paragraph.text,
       style: theme.textTheme.bodyLarge?.copyWith(
         height: 1.6,
         color: theme.colorScheme.onSurface.withValues(alpha: 0.82),
