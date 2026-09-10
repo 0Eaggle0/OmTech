@@ -17,6 +17,10 @@
   "scheduleLoadError": "Не удалось загрузить",
   "scheduleLoadErrorMsg": "Проверьте подключение к интернету и повторите.",
   "scheduleRetry": "Повторить",
+  "scheduleCachedAt": "обновлено в {time}",
+  "@scheduleCachedAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
 
   "lessonDetailSubgroup": "подгруппа",
   "lessonDetailNote": "Ваша заметка",

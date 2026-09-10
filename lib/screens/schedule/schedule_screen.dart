@@ -30,14 +30,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   static const _prefKeyOnlyMySubgroup = 'schedule_only_my_subgroup';
   static const _prefKeyHideRetake = 'schedule_hide_retake';
 
-  final _api = ScheduleApi();
+  final _api = ScheduleApi.instance;
 
   _ScheduleMode _mode = _ScheduleMode.group;
   ScheduleEntity? _teacher;
   ScheduleEntity? _auditorium;
 
   late DateTime _weekStart;
-  Future<List<ScheduleEvent>>? _future;
+  Stream<ScheduleSnapshot>? _stream;
   int? _loadedGroupId;
   DateTime? _dateFilter;
   bool _weekView = false;
@@ -85,19 +85,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   void _reload() {
     final group = context.read<GroupController>().group;
-    final start = _weekStart;
-    final finish = _weekStart.add(const Duration(days: 6));
-    Future<List<ScheduleEvent>>? next;
-    switch (_mode) {
-      case _ScheduleMode.group:
-        if (group != null) next = _api.getSchedule(group.id, start: start, finish: finish);
-      case _ScheduleMode.teacher:
-        if (_teacher != null) next = _api.getTeacherSchedule(_teacher!.id, start: start, finish: finish);
-      case _ScheduleMode.auditorium:
-        if (_auditorium != null) next = _api.getAuditoriumSchedule(_auditorium!.id, start: start, finish: finish);
-    }
-    if (next != null) setState(() { _future = next; });
+    final (type, id) = switch (_mode) {
+      _ScheduleMode.group => (EntityType.group, group?.id),
+      _ScheduleMode.teacher => (EntityType.teacher, _teacher?.id),
+      _ScheduleMode.auditorium => (EntityType.auditorium, _auditorium?.id),
+    };
+    if (id == null) return;
+    setState(() { _stream = _watch(type, id); });
   }
+
+  Stream<ScheduleSnapshot> _watch(EntityType type, int id) => _api.watchSchedule(
+        type: type,
+        id: id,
+        start: _weekStart,
+        finish: _weekStart.add(const Duration(days: 6)),
+      );
 
   void _shiftWeek(int weeks) {
     setState(() {
@@ -126,7 +128,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     if (_mode == mode) return;
     setState(() {
       _mode = mode;
-      _future = null;
+      _stream = null;
       _dateFilter = null;
     });
     _reload();
@@ -153,20 +155,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   void _setEntityAndReload({ScheduleEntity? teacher, ScheduleEntity? auditorium}) {
-    final start = _weekStart;
-    final finish = _weekStart.add(const Duration(days: 6));
-    Future<List<ScheduleEvent>> future;
     if (teacher != null) {
-      future = _api.getTeacherSchedule(teacher.id, start: start, finish: finish);
       setState(() {
         _teacher = teacher;
-        _future = future;
+        _stream = _watch(EntityType.teacher, teacher.id);
       });
     } else if (auditorium != null) {
-      future = _api.getAuditoriumSchedule(auditorium.id, start: start, finish: finish);
       setState(() {
         _auditorium = auditorium;
-        _future = future;
+        _stream = _watch(EntityType.auditorium, auditorium.id);
       });
     }
   }
@@ -179,7 +176,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       case EntityType.group:
         setState(() {
           _mode = _ScheduleMode.group;
-          _future = null;
+          _stream = null;
           _dateFilter = null;
         });
         if (!mounted) return;
@@ -577,14 +574,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       );
     }
 
-    return FutureBuilder<List<ScheduleEvent>>(
-      future: _future,
+    return StreamBuilder<ScheduleSnapshot>(
+      stream: _stream,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.none ||
-            snapshot.connectionState == ConnectionState.waiting) {
+        if (!snapshot.hasData && !snapshot.hasError) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snapshot.hasError) {
+        if (snapshot.hasError && !snapshot.hasData) {
           return EmptyState(
             icon: Icons.wifi_off_outlined,
             title: l.scheduleLoadError,
@@ -593,7 +589,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             onAction: _reload,
           );
         }
-        final events = snapshot.data ?? [];
+        final events = snapshot.data?.events ?? [];
         if (events.isEmpty) {
           return EmptyState(
             icon: Icons.event_available_outlined,
@@ -625,8 +621,36 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             }),
           );
         }
-        return _eventsList(filtered);
+        final data = snapshot.data;
+        if (data == null || !data.fromCache || data.fetchedAt == null) {
+          return _eventsList(filtered);
+        }
+        return Column(
+          children: [
+            _cachedNotice(l, data.fetchedAt!),
+            Expanded(child: _eventsList(filtered)),
+          ],
+        );
       },
+    );
+  }
+
+  /// Показываем время последнего обновления, пока на экране данные из кэша.
+  Widget _cachedNotice(AppLocalizations l, DateTime at) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.onSurface.withValues(alpha: 0.5);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      child: Row(
+        children: [
+          Icon(Icons.history, size: 13, color: color),
+          const SizedBox(width: 6),
+          Text(
+            l.scheduleCachedAt(DateFormat('HH:mm').format(at)),
+            style: theme.textTheme.labelSmall?.copyWith(color: color),
+          ),
+        ],
+      ),
     );
   }
 

@@ -11,8 +11,13 @@ class NewsDatabase {
   static const _table = 'news_articles';
 
   Database? _db;
+  Future<void>? _initFuture;
 
-  Future<void> init() async {
+  /// init() зовут и из main (без await), и лениво из NewsService — храним
+  /// Future, чтобы параллельные вызовы не открывали базу дважды.
+  Future<void> init() => _initFuture ??= _open();
+
+  Future<void> _open() async {
     if (_db != null) return;
     final dbPath = await getDatabasesPath();
     _db = await openDatabase(

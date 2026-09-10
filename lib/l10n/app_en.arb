@@ -17,6 +17,10 @@
   "scheduleLoadError": "Failed to load",
   "scheduleLoadErrorMsg": "Check your internet connection and try again.",
   "scheduleRetry": "Retry",
+  "scheduleCachedAt": "updated at {time}",
+  "@scheduleCachedAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
 
   "lessonDetailSubgroup": "subgroup",
   "lessonDetailNote": "Your note",

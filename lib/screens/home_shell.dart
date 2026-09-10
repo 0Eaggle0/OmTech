@@ -23,15 +23,58 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell>
+    with SingleTickerProviderStateMixin {
+  static const _tabTransition = Duration(milliseconds: 260);
+  static const _staticOpacity = AlwaysStoppedAnimation(1.0);
+  static const _staticOffset = AlwaysStoppedAnimation(Offset.zero);
+
   int _index = 0;
 
-  void _open(int index) => setState(() => _index = index);
+  /// Вкладки живут в дереве и не пересоздаются при переключении, иначе
+  /// каждый возврат на «Расписание» терял состояние и лез в сеть заново.
+  /// Строим их лениво: непосещённая вкладка ничего не грузит.
+  late final List<Widget> _pages;
+  final _visited = <int>{0};
+
+  late final AnimationController _tabAnim = AnimationController(
+    vsync: this,
+    duration: _tabTransition,
+    value: 1,
+  );
+  late final Animation<double> _fade =
+      CurvedAnimation(parent: _tabAnim, curve: Curves.easeOut);
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, 0.03),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _tabAnim, curve: Curves.easeOut));
+
+  void _open(int index) {
+    if (index == _index) return;
+    setState(() {
+      _index = index;
+      _visited.add(index);
+    });
+    _tabAnim.forward(from: 0);
+  }
 
   @override
   void initState() {
     super.initState();
+    _pages = [
+      DashboardScreen(onOpenTab: _open),
+      const ScheduleScreen(),
+      const NewsScreen(),
+      const WorkListScreen(),
+      const ProfileScreen(),
+    ];
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstLaunch());
+  }
+
+  @override
+  void dispose() {
+    _tabAnim.dispose();
+    super.dispose();
   }
 
   Future<void> _checkFirstLaunch() async {
@@ -69,14 +112,6 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
 
-    final pages = [
-      DashboardScreen(onOpenTab: _open),
-      const ScheduleScreen(),
-      const NewsScreen(),
-      const WorkListScreen(),
-      const ProfileScreen(),
-    ];
-
     final navItems = [
       (Icons.home_outlined, Icons.home, l.navHome),
       (Icons.calendar_month_outlined, Icons.calendar_month, l.navSchedule),
@@ -89,24 +124,29 @@ class _HomeShellState extends State<HomeShell> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 260),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.03),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
-                ),
-              ),
-              child: KeyedSubtree(
-                key: ValueKey<int>(_index),
-                child: pages[_index],
-              ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                for (var i = 0; i < _pages.length; i++)
+                  if (_visited.contains(i))
+                    Offstage(
+                      key: ValueKey<int>(i),
+                      offstage: i != _index,
+                      // Скрытая вкладка не должна крутить свои анимации.
+                      child: TickerMode(
+                        enabled: i == _index,
+                        // Обёртки одинаковые для всех вкладок: меняются только
+                        // сами анимации, поэтому поддерево не пересоздаётся.
+                        child: FadeTransition(
+                          opacity: i == _index ? _fade : _staticOpacity,
+                          child: SlideTransition(
+                            position: i == _index ? _slide : _staticOffset,
+                            child: _pages[i],
+                          ),
+                        ),
+                      ),
+                    ),
+              ],
             ),
           ),
           const Positioned(

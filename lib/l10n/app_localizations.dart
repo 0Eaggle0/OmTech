@@ -188,6 +188,12 @@ abstract class AppLocalizations {
   /// **'Повторить'**
   String get scheduleRetry;
 
+  /// No description provided for @scheduleCachedAt.
+  ///
+  /// In ru, this message translates to:
+  /// **'обновлено в {time}'**
+  String scheduleCachedAt(String time);
+
   /// No description provided for @lessonDetailSubgroup.
   ///
   /// In ru, this message translates to:

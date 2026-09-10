@@ -17,21 +17,29 @@ import 'services/notification_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ru');
-  await initializeDateFormatting('en');
-
-  await NotificationService.instance.init();
 
   final themeController = ThemeController();
   final groupController = GroupController();
   final localeController = LocaleController();
   final newsService = NewsService();
   final lkController = await LkController.create();
+
+  // До первого кадра ждём только то, без чего интерфейс мигнёт неверной
+  // темой, языком или пустым расписанием. Всё остальное — в фоне.
   await Future.wait([
     themeController.load(),
     groupController.load(),
     localeController.load(),
-    newsService.init(),
   ]);
+
+  if (localeController.locale.languageCode == 'en') {
+    await initializeDateFormatting('en');
+  } else {
+    unawaited(initializeDateFormatting('en'));
+  }
+
+  unawaited(NotificationService.instance.init());
+  unawaited(newsService.init());
 
   // Ежечасная фоновая проверка уведомлений. На Android реальная периодичность
   // соблюдается приближённо (Doze, App Standby). На iOS — best-effort.
@@ -71,6 +79,9 @@ Future<void> _initBackgroundWorker() async {
       hourlyCheckTask,
       hourlyCheckTask,
       frequency: const Duration(hours: 1),
+      // Без задержки WorkManager выполняет первый прогон сразу после
+      // регистрации — параллельно с авто-логином, в одну папку cookies.
+      initialDelay: const Duration(minutes: 15),
       constraints: Constraints(networkType: NetworkType.connected),
       existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
     );

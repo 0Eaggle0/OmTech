@@ -57,6 +57,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleRetry => 'Retry';
 
   @override
+  String scheduleCachedAt(String time) {
+    return 'updated at $time';
+  }
+
+  @override
   String get lessonDetailSubgroup => 'subgroup';
 
   @override

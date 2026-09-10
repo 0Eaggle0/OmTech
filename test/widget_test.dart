@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:campus2_0/app.dart';
 import 'package:campus2_0/controllers/group_controller.dart';
+import 'package:campus2_0/controllers/lk_controller.dart';
+import 'package:campus2_0/controllers/locale_controller.dart';
 import 'package:campus2_0/controllers/theme_controller.dart';
 
 void main() {
@@ -18,6 +20,8 @@ void main() {
         providers: [
           ChangeNotifierProvider(create: (_) => ThemeController()),
           ChangeNotifierProvider(create: (_) => GroupController()),
+          ChangeNotifierProvider(create: (_) => LocaleController()),
+          ChangeNotifierProvider(create: (_) => LkController()),
         ],
         child: const CampusApp(),
       ),

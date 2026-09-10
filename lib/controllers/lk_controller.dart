@@ -70,19 +70,24 @@ class LkController extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    try {
-      if (await _session.isAuthenticated()) {
-        _status = LkStatus.connected;
-        notifyListeners();
-        // Подтягиваем профиль в фоне, чтобы обновить кэш.
-        unawaited(_refreshProfileSilently());
-        return;
-      }
-    } catch (_) {
-      // Сеть упала — попробуем полный логин ниже.
+    final check = await _session.checkSession();
+    if (check == SessionCheck.valid) {
+      _status = LkStatus.connected;
+      notifyListeners();
+      // Подтягиваем профиль в фоне, чтобы обновить кэш.
+      unawaited(_refreshProfileSilently());
+      return;
+    }
+    if (check == SessionCheck.unknown) {
+      // Сеть не ответила — о сессии судить нельзя, полный логин только
+      // потратит время. Ждём ручного входа.
+      _status = LkStatus.disconnected;
+      notifyListeners();
+      return;
     }
 
-    await _doLogin(creds.username, creds.password, persist: false);
+    await _doLogin(creds.username, creds.password,
+        persist: false, silent: true);
   }
 
   Future<void> _refreshProfileSilently() async {
@@ -98,8 +103,11 @@ class LkController extends ChangeNotifier {
     return _doLogin(username, password, persist: true);
   }
 
+  /// [silent] — вход инициирован не пользователем (авто-логин при старте).
+  /// Такой сбой не должен всплывать баннером: просто остаёмся не подключены,
+  /// экраны ЛК сами покажут кнопку входа.
   Future<bool> _doLogin(String username, String password,
-      {required bool persist}) async {
+      {required bool persist, bool silent = false}) async {
     _status = LkStatus.connecting;
     _errorMessage = null;
     notifyListeners();
@@ -111,27 +119,29 @@ class LkController extends ChangeNotifier {
           LkCredentials(username: username, password: password),
         );
       }
-      // Подтягиваем профиль из зачётки.
-      try {
-        final record = await gradesApi.fetchFresh();
-        _profile = record.profile;
-      } catch (_) {
-        // Профиль подгрузим позже, главное — сессия активна.
-      }
+      // Сессия активна — сразу переходим в connected, не дожидаясь профиля.
+      // Профиль подтянем в фоне (UI умеет рендериться с _profile == null).
       _status = LkStatus.connected;
       notifyListeners();
+      unawaited(_refreshProfileSilently());
       return true;
     } on LkLoginException catch (e) {
-      _status = LkStatus.error;
-      _errorMessage = e.message;
-      notifyListeners();
+      if (kDebugMode && e.diagnostics != null) {
+        debugPrint('[LK] логин не удался: ${e.diagnostics}');
+      }
+      _fail(e.message, silent: silent);
       return false;
     } catch (e) {
-      _status = LkStatus.error;
-      _errorMessage = e.toString();
-      notifyListeners();
+      if (kDebugMode) debugPrint('[LK] логин не удался: $e');
+      _fail('Не удалось войти, попробуйте позже', silent: silent);
       return false;
     }
+  }
+
+  void _fail(String message, {required bool silent}) {
+    _status = silent ? LkStatus.disconnected : LkStatus.error;
+    _errorMessage = silent ? null : message;
+    notifyListeners();
   }
 
   /// Если профиль ЛК содержит группу и пользователь ещё не выбрал группу,

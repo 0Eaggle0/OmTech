@@ -10,6 +10,7 @@ import '../../controllers/group_controller.dart';
 import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/news_item.dart';
+import '../../models/schedule_entity.dart';
 import '../../models/schedule_event.dart';
 import '../../services/app_routes.dart';
 import '../../services/news_service.dart';
@@ -36,11 +37,13 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final _scheduleApi = ScheduleApi();
+  final _scheduleApi = ScheduleApi.instance;
   final _newsService = NewsService();
 
   late Future<List<NewsItem>> _newsFuture;
-  Future<List<ScheduleEvent>>? _scheduleFuture;
+  List<ScheduleEvent> _thisWeek = const [];
+  List<ScheduleEvent> _nextWeek = const [];
+  bool _scheduleLoading = false;
   int? _loadedGroupId;
   String _firstName = '';
   LkStatus? _lastLkStatus;
@@ -95,12 +98,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final group = context.watch<GroupController>().group;
     if (group != null && group.id != _loadedGroupId) {
       _loadedGroupId = group.id;
-      final now = DateTime.now();
-      _scheduleFuture = _scheduleApi.getSchedule(
-        group.id,
-        start: DateTime(now.year, now.month, now.day),
-        finish: now.add(const Duration(days: 7)),
-      );
+      _loadSchedule(group.id);
     }
     // Подхватываем имя из ЛК когда авто-логин завершается.
     final lk = context.watch<LkController>();
@@ -118,6 +116,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
         lk.autoFillGroupIfNeeded(context.read<GroupController>());
       }
     }
+  }
+
+  /// Границы недели те же, что у экрана расписания, — значит тот же ключ
+  /// кэша и один сетевой запрос на двоих. Следующую неделю трогаем, только
+  /// если до конца текущей пар уже не осталось.
+  Future<void> _loadSchedule(int groupId) async {
+    setState(() {
+      _thisWeek = const [];
+      _nextWeek = const [];
+      _scheduleLoading = true;
+    });
+
+    final monday = _mondayOf(DateTime.now());
+    await _consumeWeek(groupId, monday, (events) => _thisWeek = events);
+
+    if (!mounted || groupId != _loadedGroupId) return;
+    if (!_hasUpcoming(_thisWeek)) {
+      await _consumeWeek(groupId, monday.add(const Duration(days: 7)),
+          (events) => _nextWeek = events);
+    }
+
+    if (!mounted || groupId != _loadedGroupId) return;
+    setState(() => _scheduleLoading = false);
+  }
+
+  Future<void> _consumeWeek(
+    int groupId,
+    DateTime monday,
+    void Function(List<ScheduleEvent>) assign,
+  ) async {
+    final stream = _scheduleApi.watchSchedule(
+      type: EntityType.group,
+      id: groupId,
+      start: monday,
+      finish: monday.add(const Duration(days: 6)),
+    );
+    try {
+      await for (final snapshot in stream) {
+        if (!mounted || groupId != _loadedGroupId) return;
+        setState(() => assign(snapshot.events));
+      }
+    } catch (_) {
+      // Ни сети, ни кэша — блок «ближайшая пара» просто останется пустым.
+    }
+  }
+
+  bool _hasUpcoming(List<ScheduleEvent> events) {
+    final now = DateTime.now();
+    return events.any((e) => _parseTime(e.date, e.endLesson).isAfter(now));
+  }
+
+  static DateTime _mondayOf(DateTime d) {
+    final day = DateTime(d.year, d.month, d.day);
+    return day.subtract(Duration(days: day.weekday - DateTime.monday));
   }
 
   String get _greetingName {
@@ -292,35 +344,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _nextLessonSection(BuildContext context, AppLocalizations l) {
-    if (_scheduleFuture == null) {
+    if (_loadedGroupId == null) {
       return _hintCard(context, l.dashboardNoGroup);
     }
-    return FutureBuilder<List<ScheduleEvent>>(
-      future: _scheduleFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const ShimmerGreeting();
-        }
-        final next = _findNextOrCurrent(snapshot.data ?? []);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SectionHeader(
-              title: l.dashboardNextLesson,
-              actionLabel: l.navSchedule,
-              onAction: () => widget.onOpenTab(1),
-            ),
-            const SizedBox(height: 8),
-            if (next == null)
-              _hintCard(context, l.dashboardNoNextLesson)
-            else
-              LessonCard(
-                event: next,
-                onTap: () => LessonDetailSheet.show(context, next),
-              ),
-          ],
-        );
-      },
+    if (_scheduleLoading && _thisWeek.isEmpty && _nextWeek.isEmpty) {
+      return const ShimmerGreeting();
+    }
+    final next = _findNextOrCurrent([..._thisWeek, ..._nextWeek]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: l.dashboardNextLesson,
+          actionLabel: l.navSchedule,
+          onAction: () => widget.onOpenTab(1),
+        ),
+        const SizedBox(height: 8),
+        if (next == null)
+          _hintCard(context, l.dashboardNoNextLesson)
+        else
+          LessonCard(
+            event: next,
+            onTap: () => LessonDetailSheet.show(context, next),
+          ),
+      ],
     );
   }
 

@@ -17,6 +17,11 @@ class NotificationService {
 
   final _plugin = FlutterLocalNotificationsPlugin();
 
+  /// Инициализация запускается из main без await, поэтому каждый метод,
+  /// которому нужен готовый плагин, сам её дожидается. Повторные вызовы
+  /// переиспользуют тот же Future.
+  Future<void>? _initFuture;
+
   static const _chTasks = 'ch_tasks';
   static const _chReports = 'ch_reports';
   static const _chGrades = 'ch_grades';
@@ -29,7 +34,9 @@ class NotificationService {
   int _nextId = 100;
   int _id() => _nextId++;
 
-  Future<void> init() async {
+  Future<void> init() => _initFuture ??= _doInit();
+
+  Future<void> _doInit() async {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings();
     await _plugin.initialize(
@@ -38,6 +45,7 @@ class NotificationService {
   }
 
   Future<void> requestPermission() async {
+    await init();
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_keyPermAsked) == true) return;
     await prefs.setBool(_keyPermAsked, true);
@@ -56,6 +64,7 @@ class NotificationService {
 
   Future<void> _show(String title, String body, String channelId,
       String channelName) async {
+    await init();
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
         channelId,
