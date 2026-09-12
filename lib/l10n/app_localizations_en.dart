@@ -472,6 +472,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String get schedulePickDate => 'Pick date';
 
   @override
+  String get scheduleModeGroup => 'Group';
+
+  @override
+  String get scheduleModeTeacher => 'Teacher';
+
+  @override
+  String get scheduleModeAuditorium => 'Room';
+
+  @override
+  String get scheduleSearch => 'Search';
+
+  @override
+  String get scheduleAllSubgroups => 'All subgroups';
+
+  @override
+  String scheduleSubgroupN(int n) {
+    return 'Subgroup $n';
+  }
+
+  @override
+  String get scheduleHideRetake => 'Hide retakes';
+
+  @override
+  String get schedulePickTeacher => 'Pick teacher';
+
+  @override
+  String get schedulePickAuditorium => 'Pick room';
+
+  @override
+  String get scheduleNoTeacher => 'No teacher selected';
+
+  @override
+  String get scheduleNoTeacherMsg =>
+      'Find a teacher to see their weekly schedule.';
+
+  @override
+  String get scheduleNoAuditorium => 'No room selected';
+
+  @override
+  String get scheduleNoAuditoriumMsg =>
+      'Find a room to see how it is booked this week.';
+
+  @override
+  String get scheduleSunday => 'Sunday!';
+
+  @override
+  String get scheduleSundayMsg => 'A well-earned day off — go touch grass 🌿';
+
+  @override
+  String get scheduleNoLessonsDay => 'No classes';
+
+  @override
+  String get scheduleNoLessonsDayMsg =>
+      'There are no classes on the selected day.';
+
+  @override
+  String get scheduleRoute => 'Route';
+
+  @override
   String get profileFirstName => 'First name';
 
   @override

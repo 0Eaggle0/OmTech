@@ -9,13 +9,18 @@ import '../../l10n/app_localizations.dart';
 import '../../models/group.dart';
 import '../../models/schedule_entity.dart';
 import '../../models/schedule_event.dart';
+import '../../services/academic_week.dart';
 import '../../services/schedule_api.dart';
+import '../../theme/app_glass.dart';
 import '../../theme/app_metrics.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/entity_search_sheet.dart';
 import '../../widgets/group_search_sheet.dart';
 import '../../widgets/lesson_card.dart';
 import '../../widgets/lesson_detail_sheet.dart';
+import '../../widgets/pill_filter_row.dart';
+import '../../widgets/status_banners.dart';
+import '../../widgets/status_pill.dart';
 import '../../widgets/universal_search_sheet.dart';
 
 enum _ScheduleMode { group, teacher, auditorium }
@@ -28,7 +33,10 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
+  /// Старый ключ: bool «только моя подгруппа». Заменён на выбор подгруппы,
+  /// читаем один раз ради переноса настройки.
   static const _prefKeyOnlyMySubgroup = 'schedule_only_my_subgroup';
+  static const _prefKeySubgroupFilter = 'schedule_subgroup_filter';
   static const _prefKeyHideRetake = 'schedule_hide_retake';
 
   final _api = ScheduleApi.instance;
@@ -42,7 +50,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   int? _loadedGroupId;
   DateTime? _dateFilter;
   bool _weekView = false;
-  bool _showOnlyMySubgroup = false;
+
+  /// null — показывать все подгруппы, иначе номер подгруппы.
+  int? _subgroupFilter;
   bool _hideRetake = false;
   double _dragDx = 0;
 
@@ -50,22 +60,43 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _weekStart = _mondayOf(now);
+    _weekStart = mondayOf(now);
     // По умолчанию — сегодняшний день.
     _dateFilter = DateTime(now.year, now.month, now.day);
     _loadFilterPrefs();
   }
 
   Future<void> _loadFilterPrefs() async {
+    final profileSubgroup = context.read<GroupController>().subgroup;
     final prefs = await SharedPreferences.getInstance();
-    final onlyMy = prefs.getBool(_prefKeyOnlyMySubgroup) ?? false;
     final hideRetake = prefs.getBool(_prefKeyHideRetake) ?? false;
+
+    int? subgroup = prefs.getInt(_prefKeySubgroupFilter);
+    // Перенос старой настройки «только моя подгруппа» на выбор подгруппы.
+    if (subgroup == null && (prefs.getBool(_prefKeyOnlyMySubgroup) ?? false)) {
+      subgroup = profileSubgroup;
+      await prefs.remove(_prefKeyOnlyMySubgroup);
+      if (subgroup != null) {
+        await prefs.setInt(_prefKeySubgroupFilter, subgroup);
+      }
+    }
+
     if (!mounted) return;
-    if (onlyMy == _showOnlyMySubgroup && hideRetake == _hideRetake) return;
+    if (subgroup == _subgroupFilter && hideRetake == _hideRetake) return;
     setState(() {
-      _showOnlyMySubgroup = onlyMy;
+      _subgroupFilter = subgroup;
       _hideRetake = hideRetake;
     });
+  }
+
+  Future<void> _setSubgroupFilter(int? value) async {
+    setState(() => _subgroupFilter = value);
+    final prefs = await SharedPreferences.getInstance();
+    if (value == null) {
+      await prefs.remove(_prefKeySubgroupFilter);
+    } else {
+      await prefs.setInt(_prefKeySubgroupFilter, value);
+    }
   }
 
   Future<void> _saveFilterBool(String key, bool value) async {
@@ -116,7 +147,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final now = DateTime.now();
     final base = _dateFilter ?? DateTime(now.year, now.month, now.day);
     final next = base.add(Duration(days: delta));
-    final nextMonday = _mondayOf(next);
+    final nextMonday = mondayOf(next);
     final weekChanged = nextMonday != _weekStart;
     setState(() {
       _weekStart = nextMonday;
@@ -209,7 +240,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
     if (picked == null || !mounted) return;
     setState(() {
-      _weekStart = _mondayOf(picked);
+      _weekStart = mondayOf(picked);
       _dateFilter = DateTime(picked.year, picked.month, picked.day);
       _weekView = false;
     });
@@ -225,14 +256,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     };
   }
 
-  String? get _entityLabel {
-    final group = context.read<GroupController>().group;
-    return switch (_mode) {
-      _ScheduleMode.group => group?.label,
-      _ScheduleMode.teacher => _teacher?.label,
-      _ScheduleMode.auditorium => _auditorium?.label,
-    };
-  }
 
   List<ScheduleEvent> _applyFilters(List<ScheduleEvent> events) {
     var filtered = events;
@@ -243,12 +266,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       }).toList();
     }
     // Фильтр по подгруппе.
-    final groupCtrl = context.read<GroupController>();
-    if (_showOnlyMySubgroup && groupCtrl.subgroup != null) {
-      final mySg = groupCtrl.subgroup.toString();
+    final subgroup = _subgroupFilter;
+    if (subgroup != null) {
+      final wanted = subgroup.toString();
       filtered = filtered.where((e) {
         if (e.subgroupNumber.isEmpty) return true; // общие для всех
-        return e.subgroupNumber == mySg;
+        return e.subgroupNumber == wanted;
       }).toList();
     }
     // Фильтр пересдач.
@@ -264,46 +287,49 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final label = _entityLabel;
+    // watch, а не read: смена группы должна перерисовать чип в шапке.
     final groupCtrl = context.watch<GroupController>();
+    final label = switch (_mode) {
+      _ScheduleMode.group => groupCtrl.group?.label,
+      _ScheduleMode.teacher => _teacher?.label,
+      _ScheduleMode.auditorium => _auditorium?.label,
+    };
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l.scheduleTitle),
         actions: [
-          // Переключатель вида: день / неделя
-          _viewToggle(l),
-          // Выбор даты через календарь
-          _appBarAction(
-            icon: Icons.calendar_today_outlined,
-            label: l.schedulePickDate,
-            onTap: _pickDate,
-          ),
-          _appBarAction(
-            icon: Icons.search,
-            label: 'Поиск',
-            onTap: _openUniversalSearch,
-          ),
-          TextButton.icon(
-            onPressed: _pickEntity,
-            icon: Icon(_modeIcon(_mode), size: 18),
-            label: Text(
-              label ?? _modePlaceholder(_mode),
-              overflow: TextOverflow.ellipsis,
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: ActionChip(
+                avatar: Icon(_modeIcon(_mode), size: 16),
+                label: Text(
+                  label ?? _modePlaceholder(l, _mode),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onPressed: _pickEntity,
+              ),
             ),
           ),
+          IconButton(
+            onPressed: _openUniversalSearch,
+            tooltip: l.scheduleSearch,
+            icon: const Icon(Icons.search),
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
         children: [
-          _modeSwitcher(),
+          _actionRow(l),
+          _modeSwitcher(l),
           _weekSwitcher(l),
           _dayRow(l),
-          // Фильтр подгруппы — только если подгруппа задана
-          if (groupCtrl.subgroup != null && _mode == _ScheduleMode.group)
-            _subgroupFilterRow(l, groupCtrl.subgroup!),
-          if (_mode == _ScheduleMode.group)
-            _retakeFilterRow(),
+          if (_mode == _ScheduleMode.group) ...[
+            _subgroupFilterRow(l),
+            _retakeFilterRow(l),
+          ],
           Expanded(
             child: GestureDetector(
               // В пустой день контент — маленький блок по центру, и при
@@ -329,7 +355,84 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _modeSwitcher() {
+  /// Три действия одной плашкой: вид недели/дня, календарь и поиск.
+  Widget _actionRow(AppLocalizations l) {
+    final glass = context.glass;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: glass.elevatedFill,
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          border: Border.all(color: glass.hairline),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: _action(
+                icon: _weekView ? Icons.today_outlined : Icons.view_week_outlined,
+                label: _weekView ? l.scheduleDayView : l.scheduleWeekView,
+                active: _weekView,
+                onTap: _toggleView,
+              ),
+            ),
+            Expanded(
+              child: _action(
+                icon: Icons.calendar_today_outlined,
+                label: l.schedulePickDate,
+                onTap: _pickDate,
+              ),
+            ),
+            Expanded(
+              child: _action(
+                icon: Icons.manage_search,
+                label: l.scheduleSearch,
+                onTap: _openUniversalSearch,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _action({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool active = false,
+  }) {
+    final theme = Theme.of(context);
+    final glass = context.glass;
+    final color = active ? theme.colorScheme.primary : glass.textMuted;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.tile),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 17, color: color),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: color,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _modeSwitcher(AppLocalizations l) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: SegmentedButton<_ScheduleMode>(
@@ -337,21 +440,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           textStyle: const TextStyle(fontSize: 13),
         ),
-        segments: const [
+        segments: [
           ButtonSegment(
             value: _ScheduleMode.group,
-            icon: Icon(Icons.groups_outlined, size: 16),
-            label: Text('Группа'),
+            icon: const Icon(Icons.groups_outlined, size: 16),
+            label: Text(l.scheduleModeGroup),
           ),
           ButtonSegment(
             value: _ScheduleMode.teacher,
-            icon: Icon(Icons.person_outline, size: 16),
-            label: Text('Препод.'),
+            icon: const Icon(Icons.person_outline, size: 16),
+            label: Text(l.scheduleModeTeacher),
           ),
           ButtonSegment(
             value: _ScheduleMode.auditorium,
-            icon: Icon(Icons.place_outlined, size: 16),
-            label: Text('Аудит.'),
+            icon: const Icon(Icons.place_outlined, size: 16),
+            label: Text(l.scheduleModeAuditorium),
           ),
         ],
         selected: {_mode},
@@ -365,6 +468,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final end = _weekStart.add(const Duration(days: 6));
     final locale = Localizations.localeOf(context).languageCode;
     final fmt = DateFormat('d MMM', locale);
+    final week = academicWeekOf(_weekStart);
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
       child: Row(
@@ -374,10 +478,24 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             icon: const Icon(Icons.chevron_left),
           ),
           Expanded(
-            child: Text(
-              '${fmt.format(_weekStart)} – ${fmt.format(end)}',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    '${fmt.format(_weekStart)} – ${fmt.format(end)}',
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                StatusPill(
+                  '${week.isOdd ? l.dashboardWeekOdd : l.dashboardWeekEven}'
+                  ' (${week.number})',
+                  status: AppStatus.accent,
+                  dense: true,
+                ),
+              ],
             ),
           ),
           IconButton(
@@ -406,6 +524,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           final isSelected = !_weekView && _dateFilter == dayOnly;
           final isToday = dayOnly == today;
           final theme = Theme.of(context);
+          final glass = context.glass;
           final primary = theme.colorScheme.primary;
 
           return Expanded(
@@ -423,14 +542,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 margin: const EdgeInsets.symmetric(horizontal: 2),
-                padding: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? primary
                       : isToday
-                          ? primary.withValues(alpha: 0.12)
-                          : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
+                          ? glass.tint(primary)
+                          : glass.elevatedFill,
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  border: Border.all(
+                    color: isSelected ? primary : glass.hairline,
+                  ),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -444,7 +566,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             ? Colors.white
                             : isToday
                                 ? primary
-                                : theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                                : glass.textMuted,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -470,42 +592,34 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _subgroupFilterRow(AppLocalizations l, int mySubgroup) {
+  /// Все подгруппы / 1-я / 2-я — независимо от подгруппы в профиле.
+  Widget _subgroupFilterRow(AppLocalizations l) {
+    final selected = switch (_subgroupFilter) {
+      1 => 1,
+      2 => 2,
+      _ => 0,
+    };
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-      child: Row(
-        children: [
-          Icon(Icons.people_outline, size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55)),
-          const SizedBox(width: 8),
-          FilterChip(
-            label: Text(
-              _showOnlyMySubgroup
-                  ? l.scheduleOnlyMySubgroup(mySubgroup)
-                  : 'Все подгруппы',
-            ),
-            selected: _showOnlyMySubgroup,
-            onSelected: (v) {
-              setState(() => _showOnlyMySubgroup = v);
-              _saveFilterBool(_prefKeyOnlyMySubgroup, v);
-            },
-            visualDensity: VisualDensity.compact,
-          ),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+      child: PillFilterRow(
+        items: [
+          PillFilterItem(l.scheduleAllSubgroups),
+          PillFilterItem(l.scheduleSubgroupN(1)),
+          PillFilterItem(l.scheduleSubgroupN(2)),
         ],
+        selected: selected,
+        onSelected: (i) => _setSubgroupFilter(i == 0 ? null : i),
       ),
     );
   }
 
-  Widget _retakeFilterRow() {
+  Widget _retakeFilterRow(AppLocalizations l) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
       child: Row(
         children: [
-          Icon(Icons.filter_alt_outlined, size: 16,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55)),
-          const SizedBox(width: 8),
           FilterChip(
-            label: const Text('Скрыть пересдачи'),
+            label: Text(l.scheduleHideRetake),
             selected: _hideRetake,
             onSelected: (v) {
               setState(() => _hideRetake = v);
@@ -518,48 +632,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  /// Иконка AppBar с подписью под ней — единый стиль для всех action-кнопок.
-  Widget _appBarAction({required IconData icon, required String label, required VoidCallback onTap}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Tooltip(
-        message: label,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 20),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _viewToggle(AppLocalizations l) {
-    return _appBarAction(
-      icon: _weekView ? Icons.today_outlined : Icons.view_week_outlined,
-      label: _weekView ? l.scheduleDayView : l.scheduleWeekView,
-      onTap: _toggleView,
-    );
-  }
-
   void _toggleView() {
     if (_weekView) {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      final todayMonday = _mondayOf(today);
+      final todayMonday = mondayOf(today);
       final weekChanged = todayMonday != _weekStart;
       setState(() {
         _weekView = false;
@@ -579,9 +656,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     if (!_hasEntity) {
       return EmptyState(
         icon: _modeIcon(_mode),
-        title: _modeEmptyTitle(_mode),
-        message: _modeEmptyMsg(_mode),
-        actionLabel: _modePlaceholder(_mode),
+        title: _modeEmptyTitle(l, _mode),
+        message: _modeEmptyMsg(l, _mode),
+        actionLabel: _modePlaceholder(l, _mode),
         onAction: _pickEntity,
       );
     }
@@ -617,15 +694,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           return EmptyState(
             icon: (isToday || isSunday) ? Icons.nature_people_outlined : Icons.filter_list_off,
             title: isSunday && !isToday
-                ? 'Воскресенье!'
+                ? l.scheduleSunday
                 : isToday
                     ? l.scheduleNoLessonsToday.split('\n').first
-                    : 'Нет занятий',
+                    : l.scheduleNoLessonsDay,
             message: (isToday || isSunday)
                 ? (isSunday && !isToday
-                    ? 'Законный выходной — трогай траву! 🌿'
+                    ? l.scheduleSundayMsg
                     : l.scheduleNoLessonsTodayMsg)
-                : 'В выбранный день пар нет',
+                : l.scheduleNoLessonsDayMsg,
             actionLabel: l.scheduleShowWeek,
             onAction: () => setState(() {
               _dateFilter = null;
@@ -634,12 +711,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           );
         }
         final data = snapshot.data;
-        if (data == null || !data.fromCache || data.fetchedAt == null) {
-          return _eventsList(filtered);
-        }
+        final at = data?.fetchedAt;
+        if (data == null || at == null) return _eventsList(filtered);
         return Column(
           children: [
-            _cachedNotice(l, data.fetchedAt!),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: data.fromCache
+                  ? CacheBanner(updatedAt: at)
+                  : _syncedNotice(l, at),
+            ),
             Expanded(child: _eventsList(filtered)),
           ],
         );
@@ -647,22 +728,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  /// Показываем время последнего обновления, пока на экране данные из кэша.
-  Widget _cachedNotice(AppLocalizations l, DateTime at) {
+  /// Данные свежие — показываем время последней синхронизации.
+  Widget _syncedNotice(AppLocalizations l, DateTime at) {
     final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurface.withValues(alpha: 0.5);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-      child: Row(
-        children: [
-          Icon(Icons.history, size: 13, color: color),
-          const SizedBox(width: 6),
-          Text(
-            l.scheduleCachedAt(DateFormat('HH:mm').format(at)),
-            style: theme.textTheme.labelSmall?.copyWith(color: color),
-          ),
-        ],
-      ),
+    final glass = context.glass;
+    return Row(
+      children: [
+        Icon(Icons.sync, size: 14, color: glass.textMuted),
+        const SizedBox(width: 6),
+        Text(
+          l.scheduleCachedAt(DateFormat('HH:mm').format(at)),
+          style: theme.textTheme.bodySmall?.copyWith(color: glass.textMuted),
+        ),
+      ],
     );
   }
 
@@ -719,28 +797,26 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         _ScheduleMode.auditorium => Icons.place_outlined,
       };
 
-  static String _modePlaceholder(_ScheduleMode m) => switch (m) {
-        _ScheduleMode.group => 'Выбрать группу',
-        _ScheduleMode.teacher => 'Выбрать препода',
-        _ScheduleMode.auditorium => 'Выбрать аудит.',
+  static String _modePlaceholder(AppLocalizations l, _ScheduleMode m) =>
+      switch (m) {
+        _ScheduleMode.group => l.schedulePickGroup,
+        _ScheduleMode.teacher => l.schedulePickTeacher,
+        _ScheduleMode.auditorium => l.schedulePickAuditorium,
       };
 
-  static String _modeEmptyTitle(_ScheduleMode m) => switch (m) {
-        _ScheduleMode.group => 'Группа не выбрана',
-        _ScheduleMode.teacher => 'Преподаватель не выбран',
-        _ScheduleMode.auditorium => 'Аудитория не выбрана',
+  static String _modeEmptyTitle(AppLocalizations l, _ScheduleMode m) =>
+      switch (m) {
+        _ScheduleMode.group => l.scheduleNoGroup,
+        _ScheduleMode.teacher => l.scheduleNoTeacher,
+        _ScheduleMode.auditorium => l.scheduleNoAuditorium,
       };
 
-  static String _modeEmptyMsg(_ScheduleMode m) => switch (m) {
-        _ScheduleMode.group => 'Выберите учебную группу для просмотра расписания',
-        _ScheduleMode.teacher => 'Найдите любого преподавателя и смотрите его расписание на неделю',
-        _ScheduleMode.auditorium => 'Найдите аудиторию и смотрите её занятость на неделю',
+  static String _modeEmptyMsg(AppLocalizations l, _ScheduleMode m) =>
+      switch (m) {
+        _ScheduleMode.group => l.scheduleNoGroupMsg,
+        _ScheduleMode.teacher => l.scheduleNoTeacherMsg,
+        _ScheduleMode.auditorium => l.scheduleNoAuditoriumMsg,
       };
-
-  static DateTime _mondayOf(DateTime d) {
-    final date = DateTime(d.year, d.month, d.day);
-    return date.subtract(Duration(days: date.weekday - 1));
-  }
 
   static String _capitalize(String s) =>
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);

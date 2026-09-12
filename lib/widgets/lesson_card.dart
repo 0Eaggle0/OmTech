@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/schedule_event.dart';
+import '../services/campus_map.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_glass.dart';
+import '../theme/app_metrics.dart';
+import 'accent_bar.dart';
+import 'status_pill.dart';
 
 class LessonCard extends StatelessWidget {
   final ScheduleEvent event;
@@ -11,178 +17,130 @@ class LessonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final glass = context.glass;
     final accent = AppColors.forKindOfWork(event.kindOfWork);
+    final shape = BorderRadius.circular(AppRadius.card);
+    final showRoute = hasCampusAddress(event.building);
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: isDark ? 0.12 : 0.10),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: theme.cardTheme.color ?? theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
-          // Stack вместо IntrinsicHeight+Row: цветная полоска через Positioned,
-          // содержимое имеет нормально ограниченную ширину → Expanded работает.
-          child: Stack(
-            children: [
-              Positioned(
-                left: 0, top: 0, bottom: 0,
-                child: Container(
-                  width: 5,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [accent, accent.withValues(alpha: 0.6)],
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  19, 12,
-                  onTap != null ? 38 : 14,
-                  14,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: accent.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '${event.beginLesson} – ${event.endLesson}',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: accent,
+    return Material(
+      color: glass.cardFill,
+      borderRadius: shape,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: shape,
+        // Stack, а не IntrinsicHeight+Row: полоска через Positioned, поэтому
+        // у содержимого нормально ограниченная ширина и Expanded работает.
+        child: Stack(
+          children: [
+            Positioned(left: 0, top: 0, bottom: 0, child: AccentBar(accent)),
+            Padding(
+              padding: EdgeInsets.fromLTRB(19, 12, onTap != null ? 38 : 14, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      StatusPill(
+                        '${event.beginLesson} – ${event.endLesson}',
+                        color: accent,
+                        icon: Icons.schedule,
+                      ),
+                      if (event.kindOfWork.isNotEmpty)
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Container(
+                              constraints: const BoxConstraints(maxWidth: 150),
+                              margin: const EdgeInsets.only(left: 6),
+                              child: StatusPill(
+                                event.kindOfWork,
+                                color: accent,
+                                dense: true,
+                              ),
                             ),
                           ),
                         ),
-                        if (event.kindOfWork.isNotEmpty)
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: Container(
-                                constraints: const BoxConstraints(maxWidth: 160),
-                                margin: const EdgeInsets.only(left: 6),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: accent.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  event.kindOfWork,
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: accent,
-                                    fontWeight: FontWeight.w600,
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(event.discipline, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  if (event.location.isNotEmpty)
+                    _row(context, Icons.place_outlined, event.location),
+                  if (event.lecturer.isNotEmpty)
+                    _row(context, Icons.person_outline, event.lecturer),
+                  if (event.streamDisplay.isNotEmpty)
+                    _row(context, Icons.groups_2_outlined, event.streamDisplay),
+                  if (event.subgroupLabel.isNotEmpty || showRoute) ...[
+                    const SizedBox(height: 9),
+                    Row(
+                      children: [
+                        if (event.subgroupLabel.isNotEmpty)
+                          StatusPill(
+                            event.subgroupLabel,
+                            color: accent,
+                            icon: Icons.people,
+                            dense: true,
+                          ),
+                        const Spacer(),
+                        if (showRoute)
+                          GestureDetector(
+                            onTap: () => openCampusRoute(context, event.building),
+                            behavior: HitTestBehavior.opaque,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.map_outlined,
+                                    size: 14, color: theme.colorScheme.primary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  l.scheduleRoute,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.primary,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      event.discipline,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (event.location.isNotEmpty)
-                      _row(context, Icons.place_outlined, event.location, accent),
-                    if (event.lecturer.isNotEmpty)
-                      _row(context, Icons.person_outline, event.lecturer, accent),
-                    if (event.streamDisplay.isNotEmpty)
-                      _row(context, Icons.groups_2_outlined, event.streamDisplay, accent),
-                    if (event.subgroupLabel.isNotEmpty)
-                      _subgroupChip(context, event.subgroupLabel, accent),
                   ],
+                ],
+              ),
+            ),
+            if (onTap != null)
+              Positioned(
+                right: 10,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Icon(Icons.chevron_right,
+                      size: 18, color: glass.textFaint),
                 ),
               ),
-              if (onTap != null)
-                Positioned(
-                  right: 10, top: 0, bottom: 0,
-                  child: Center(
-                    child: Icon(
-                      Icons.chevron_right,
-                      size: 18,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _subgroupChip(BuildContext context, String label, Color accent) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 5),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.people, size: 12, color: accent),
-                const SizedBox(width: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: accent,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _row(BuildContext context, IconData icon, String text, Color accent) {
-    final muted = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55);
+  Widget _row(BuildContext context, IconData icon, String text) {
+    final theme = Theme.of(context);
+    final muted = context.glass.textMuted;
     return Padding(
       padding: const EdgeInsets.only(top: 3),
       child: Row(
         children: [
           Icon(icon, size: 14, color: muted),
-          const SizedBox(width: 5),
+          const SizedBox(width: 6),
           Expanded(
             child: Text(
               text,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: muted),
+              style: theme.textTheme.bodySmall?.copyWith(color: muted),
               overflow: TextOverflow.ellipsis,
             ),
           ),

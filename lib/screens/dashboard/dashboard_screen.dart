@@ -12,6 +12,7 @@ import '../../models/news_item.dart';
 import '../../models/schedule_entity.dart';
 import '../../models/schedule_event.dart';
 import '../../models/student_record.dart';
+import '../../services/academic_week.dart';
 import '../../services/app_routes.dart';
 import '../../services/news_service.dart';
 import '../../services/schedule_api.dart';
@@ -183,7 +184,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _scheduleLoading = true;
     });
 
-    final monday = _mondayOf(DateTime.now());
+    final monday = mondayOf(DateTime.now());
     await _consumeWeek(groupId, monday, (events) => _thisWeek = events);
 
     if (!mounted || groupId != _loadedGroupId) return;
@@ -222,27 +223,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return events.any((e) => _parseTime(e.date, e.endLesson).isAfter(now));
   }
 
-  static DateTime _mondayOf(DateTime d) {
-    final day = DateTime(d.year, d.month, d.day);
-    return day.subtract(Duration(days: day.weekday - DateTime.monday));
-  }
-
   String get _greetingName {
     if (_firstName.isNotEmpty) return _firstName;
     return 'Студент';
-  }
-
-  /// Номер учебной недели и её чётность — от понедельника недели, в которую
-  /// попадает 1 сентября текущего учебного года. В API `rasp.omgtu.ru` этого
-  /// поля нет, поэтому считаем локально: неделя 1 (с 1 сентября) — нечётная.
-  (int number, bool isOdd) get _academicWeek {
-    final now = DateTime.now();
-    final academicYearStart = now.month >= 9 ? now.year : now.year - 1;
-    final firstMonday = _mondayOf(DateTime(academicYearStart, 9, 1));
-    final thisMonday = _mondayOf(now);
-    final weeksSince = thisMonday.difference(firstMonday).inDays ~/ 7;
-    final number = weeksSince + 1;
-    return (number, number.isOdd);
   }
 
   int get _lessonsToday {
@@ -385,8 +368,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final locale = Localizations.localeOf(context).languageCode;
     final dateStr =
         _capitalize(DateFormat('EEEE, d MMMM', locale).format(DateTime.now()));
-    final (weekNumber, weekOdd) = _academicWeek;
-    final weekLabel = weekOdd ? l.dashboardWeekOdd : l.dashboardWeekEven;
+    final week = academicWeekOf(DateTime.now());
+    final weekLabel = week.isOdd ? l.dashboardWeekOdd : l.dashboardWeekEven;
     final lessonsToday = _lessonsToday;
 
     return GestureDetector(
@@ -404,7 +387,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 _chip(dateStr),
                 const SizedBox(width: 8),
-                _chip('$weekLabel ($weekNumber)'),
+                _chip('$weekLabel (${week.number})'),
               ],
             ),
             const SizedBox(height: 12),

@@ -2,22 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../models/schedule_event.dart';
-import '../services/link_launcher.dart';
+import '../services/campus_map.dart';
 import '../theme/app_colors.dart';
-
-/// Карта здания ОМГТУ → адрес
-const _buildingAddresses = {
-  'УЛК-1': 'пр. Мира, 11',
-  'УЛК-2': 'пр. Мира, 11к2',
-  'УЛК-3': 'пр. Мира, 11к3',
-  'УЛК-4': 'пр. Мира, 11к4',
-  'УЛК-5': 'пр. Мира, 11к5',
-  'УЛК-6': 'пр. Мира, 11к6',
-  'УЛК-7': 'пр. Мира, 11к7',
-  'УЛК-8': 'пр. Мира, 11к8',
-  'ГУК': 'пр. Мира, 11',
-  'СК': 'пр. Мира, 11',
-};
 
 class LessonDetailSheet extends StatelessWidget {
   final ScheduleEvent event;
@@ -39,7 +25,7 @@ class LessonDetailSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final accent = AppColors.forKindOfWork(event.kindOfWork);
     final e = event;
-    final address = _buildingAddresses[e.building];
+    final address = campusAddresses[e.building];
 
     final bottomPad = MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom;
     return SingleChildScrollView(
@@ -179,10 +165,7 @@ class LessonDetailSheet extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () {
-              final query = Uri.encodeComponent(address != null ? '$building $address Омск' : '$building Омск ОМГТУ');
-              openExternal(context, 'https://maps.yandex.ru/?text=$query');
-            },
+            onPressed: () => openCampusRoute(context, building),
             icon: Icon(Icons.map_outlined, color: accent),
             tooltip: l.lessonDetailOpenMaps,
           ),

@@ -473,6 +473,64 @@ class AppLocalizationsRu extends AppLocalizations {
   String get schedulePickDate => 'Выбрать дату';
 
   @override
+  String get scheduleModeGroup => 'Группа';
+
+  @override
+  String get scheduleModeTeacher => 'Препод.';
+
+  @override
+  String get scheduleModeAuditorium => 'Аудит.';
+
+  @override
+  String get scheduleSearch => 'Поиск';
+
+  @override
+  String get scheduleAllSubgroups => 'Все подгруппы';
+
+  @override
+  String scheduleSubgroupN(int n) {
+    return '$n-я подгруппа';
+  }
+
+  @override
+  String get scheduleHideRetake => 'Скрыть пересдачи';
+
+  @override
+  String get schedulePickTeacher => 'Выбрать преподавателя';
+
+  @override
+  String get schedulePickAuditorium => 'Выбрать аудиторию';
+
+  @override
+  String get scheduleNoTeacher => 'Преподаватель не выбран';
+
+  @override
+  String get scheduleNoTeacherMsg =>
+      'Найдите преподавателя и смотрите его расписание на неделю.';
+
+  @override
+  String get scheduleNoAuditorium => 'Аудитория не выбрана';
+
+  @override
+  String get scheduleNoAuditoriumMsg =>
+      'Найдите аудиторию и смотрите её занятость на неделю.';
+
+  @override
+  String get scheduleSunday => 'Воскресенье!';
+
+  @override
+  String get scheduleSundayMsg => 'Законный выходной — трогай траву! 🌿';
+
+  @override
+  String get scheduleNoLessonsDay => 'Нет занятий';
+
+  @override
+  String get scheduleNoLessonsDayMsg => 'В выбранный день пар нет.';
+
+  @override
+  String get scheduleRoute => 'Маршрут';
+
+  @override
   String get profileFirstName => 'Имя';
 
   @override

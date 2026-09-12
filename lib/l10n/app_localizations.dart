@@ -974,6 +974,114 @@ abstract class AppLocalizations {
   /// **'Выбрать дату'**
   String get schedulePickDate;
 
+  /// No description provided for @scheduleModeGroup.
+  ///
+  /// In ru, this message translates to:
+  /// **'Группа'**
+  String get scheduleModeGroup;
+
+  /// No description provided for @scheduleModeTeacher.
+  ///
+  /// In ru, this message translates to:
+  /// **'Препод.'**
+  String get scheduleModeTeacher;
+
+  /// No description provided for @scheduleModeAuditorium.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аудит.'**
+  String get scheduleModeAuditorium;
+
+  /// No description provided for @scheduleSearch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск'**
+  String get scheduleSearch;
+
+  /// No description provided for @scheduleAllSubgroups.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все подгруппы'**
+  String get scheduleAllSubgroups;
+
+  /// No description provided for @scheduleSubgroupN.
+  ///
+  /// In ru, this message translates to:
+  /// **'{n}-я подгруппа'**
+  String scheduleSubgroupN(int n);
+
+  /// No description provided for @scheduleHideRetake.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скрыть пересдачи'**
+  String get scheduleHideRetake;
+
+  /// No description provided for @schedulePickTeacher.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать преподавателя'**
+  String get schedulePickTeacher;
+
+  /// No description provided for @schedulePickAuditorium.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выбрать аудиторию'**
+  String get schedulePickAuditorium;
+
+  /// No description provided for @scheduleNoTeacher.
+  ///
+  /// In ru, this message translates to:
+  /// **'Преподаватель не выбран'**
+  String get scheduleNoTeacher;
+
+  /// No description provided for @scheduleNoTeacherMsg.
+  ///
+  /// In ru, this message translates to:
+  /// **'Найдите преподавателя и смотрите его расписание на неделю.'**
+  String get scheduleNoTeacherMsg;
+
+  /// No description provided for @scheduleNoAuditorium.
+  ///
+  /// In ru, this message translates to:
+  /// **'Аудитория не выбрана'**
+  String get scheduleNoAuditorium;
+
+  /// No description provided for @scheduleNoAuditoriumMsg.
+  ///
+  /// In ru, this message translates to:
+  /// **'Найдите аудиторию и смотрите её занятость на неделю.'**
+  String get scheduleNoAuditoriumMsg;
+
+  /// No description provided for @scheduleSunday.
+  ///
+  /// In ru, this message translates to:
+  /// **'Воскресенье!'**
+  String get scheduleSunday;
+
+  /// No description provided for @scheduleSundayMsg.
+  ///
+  /// In ru, this message translates to:
+  /// **'Законный выходной — трогай траву! 🌿'**
+  String get scheduleSundayMsg;
+
+  /// No description provided for @scheduleNoLessonsDay.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нет занятий'**
+  String get scheduleNoLessonsDay;
+
+  /// No description provided for @scheduleNoLessonsDayMsg.
+  ///
+  /// In ru, this message translates to:
+  /// **'В выбранный день пар нет.'**
+  String get scheduleNoLessonsDayMsg;
+
+  /// No description provided for @scheduleRoute.
+  ///
+  /// In ru, this message translates to:
+  /// **'Маршрут'**
+  String get scheduleRoute;
+
   /// No description provided for @profileFirstName.
   ///
   /// In ru, this message translates to:
