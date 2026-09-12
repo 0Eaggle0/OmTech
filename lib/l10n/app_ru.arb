@@ -39,6 +39,25 @@
   "gradesTitle": "Оценки",
   "gradesSemester": "сем",
   "gradesDemoNote": "Демонстрационные данные. Реальные оценки появятся после подключения личного кабинета.",
+  "gradesProgress": "Прогресс обучения ({n} семестров)",
+  "@gradesProgress": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "gradesCourse": "Курс {n}",
+  "@gradesCourse": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "gradesExcellent": "Отлично",
+  "gradesGood": "Хорошо",
+  "gradesCredited": "Зачтено",
+  "gradesNoGradesYet": "{n} сем: пока нет оценок",
+  "@gradesNoGradesYet": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "gradesSemesterLabel": "{n} сем",
+  "@gradesSemesterLabel": {
+    "placeholders": { "n": { "type": "int" } }
+  },
 
   "materialsTitle": "Материалы",
   "materialsDemoNote": "Демонстрационные данные. Реальные материалы появятся после подключения личного кабинета.",

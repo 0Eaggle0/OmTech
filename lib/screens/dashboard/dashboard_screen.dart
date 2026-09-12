@@ -10,9 +10,9 @@ import '../../l10n/app_localizations.dart';
 import '../../models/news_item.dart';
 import '../../models/schedule_entity.dart';
 import '../../models/schedule_event.dart';
-import '../../models/student_record.dart';
 import '../../services/academic_week.dart';
 import '../../services/app_routes.dart';
+import '../../services/grades_summary.dart';
 import '../../services/news_service.dart';
 import '../../services/schedule_api.dart';
 import '../../services/weather_service.dart';
@@ -147,30 +147,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final reports = await lk.reportWorkApi.readCache();
     if (!mounted) return;
     setState(() {
-      _gpa = record == null ? null : _calcGpa(record);
+      _gpa = record == null ? null : calcGpa(record);
       _workCount = disciplines?.length;
       _reportCount = reports?.otherWorks.length;
     });
-  }
-
-  static double? _calcGpa(StudentRecord record) {
-    final marks = record.allSections
-        .expand((s) => s.grades)
-        .map((g) => _markValue(g.mark))
-        .whereType<double>()
-        .toList();
-    if (marks.isEmpty) return null;
-    return marks.reduce((a, b) => a + b) / marks.length;
-  }
-
-  /// Зачёты («зачтено») в среднем балле не участвуют — у них нет оценки.
-  static double? _markValue(String mark) {
-    final m = mark.toLowerCase();
-    if (m.contains('отл')) return 5;
-    if (m.contains('хор')) return 4;
-    if (m.contains('удовл')) return 3;
-    if (m.contains('неуд')) return 2;
-    return double.tryParse(mark.replaceAll(',', '.'));
   }
 
   /// Границы недели те же, что у экрана расписания, — значит тот же ключ

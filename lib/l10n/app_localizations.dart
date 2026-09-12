@@ -284,6 +284,48 @@ abstract class AppLocalizations {
   /// **'Демонстрационные данные. Реальные оценки появятся после подключения личного кабинета.'**
   String get gradesDemoNote;
 
+  /// No description provided for @gradesProgress.
+  ///
+  /// In ru, this message translates to:
+  /// **'Прогресс обучения ({n} семестров)'**
+  String gradesProgress(int n);
+
+  /// No description provided for @gradesCourse.
+  ///
+  /// In ru, this message translates to:
+  /// **'Курс {n}'**
+  String gradesCourse(int n);
+
+  /// No description provided for @gradesExcellent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отлично'**
+  String get gradesExcellent;
+
+  /// No description provided for @gradesGood.
+  ///
+  /// In ru, this message translates to:
+  /// **'Хорошо'**
+  String get gradesGood;
+
+  /// No description provided for @gradesCredited.
+  ///
+  /// In ru, this message translates to:
+  /// **'Зачтено'**
+  String get gradesCredited;
+
+  /// No description provided for @gradesNoGradesYet.
+  ///
+  /// In ru, this message translates to:
+  /// **'{n} сем: пока нет оценок'**
+  String gradesNoGradesYet(int n);
+
+  /// No description provided for @gradesSemesterLabel.
+  ///
+  /// In ru, this message translates to:
+  /// **'{n} сем'**
+  String gradesSemesterLabel(int n);
+
   /// No description provided for @materialsTitle.
   ///
   /// In ru, this message translates to:

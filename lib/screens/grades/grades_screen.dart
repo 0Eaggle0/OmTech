@@ -8,8 +8,17 @@ import '../../l10n/app_localizations.dart';
 import '../../models/grade.dart';
 import '../../models/student_record.dart';
 import '../../services/grades_service.dart';
+import '../../services/grades_summary.dart';
+import '../../theme/app_glass.dart';
+import '../../theme/app_metrics.dart';
+import '../../widgets/accent_bar.dart';
 import '../../widgets/demo_banner.dart';
 import '../../widgets/lk_required_state.dart';
+import '../../widgets/pill_filter_row.dart';
+import '../../widgets/section_caption.dart';
+import '../../widgets/stat_tile.dart';
+import '../../widgets/status_banners.dart';
+import '../../widgets/status_pill.dart';
 
 class GradesScreen extends StatefulWidget {
   const GradesScreen({super.key});
@@ -58,7 +67,11 @@ class _GradesScreenState extends State<GradesScreen> {
   int? _defaultSemester(GradesResult r) {
     final panels = r.record?.panels ?? const <SemesterPanel>[];
     if (panels.isEmpty) return null;
-    return panels.first.number;
+    final active = panels.where((p) => p.isActive).cast<SemesterPanel?>().firstWhere(
+          (_) => true,
+          orElse: () => null,
+        );
+    return (active ?? panels.first).number;
   }
 
   @override
@@ -100,24 +113,36 @@ class _GradesScreenState extends State<GradesScreen> {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
       children: [
         if (result.isDemo)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.only(bottom: 10),
             child: DemoBanner(text: l.gradesDemoNote),
           )
         else if (record != null && record.profile.fullName.isNotEmpty)
-          _profileHeader(context, record.profile, result.fromCache),
-        if (record != null && record.semesters.isNotEmpty)
-          _semesterAccessStrip(context, record.semesters),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _profileHeader(context, record, result.fromCache),
+          ),
+        if (result.fromCache && !result.isDemo)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 6),
+            child: CacheBanner(),
+          ),
         if (_error != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: _errorBanner(context, l),
+            padding: const EdgeInsets.only(bottom: 10),
+            child: ErrorBanner(_error!, onRetry: () => _load(forceRefresh: true)),
           ),
-        if (panels.isNotEmpty) _semesterTabs(context, panels),
-        const SizedBox(height: 8),
+        if (record != null && record.semesters.isNotEmpty) ...[
+          _progressSection(context, l, record),
+          const SizedBox(height: 14),
+        ],
+        if (panels.isNotEmpty) ...[
+          _semesterTabs(context, l, panels),
+          const SizedBox(height: 10),
+        ],
         if (selected == null)
           Padding(
             padding: const EdgeInsets.all(40),
@@ -129,206 +154,186 @@ class _GradesScreenState extends State<GradesScreen> {
     );
   }
 
-  Widget _profileHeader(
-      BuildContext context, StudentProfile profile, bool fromCache) {
+  Widget _profileHeader(BuildContext context, StudentRecord record, bool fromCache) {
     final theme = Theme.of(context);
+    final glass = context.glass;
     final l = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    final profile = record.profile;
+    final gpa = calcGpa(record);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: glass.tint(theme.colorScheme.primary),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.school_outlined, color: theme.colorScheme.primary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.school_outlined, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      profile.fullName,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
+                  Text(profile.fullName, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 4,
+                    children: [
+                      if (profile.groupLabel.isNotEmpty)
+                        _meta(theme, glass, Icons.groups_outlined, profile.groupLabel),
+                      if (profile.bookNumber.isNotEmpty)
+                        _meta(theme, glass, Icons.menu_book_outlined,
+                            '${l.lkBookNumber} ${profile.bookNumber}'),
+                      if (profile.studyForm.isNotEmpty)
+                        _meta(theme, glass, Icons.history_edu_outlined, profile.studyForm),
+                    ],
                   ),
-                  if (fromCache)
-                    Tooltip(
-                      message: l.lkCacheShown,
-                      child: Icon(Icons.offline_pin_outlined,
-                          size: 18,
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.5)),
+                ],
+              ),
+            ),
+            if (gpa != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: glass.accentGradient,
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      gpa.toStringAsFixed(2),
+                      style: theme.textTheme.titleLarge?.copyWith(color: Colors.white),
                     ),
-                ],
+                    Text('GPA',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.white70,
+                          fontSize: 10,
+                        )),
+                  ],
+                ),
+              )
+            else if (fromCache)
+              Tooltip(
+                message: l.lkCacheShown,
+                child: Icon(Icons.offline_pin_outlined, size: 18, color: glass.textMuted),
               ),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 14,
-                runSpacing: 4,
-                children: [
-                  if (profile.groupLabel.isNotEmpty)
-                    _meta(theme, Icons.groups_outlined, profile.groupLabel),
-                  if (profile.bookNumber.isNotEmpty)
-                    _meta(theme, Icons.menu_book_outlined,
-                        '${l.lkBookNumber} ${profile.bookNumber}'),
-                  if (profile.studyForm.isNotEmpty)
-                    _meta(theme, Icons.history_edu_outlined, profile.studyForm),
-                ],
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _meta(ThemeData theme, IconData icon, String text) {
+  Widget _meta(ThemeData theme, AppGlass glass, IconData icon, String text) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon,
-            size: 14,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
+        Icon(icon, size: 14, color: glass.textMuted),
         const SizedBox(width: 4),
-        Text(text,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-            )),
+        Text(text, style: theme.textTheme.bodySmall?.copyWith(color: glass.textMuted)),
       ],
     );
   }
 
-  Widget _semesterAccessStrip(
-      BuildContext context, List<SemesterAccess> semesters) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 6,
-        children: semesters.map((s) {
-          final color = s.hasAccess
-              ? const Color(0xFF49C18B)
-              : const Color(0xFFE05A6B);
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  s.hasAccess
-                      ? Icons.check_circle_outline
-                      : Icons.block_outlined,
-                  size: 14,
-                  color: color,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${s.number}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
+  Widget _progressSection(
+      BuildContext context, AppLocalizations l, StudentRecord record) {
+    final activeNumber = record.panels
+        .where((p) => p.isActive)
+        .cast<SemesterPanel?>()
+        .firstWhere((_) => true, orElse: () => null)
+        ?.number;
+    final course = activeNumber == null ? null : ((activeNumber + 1) / 2).ceil();
 
-  Widget _semesterTabs(BuildContext context, List<SemesterPanel> panels) {
-    final theme = Theme.of(context);
-    final l = AppLocalizations.of(context)!;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 10, 8, 2),
-      child: SizedBox(
-        height: 42,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          itemCount: panels.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 6),
-          itemBuilder: (_, i) {
-            final p = panels[i];
-            final selected = p.number == _selectedSemester;
-            return ChoiceChip(
-              label: Text('${p.number} ${l.gradesSemester}'),
-              selected: selected,
-              onSelected: (_) =>
-                  setState(() => _selectedSemester = p.number),
-              selectedColor:
-                  theme.colorScheme.primary.withValues(alpha: 0.18),
-              labelStyle: TextStyle(
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                color: selected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.75),
-              ),
-            );
-          },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionCaption(
+          l.gradesProgress(record.semesters.length),
+          trailing: course == null
+              ? null
+              : Text(
+                  l.gradesCourse(course),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                ),
         ),
-      ),
+        Row(
+          children: [
+            for (final access in record.semesters) ...[
+              Expanded(
+                child: _SemesterDot(
+                  number: access.number,
+                  isCurrent: access.number == activeNumber,
+                  hasAccess: access.hasAccess,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 
-  Widget _errorBanner(BuildContext context, AppLocalizations l) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline,
-              size: 18, color: Theme.of(context).colorScheme.error),
-          const SizedBox(width: 8),
-          Expanded(child: Text(_error ?? l.error)),
-        ],
-      ),
+  Widget _semesterTabs(BuildContext context, AppLocalizations l, List<SemesterPanel> panels) {
+    final index = panels.indexWhere((p) => p.number == _selectedSemester);
+    return PillFilterRow(
+      items: [
+        for (final p in panels) PillFilterItem(l.gradesSemesterLabel(p.number)),
+      ],
+      selected: index < 0 ? 0 : index,
+      onSelected: (i) => setState(() => _selectedSemester = panels[i].number),
     );
   }
 
   Widget _semesterContent(
       BuildContext context, AppLocalizations l, SemesterPanel panel) {
+    final glass = context.glass;
     if (panel.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
+        padding: const EdgeInsets.fromLTRB(0, 32, 0, 16),
         child: Column(
           children: [
-            Icon(
-              Icons.inbox_outlined,
-              size: 48,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.3),
-            ),
+            Icon(Icons.inbox_outlined, size: 48, color: glass.textFaint),
             const SizedBox(height: 8),
             Text(
-              '${panel.number} ${l.gradesSemester}: пока нет оценок',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
-                  ),
+              l.gradesNoGradesYet(panel.number),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: glass.textMuted),
             ),
           ],
         ),
       );
     }
 
+    final counts = countMarks(panel.sections.expand((s) => s.grades));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        StatTileRow([
+          StatTile(
+            value: '${counts.excellent}',
+            caption: l.gradesExcellent,
+            accent: glass.statusColor(AppStatus.success),
+          ),
+          StatTile(
+            value: '${counts.good}',
+            caption: l.gradesGood,
+            accent: glass.statusColor(AppStatus.info),
+          ),
+          StatTile(
+            value: '${counts.credited}',
+            caption: l.gradesCredited,
+            accent: glass.accent,
+          ),
+        ]),
         for (final section in panel.sections) ...[
           if (section.grades.isNotEmpty) _section(context, section),
         ],
@@ -338,23 +343,19 @@ class _GradesScreenState extends State<GradesScreen> {
 
   Widget _section(BuildContext context, Semester section) {
     final theme = Theme.of(context);
+    final glass = context.glass;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      padding: const EdgeInsets.only(top: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(_sectionIcon(section.title),
-                  size: 16,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55)),
+              Icon(_sectionIcon(section.title), size: 15, color: glass.textMuted),
               const SizedBox(width: 6),
               Text(
                 section.title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w700,
-                ),
+                style: theme.textTheme.labelSmall?.copyWith(color: glass.textMuted),
               ),
             ],
           ),
@@ -382,137 +383,105 @@ class _GradesScreenState extends State<GradesScreen> {
 
   Widget _gradeTile(BuildContext context, Grade g) {
     final theme = Theme.of(context);
-    final markColor = _markColor(g.mark, g.status);
+    final glass = context.glass;
+    final markColor = _markColor(glass, g.mark, g.status);
+    final shape = BorderRadius.circular(AppRadius.card);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      g.discipline,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 3),
-                    Row(
+      child: Material(
+        color: glass.cardFill,
+        borderRadius: shape,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            Positioned(left: 0, top: 0, bottom: 0, child: AccentBar(markColor)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(19, 14, 14, 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          _controlIcon(g.controlType),
-                          size: 13,
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.4),
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            g.controlType,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.5),
+                        Text(g.discipline, style: theme.textTheme.titleSmall),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(_controlIcon(g.controlType), size: 13, color: glass.textFaint),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                g.controlType,
+                                style: theme.textTheme.bodySmall?.copyWith(color: glass.textMuted),
+                              ),
                             ),
-                          ),
+                            if (g.date != null) ...[
+                              const SizedBox(width: 8),
+                              Icon(Icons.event, size: 12, color: glass.textFaint),
+                              const SizedBox(width: 3),
+                              Text(
+                                DateFormat('dd.MM.yyyy').format(g.date!),
+                                style: theme.textTheme.bodySmall?.copyWith(color: glass.textMuted),
+                              ),
+                            ],
+                          ],
                         ),
-                        if (g.date != null) ...[
-                          const SizedBox(width: 8),
-                          Icon(Icons.event,
-                              size: 12,
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.4)),
-                          const SizedBox(width: 3),
+                        if (g.teacher != null && g.teacher!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
                           Text(
-                            DateFormat('dd.MM.yyyy').format(g.date!),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.5),
-                            ),
+                            g.teacher!,
+                            style: theme.textTheme.bodySmall?.copyWith(color: glass.textFaint),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ],
                     ),
-                    if (g.teacher != null && g.teacher!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        g.teacher!,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.45),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: markColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      g.mark,
-                      style: TextStyle(
-                        color: markColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
                   ),
-                  if (g.score != null) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      '${g.score} б.',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.45),
-                      ),
-                    ),
-                  ],
-                  if (g.hours != null) ...[
-                    const SizedBox(height: 1),
-                    Text(
-                      '${g.hours} ч.',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.4),
-                      ),
-                    ),
-                  ],
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      StatusPill(g.mark, color: markColor),
+                      if (g.score != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${g.score} б.',
+                          style: theme.textTheme.bodySmall?.copyWith(color: glass.textFaint),
+                        ),
+                      ],
+                      if (g.hours != null) ...[
+                        const SizedBox(height: 1),
+                        Text(
+                          '${g.hours} ч.',
+                          style: theme.textTheme.bodySmall?.copyWith(color: glass.textFaint),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Color _markColor(String mark, GradeStatus status) {
-    if (status == GradeStatus.success) return const Color(0xFF49C18B);
-    if (status == GradeStatus.warning) return const Color(0xFFE0A03A);
-    if (status == GradeStatus.danger) return const Color(0xFFE05A6B);
+  Color _markColor(AppGlass glass, String mark, GradeStatus status) {
+    if (status == GradeStatus.success) return glass.statusColor(AppStatus.success);
+    if (status == GradeStatus.warning) return glass.statusColor(AppStatus.warning);
+    if (status == GradeStatus.danger) return glass.statusColor(AppStatus.danger);
     final m = mark.toLowerCase();
-    if (m.contains('отл')) return const Color(0xFF49C18B);
-    if (m.contains('хор')) return const Color(0xFF4F9DDE);
-    if (m.contains('удовл')) return const Color(0xFFE0A03A);
-    if (m.contains('зачт')) return const Color(0xFF8B5CF6);
+    if (m.contains('отл')) return glass.statusColor(AppStatus.success);
+    if (m.contains('хор')) return glass.statusColor(AppStatus.info);
+    if (m.contains('удовл')) return glass.statusColor(AppStatus.warning);
+    if (m.contains('зачт')) return glass.accent;
     if (m.contains('незачт') || m.contains('неуд')) {
-      return const Color(0xFFE05A6B);
+      return glass.statusColor(AppStatus.danger);
     }
-    return const Color(0xFF9A97A8);
+    return glass.textMuted;
   }
 
   IconData _controlIcon(String type) {
@@ -523,5 +492,60 @@ class _GradesScreenState extends State<GradesScreen> {
     if (t.contains('курс')) return Icons.menu_book_outlined;
     if (t.contains('вкр')) return Icons.school_outlined;
     return Icons.grade_outlined;
+  }
+}
+
+/// Кружок в ряду «Прогресс обучения»: пройден / текущий / закрыт.
+class _SemesterDot extends StatelessWidget {
+  final int number;
+  final bool isCurrent;
+  final bool hasAccess;
+
+  const _SemesterDot({
+    required this.number,
+    required this.isCurrent,
+    required this.hasAccess,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final glass = context.glass;
+    final passed = hasAccess && !isCurrent;
+
+    final Color fg;
+    final Color bg;
+    final Widget child;
+    if (isCurrent) {
+      fg = Colors.white;
+      bg = theme.colorScheme.primary;
+      child = Text('$number',
+          style: theme.textTheme.bodySmall?.copyWith(color: fg, fontWeight: FontWeight.w800));
+    } else if (passed) {
+      fg = glass.statusColor(AppStatus.success);
+      bg = glass.tint(fg);
+      child = Icon(Icons.check, size: 15, color: fg);
+    } else {
+      fg = glass.textFaint;
+      bg = glass.elevatedFill;
+      child = Icon(Icons.lock_outline, size: 13, color: fg);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: Column(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: bg),
+            child: child,
+          ),
+          const SizedBox(height: 3),
+          Text('$number', style: theme.textTheme.bodySmall?.copyWith(color: glass.textFaint)),
+        ],
+      ),
+    );
   }
 }

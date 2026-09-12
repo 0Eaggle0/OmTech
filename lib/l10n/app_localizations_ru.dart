@@ -108,6 +108,35 @@ class AppLocalizationsRu extends AppLocalizations {
       'Демонстрационные данные. Реальные оценки появятся после подключения личного кабинета.';
 
   @override
+  String gradesProgress(int n) {
+    return 'Прогресс обучения ($n семестров)';
+  }
+
+  @override
+  String gradesCourse(int n) {
+    return 'Курс $n';
+  }
+
+  @override
+  String get gradesExcellent => 'Отлично';
+
+  @override
+  String get gradesGood => 'Хорошо';
+
+  @override
+  String get gradesCredited => 'Зачтено';
+
+  @override
+  String gradesNoGradesYet(int n) {
+    return '$n сем: пока нет оценок';
+  }
+
+  @override
+  String gradesSemesterLabel(int n) {
+    return '$n сем';
+  }
+
+  @override
   String get materialsTitle => 'Материалы';
 
   @override

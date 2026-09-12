@@ -39,6 +39,25 @@
   "gradesTitle": "Grades",
   "gradesSemester": "sem",
   "gradesDemoNote": "Demo data. Real grades will appear after connecting your personal account.",
+  "gradesProgress": "Study progress ({n} semesters)",
+  "@gradesProgress": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "gradesCourse": "Year {n}",
+  "@gradesCourse": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "gradesExcellent": "Excellent",
+  "gradesGood": "Good",
+  "gradesCredited": "Credited",
+  "gradesNoGradesYet": "Semester {n}: no grades yet",
+  "@gradesNoGradesYet": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "gradesSemesterLabel": "Sem. {n}",
+  "@gradesSemesterLabel": {
+    "placeholders": { "n": { "type": "int" } }
+  },
 
   "materialsTitle": "Materials",
   "materialsDemoNote": "Demo data. Real materials will appear after connecting your personal account.",

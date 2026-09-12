@@ -108,6 +108,35 @@ class AppLocalizationsEn extends AppLocalizations {
       'Demo data. Real grades will appear after connecting your personal account.';
 
   @override
+  String gradesProgress(int n) {
+    return 'Study progress ($n semesters)';
+  }
+
+  @override
+  String gradesCourse(int n) {
+    return 'Year $n';
+  }
+
+  @override
+  String get gradesExcellent => 'Excellent';
+
+  @override
+  String get gradesGood => 'Good';
+
+  @override
+  String get gradesCredited => 'Credited';
+
+  @override
+  String gradesNoGradesYet(int n) {
+    return 'Semester $n: no grades yet';
+  }
+
+  @override
+  String gradesSemesterLabel(int n) {
+    return 'Sem. $n';
+  }
+
+  @override
   String get materialsTitle => 'Materials';
 
   @override
