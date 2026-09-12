@@ -848,6 +848,54 @@ abstract class AppLocalizations {
   /// **'Выбрать группу'**
   String get dashboardSelectGroup;
 
+  /// No description provided for @dashboardSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Цифровой кампус'**
+  String get dashboardSubtitle;
+
+  /// No description provided for @dashboardWeekOdd.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нечётная'**
+  String get dashboardWeekOdd;
+
+  /// No description provided for @dashboardWeekEven.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чётная'**
+  String get dashboardWeekEven;
+
+  /// No description provided for @dashboardLessonsToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сегодня {n} пар'**
+  String dashboardLessonsToday(int n);
+
+  /// No description provided for @dashboardNoLessonsToday.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сегодня пар нет'**
+  String get dashboardNoLessonsToday;
+
+  /// No description provided for @dashboardGpaCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ср. балл {gpa}'**
+  String dashboardGpaCaption(String gpa);
+
+  /// No description provided for @dashboardWorkCountCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'{n} дисциплин'**
+  String dashboardWorkCountCaption(int n);
+
+  /// No description provided for @dashboardReportCountCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'{n} работ'**
+  String dashboardReportCountCaption(int n);
+
   /// No description provided for @groupSearchTitle.
   ///
   /// In ru, this message translates to:

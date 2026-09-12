@@ -1,5 +1,3 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -9,20 +7,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../controllers/group_controller.dart';
 import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/group.dart';
 import '../../models/news_item.dart';
 import '../../models/schedule_entity.dart';
 import '../../models/schedule_event.dart';
+import '../../models/student_record.dart';
 import '../../services/app_routes.dart';
 import '../../services/news_service.dart';
 import '../../services/schedule_api.dart';
+import '../../services/weather_service.dart';
+import '../../theme/app_glass.dart';
 import '../../theme/app_metrics.dart';
 import '../../widgets/animated_mesh_background.dart';
+import '../../widgets/glass_surface.dart';
 import '../../widgets/lesson_card.dart';
 import '../../widgets/lesson_detail_sheet.dart';
 import '../../widgets/news_carousel.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/shimmer_placeholder.dart';
 import '../../widgets/tilt_card.dart';
+import '../../widgets/universal_search_sheet.dart';
 import '../grades/grades_screen.dart';
 import '../news/news_detail_screen.dart';
 import '../reports/report_work_screen.dart';
@@ -40,19 +44,28 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final _scheduleApi = ScheduleApi.instance;
   final _newsService = NewsService();
+  final _weatherService = WeatherService();
 
   late Future<List<NewsItem>> _newsFuture;
+  late Future<WeatherInfo?> _weatherFuture;
   List<ScheduleEvent> _thisWeek = const [];
   List<ScheduleEvent> _nextWeek = const [];
   bool _scheduleLoading = false;
   int? _loadedGroupId;
   String _firstName = '';
   LkStatus? _lastLkStatus;
+  bool _lkSummaryRequested = false;
+  double? _gpa;
+  int? _workCount;
+  int? _reportCount;
 
   @override
   void initState() {
     super.initState();
     _newsFuture = _newsService.fetchNews();
+    // Уходит в сеть уже после первого кадра — не задерживает запуск и
+    // не мешает, если запрос упадёт: строка погоды просто не появится.
+    _weatherFuture = _weatherService.fetch();
     _loadUserName();
   }
 
@@ -104,6 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Подхватываем имя из ЛК когда авто-логин завершается.
     final lk = context.watch<LkController>();
     if (_lastLkStatus != lk.status) {
+      final wasConnected = _lastLkStatus == LkStatus.connected;
       _lastLkStatus = lk.status;
       if (lk.isConnected && _firstName.isEmpty) {
         final lkName = lk.profile?.fullName ?? '';
@@ -116,7 +130,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Автозаполнение группы из ЛК.
         lk.autoFillGroupIfNeeded(context.read<GroupController>());
       }
+      // Кэш сводки (GPA, счётчики) читаем и сразу после входа, и один раз
+      // при первом построении экрана — он локальный, сети не трогает.
+      if (lk.isConnected && !wasConnected) _loadLkSummary(lk);
     }
+    if (!_lkSummaryRequested) {
+      _lkSummaryRequested = true;
+      _loadLkSummary(lk);
+    }
+  }
+
+  /// Только кэш — GPA и счётчики на плитках не должны ждать сеть.
+  Future<void> _loadLkSummary(LkController lk) async {
+    final record = await lk.gradesApi.readCache();
+    final disciplines = await lk.contactWorkApi.readDisciplinesCache();
+    final reports = await lk.reportWorkApi.readCache();
+    if (!mounted) return;
+    setState(() {
+      _gpa = record == null ? null : _calcGpa(record);
+      _workCount = disciplines?.length;
+      _reportCount = reports?.otherWorks.length;
+    });
+  }
+
+  static double? _calcGpa(StudentRecord record) {
+    final marks = record.allSections
+        .expand((s) => s.grades)
+        .map((g) => _markValue(g.mark))
+        .whereType<double>()
+        .toList();
+    if (marks.isEmpty) return null;
+    return marks.reduce((a, b) => a + b) / marks.length;
+  }
+
+  /// Зачёты («зачтено») в среднем балле не участвуют — у них нет оценки.
+  static double? _markValue(String mark) {
+    final m = mark.toLowerCase();
+    if (m.contains('отл')) return 5;
+    if (m.contains('хор')) return 4;
+    if (m.contains('удовл')) return 3;
+    if (m.contains('неуд')) return 2;
+    return double.tryParse(mark.replaceAll(',', '.'));
   }
 
   /// Границы недели те же, что у экрана расписания, — значит тот же ключ
@@ -178,6 +232,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return 'Студент';
   }
 
+  /// Номер учебной недели и её чётность — от понедельника недели, в которую
+  /// попадает 1 сентября текущего учебного года. В API `rasp.omgtu.ru` этого
+  /// поля нет, поэтому считаем локально: неделя 1 (с 1 сентября) — нечётная.
+  (int number, bool isOdd) get _academicWeek {
+    final now = DateTime.now();
+    final academicYearStart = now.month >= 9 ? now.year : now.year - 1;
+    final firstMonday = _mondayOf(DateTime(academicYearStart, 9, 1));
+    final thisMonday = _mondayOf(now);
+    final weeksSince = thisMonday.difference(firstMonday).inDays ~/ 7;
+    final number = weeksSince + 1;
+    return (number, number.isOdd);
+  }
+
+  int get _lessonsToday {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return [..._thisWeek, ..._nextWeek]
+        .where((e) =>
+            e.date.year == today.year &&
+            e.date.month == today.month &&
+            e.date.day == today.day)
+        .length;
+  }
+
+  Future<void> _openSearch() async {
+    final entity = await UniversalSearchSheet.show(context);
+    if (entity == null || !mounted) return;
+    if (entity.type == EntityType.group) {
+      await context.read<GroupController>().select(
+            Group(id: entity.id, label: entity.label, description: entity.description),
+          );
+      return;
+    }
+    // Преподаватель/аудитория: полноценный переход на них будет в отдельном
+    // экране поиска — пока просто открываем расписание.
+    widget.onOpenTab(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -191,8 +283,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _greeting(context, l)
+                child: _header(context, l)
                     .animate()
+                    .fadeIn(duration: 300.ms),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _greeting(context, l)
+                    .animate(delay: 40.ms)
                     .fadeIn(duration: 350.ms)
                     .slideY(begin: -0.04, curve: Curves.easeOut),
               ),
@@ -232,117 +331,172 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _header(BuildContext context, AppLocalizations l) {
+    final theme = Theme.of(context);
+    final glass = context.glass;
+    final initial = _greetingName.isNotEmpty
+        ? _greetingName[0].toUpperCase()
+        : 'O';
+
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () => widget.onOpenTab(4),
+          child: CircleAvatar(
+            radius: 19,
+            backgroundColor: glass.tint(theme.colorScheme.primary),
+            child: Text(
+              initial,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(color: theme.colorScheme.primary),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l.appTitle, style: theme.textTheme.titleMedium),
+              Text(
+                l.dashboardSubtitle,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: glass.textMuted),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          onPressed: _openSearch,
+          icon: const Icon(Icons.search),
+          style: IconButton.styleFrom(
+            backgroundColor: glass.elevatedFill,
+            shape: const CircleBorder(),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _greeting(BuildContext context, AppLocalizations l) {
     final theme = Theme.of(context);
+    final glass = context.glass;
     final group = context.watch<GroupController>().group;
     final locale = Localizations.localeOf(context).languageCode;
     final dateStr =
         _capitalize(DateFormat('EEEE, d MMMM', locale).format(DateTime.now()));
+    final (weekNumber, weekOdd) = _academicWeek;
+    final weekLabel = weekOdd ? l.dashboardWeekOdd : l.dashboardWeekEven;
+    final lessonsToday = _lessonsToday;
 
     return GestureDetector(
       onTap: () => widget.onOpenTab(4),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xA36C5CE7),
-                Color(0x8C8B5CF6),
+      child: GlassSurface(
+        radius: 24,
+        blur: 18,
+        border: false,
+        gradient: glass.accentGradient,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _chip(dateStr),
+                const SizedBox(width: 8),
+                _chip('$weekLabel ($weekNumber)'),
               ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.22),
-              width: 1.2,
-            ),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Stack(
-        children: [
-          Positioned(
-            right: -20, top: -20,
-            child: Container(
-              width: 100, height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
+            const SizedBox(height: 12),
+            Text(
+              l.dashboardHello(_greetingName),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: Colors.white,
               ),
             ),
-          ),
-          Positioned(
-            right: 30, bottom: -30,
-            child: Container(
-              width: 70, height: 70,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.06),
-              ),
+            const SizedBox(height: 4),
+            Text(
+              group != null ? 'Группа ${group.label}' : l.dashboardNoGroup,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  dateStr,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+            if (group == null) ...[
               const SizedBox(height: 12),
-              Text(
-                l.dashboardHello(_greetingName),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                group != null ? 'Группа ${group.label}' : l.dashboardNoGroup,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-              if (group == null) ...[
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () => widget.onOpenTab(1),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      l.dashboardSelectGroup,
-                      style: const TextStyle(
-                        color: Color(0xFF6C5CE7),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
+              GestureDetector(
+                onTap: () => widget.onOpenTab(1),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    l.dashboardSelectGroup,
+                    style: const TextStyle(
+                      color: Color(0xFF6C5CE7),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
                     ),
                   ),
                 ),
-              ],
+              ),
             ],
-          ),
-        ],
-      ),
-      ),
+            const Divider(color: Colors.white24, height: 24),
+            Row(
+              children: [
+                Expanded(child: _weatherLine(context)),
+                Text(
+                  lessonsToday > 0
+                      ? l.dashboardLessonsToday(lessonsToday)
+                      : l.dashboardNoLessonsToday,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: Colors.white70),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _chip(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _weatherLine(BuildContext context) {
+    return FutureBuilder<WeatherInfo?>(
+      future: _weatherFuture,
+      builder: (context, snapshot) {
+        final info = snapshot.data;
+        // Нет данных — сети/кэша не было: строка молча не рисуется.
+        if (info == null) return const SizedBox.shrink();
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(info.icon, size: 15, color: Colors.white70),
+            const SizedBox(width: 4),
+            Text(
+              '${info.tempC.round()}°C · Омск',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -413,6 +567,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: _Tile(
                     icon: Icons.grade_outlined,
                     label: l.dashboardGrades,
+                    caption: _gpa == null
+                        ? null
+                        : l.dashboardGpaCaption(_gpa!.toStringAsFixed(2)),
                     gradient: const LinearGradient(
                       colors: [Color(0xFF4F9DDE), Color(0xFF6C5CE7)],
                       begin: Alignment.topLeft,
@@ -432,6 +589,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: _Tile(
                     icon: Icons.assignment_outlined,
                     label: l.dashboardTasks,
+                    caption: _workCount == null
+                        ? null
+                        : l.dashboardWorkCountCaption(_workCount!),
                     gradient: const LinearGradient(
                       colors: [Color(0xFF26C6DA), Color(0xFF00ACC1)],
                       begin: Alignment.topLeft,
@@ -451,6 +611,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: _Tile(
                     icon: Icons.assignment_turned_in_outlined,
                     label: l.dashboardReportWorks,
+                    caption: _reportCount == null
+                        ? null
+                        : l.dashboardReportCountCaption(_reportCount!),
                     gradient: const LinearGradient(
                       colors: [Color(0xFFE08F4F), Color(0xFFE05A6B)],
                       begin: Alignment.topLeft,
@@ -520,6 +683,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _Tile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String? caption;
   final LinearGradient gradient;
   final Color neonColor;
   final VoidCallback onTap;
@@ -527,6 +691,7 @@ class _Tile extends StatelessWidget {
   const _Tile({
     required this.icon,
     required this.label,
+    this.caption,
     required this.gradient,
     required this.neonColor,
     required this.onTap,
@@ -579,6 +744,20 @@ class _Tile extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (caption != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    caption!,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),

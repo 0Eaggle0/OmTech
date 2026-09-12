@@ -143,6 +143,26 @@
   "dashboardNews": "Новости",
   "dashboardAllNews": "Все новости",
   "dashboardSelectGroup": "Выбрать группу",
+  "dashboardSubtitle": "Цифровой кампус",
+  "dashboardWeekOdd": "Нечётная",
+  "dashboardWeekEven": "Чётная",
+  "dashboardLessonsToday": "Сегодня {n} пар",
+  "@dashboardLessonsToday": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "dashboardNoLessonsToday": "Сегодня пар нет",
+  "dashboardGpaCaption": "Ср. балл {gpa}",
+  "@dashboardGpaCaption": {
+    "placeholders": { "gpa": { "type": "String" } }
+  },
+  "dashboardWorkCountCaption": "{n} дисциплин",
+  "@dashboardWorkCountCaption": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "dashboardReportCountCaption": "{n} работ",
+  "@dashboardReportCountCaption": {
+    "placeholders": { "n": { "type": "int" } }
+  },
 
   "groupSearchTitle": "Поиск группы",
   "groupSearchHint": "Введите номер группы...",

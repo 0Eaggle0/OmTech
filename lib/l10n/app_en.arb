@@ -143,6 +143,26 @@
   "dashboardNews": "News",
   "dashboardAllNews": "All news",
   "dashboardSelectGroup": "Select group",
+  "dashboardSubtitle": "Digital campus",
+  "dashboardWeekOdd": "Odd",
+  "dashboardWeekEven": "Even",
+  "dashboardLessonsToday": "{n} classes today",
+  "@dashboardLessonsToday": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "dashboardNoLessonsToday": "No classes today",
+  "dashboardGpaCaption": "GPA {gpa}",
+  "@dashboardGpaCaption": {
+    "placeholders": { "gpa": { "type": "String" } }
+  },
+  "dashboardWorkCountCaption": "{n} subjects",
+  "@dashboardWorkCountCaption": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "dashboardReportCountCaption": "{n} works",
+  "@dashboardReportCountCaption": {
+    "placeholders": { "n": { "type": "int" } }
+  },
 
   "groupSearchTitle": "Search group",
   "groupSearchHint": "Enter group number...",

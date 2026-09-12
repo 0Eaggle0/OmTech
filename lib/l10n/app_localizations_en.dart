@@ -397,6 +397,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardSelectGroup => 'Select group';
 
   @override
+  String get dashboardSubtitle => 'Digital campus';
+
+  @override
+  String get dashboardWeekOdd => 'Odd';
+
+  @override
+  String get dashboardWeekEven => 'Even';
+
+  @override
+  String dashboardLessonsToday(int n) {
+    return '$n classes today';
+  }
+
+  @override
+  String get dashboardNoLessonsToday => 'No classes today';
+
+  @override
+  String dashboardGpaCaption(String gpa) {
+    return 'GPA $gpa';
+  }
+
+  @override
+  String dashboardWorkCountCaption(int n) {
+    return '$n subjects';
+  }
+
+  @override
+  String dashboardReportCountCaption(int n) {
+    return '$n works';
+  }
+
+  @override
   String get groupSearchTitle => 'Search group';
 
   @override

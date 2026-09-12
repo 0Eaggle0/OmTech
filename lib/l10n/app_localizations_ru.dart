@@ -399,6 +399,38 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dashboardSelectGroup => 'Выбрать группу';
 
   @override
+  String get dashboardSubtitle => 'Цифровой кампус';
+
+  @override
+  String get dashboardWeekOdd => 'Нечётная';
+
+  @override
+  String get dashboardWeekEven => 'Чётная';
+
+  @override
+  String dashboardLessonsToday(int n) {
+    return 'Сегодня $n пар';
+  }
+
+  @override
+  String get dashboardNoLessonsToday => 'Сегодня пар нет';
+
+  @override
+  String dashboardGpaCaption(String gpa) {
+    return 'Ср. балл $gpa';
+  }
+
+  @override
+  String dashboardWorkCountCaption(int n) {
+    return '$n дисциплин';
+  }
+
+  @override
+  String dashboardReportCountCaption(int n) {
+    return '$n работ';
+  }
+
+  @override
   String get groupSearchTitle => 'Поиск группы';
 
   @override
