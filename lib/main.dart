@@ -6,9 +6,11 @@ import 'package:provider/provider.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
+import 'controllers/app_nav_controller.dart';
 import 'controllers/group_controller.dart';
 import 'controllers/lk_controller.dart';
 import 'controllers/locale_controller.dart';
+import 'controllers/schedule_nav_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'services/background_worker.dart';
 import 'services/news_service.dart';
@@ -65,6 +67,8 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: groupController),
         ChangeNotifierProvider.value(value: localeController),
         ChangeNotifierProvider.value(value: lkController),
+        ChangeNotifierProvider(create: (_) => AppNavController()),
+        ChangeNotifierProvider(create: (_) => ScheduleNavController()),
         Provider<NewsService>.value(value: newsService),
       ],
       child: const CampusApp(),

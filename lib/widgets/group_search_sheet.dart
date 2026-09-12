@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/group.dart';
 import '../services/schedule_api.dart';
+import '../theme/app_glass.dart';
+import '../theme/app_metrics.dart';
 
 /// Bottom sheet поиска группы через реальный API.
 /// Возвращает выбранную [Group] через Navigator.pop.
@@ -67,13 +70,14 @@ class _GroupSearchSheetState extends State<GroupSearchSheet> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = 'Не удалось найти группы. Проверьте соединение.';
+        _error = AppLocalizations.of(context)!.groupSearchError;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Padding(
       padding: EdgeInsets.only(left: 16, right: 16, bottom: bottomInset + 16),
@@ -81,55 +85,87 @@ class _GroupSearchSheetState extends State<GroupSearchSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Выбор группы',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
+          Text(l.groupSearchTitle, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           TextField(
             controller: _controller,
             autofocus: true,
             onChanged: _onChanged,
-            decoration: const InputDecoration(
-              hintText: 'Например: ИВТ-221',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: l.groupSearchHint,
+              prefixIcon: const Icon(Icons.search),
             ),
           ),
           const SizedBox(height: 12),
-          Flexible(child: _buildResults()),
+          Flexible(child: _buildResults(l)),
         ],
       ),
     );
   }
 
-  Widget _buildResults() {
+  Widget _buildResults(AppLocalizations l) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
+    final glass = context.glass;
     if (_error != null) {
-      return Center(child: Text(_error!, textAlign: TextAlign.center));
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(child: Text(_error!, textAlign: TextAlign.center)),
+      );
     }
     if (_results.isEmpty) {
-      return Center(
-        child: Text(
-          'Введите название группы',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Text(
+            l.groupSearchHint,
+            style: TextStyle(color: glass.textMuted),
           ),
         ),
       );
     }
     return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: _results.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (_, i) {
         final g = _results[i];
-        return ListTile(
-          title: Text(g.label, style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: g.description.isEmpty ? null : Text(g.description),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).pop(g),
+        return Material(
+          color: glass.elevatedFill,
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.tile),
+            onTap: () => Navigator.of(context).pop(g),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(g.label, style: Theme.of(context).textTheme.titleSmall),
+                        if (g.description.isNotEmpty)
+                          Text(
+                            g.description,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: glass.textMuted),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: glass.textFaint),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );

@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../controllers/app_nav_controller.dart';
 import '../controllers/lk_controller.dart';
 import '../l10n/app_localizations.dart';
 import '../services/lk/lk_credentials_storage.dart';
@@ -61,6 +62,8 @@ class _HomeShellState extends State<HomeShell>
     value: 1,
   );
 
+  AppNavController? _appNav;
+
   void _open(int index) {
     if (index == _index) return;
     setState(() {
@@ -70,6 +73,14 @@ class _HomeShellState extends State<HomeShell>
     });
     _tabAnim.forward(from: 0);
     _navAnim.forward(from: 0);
+  }
+
+  /// Экраны, запушенные поверх шелла (например, полноэкранный поиск), не
+  /// являются потомками `_pages` и не могут дёрнуть `_open` напрямую —
+  /// вместо этого они просят через провайдер, а шелл слушает и переключает.
+  void _onAppNavChanged() {
+    final tab = _appNav?.consumeTab();
+    if (tab != null) _open(tab);
   }
 
   @override
@@ -86,7 +97,19 @@ class _HomeShellState extends State<HomeShell>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final nav = context.read<AppNavController>();
+    if (_appNav != nav) {
+      _appNav?.removeListener(_onAppNavChanged);
+      _appNav = nav;
+      _appNav!.addListener(_onAppNavChanged);
+    }
+  }
+
+  @override
   void dispose() {
+    _appNav?.removeListener(_onAppNavChanged);
     _tabAnim.dispose();
     _navAnim.dispose();
     super.dispose();

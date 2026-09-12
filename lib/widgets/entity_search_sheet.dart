@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../models/schedule_entity.dart';
 import '../services/schedule_api.dart';
+import '../theme/app_glass.dart';
+import '../theme/app_metrics.dart';
 
 class EntitySearchSheet extends StatefulWidget {
   final String title;
@@ -17,19 +20,25 @@ class EntitySearchSheet extends StatefulWidget {
     required this.search,
   });
 
-  static Future<ScheduleEntity?> showForTeacher(BuildContext context) => _show(
-        context,
-        title: 'Поиск преподавателя',
-        hint: 'Фамилия, например: Иванов',
-        search: ScheduleApi.instance.searchTeachers,
-      );
+  static Future<ScheduleEntity?> showForTeacher(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return _show(
+      context,
+      title: l.entitySearchTeacherTitle,
+      hint: l.entitySearchTeacherHint,
+      search: ScheduleApi.instance.searchTeachers,
+    );
+  }
 
-  static Future<ScheduleEntity?> showForAuditorium(BuildContext context) => _show(
-        context,
-        title: 'Поиск аудитории',
-        hint: 'Номер, например: 8-418',
-        search: ScheduleApi.instance.searchAuditoriums,
-      );
+  static Future<ScheduleEntity?> showForAuditorium(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return _show(
+      context,
+      title: l.entitySearchAuditoriumTitle,
+      hint: l.entitySearchAuditoriumHint,
+      search: ScheduleApi.instance.searchAuditoriums,
+    );
+  }
 
   static Future<ScheduleEntity?> _show(
     BuildContext context, {
@@ -98,7 +107,7 @@ class _EntitySearchSheetState extends State<EntitySearchSheet> {
       setState(() {
         _loading = false;
         _searched = true;
-        _error = 'Не удалось выполнить поиск. Проверьте соединение.';
+        _error = AppLocalizations.of(context)!.entitySearchError;
       });
     }
   }
@@ -112,10 +121,7 @@ class _EntitySearchSheetState extends State<EntitySearchSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-          ),
+          Text(widget.title, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           TextField(
             controller: _controller,
@@ -124,7 +130,6 @@ class _EntitySearchSheetState extends State<EntitySearchSheet> {
             decoration: InputDecoration(
               hintText: widget.hint,
               prefixIcon: const Icon(Icons.search),
-              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
@@ -135,6 +140,8 @@ class _EntitySearchSheetState extends State<EntitySearchSheet> {
   }
 
   Widget _buildResults() {
+    final l = AppLocalizations.of(context)!;
+    final glass = context.glass;
     if (_loading) {
       return const SizedBox(
         height: 80,
@@ -151,12 +158,7 @@ class _EntitySearchSheetState extends State<EntitySearchSheet> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Center(
-          child: Text(
-            'Введите не менее 2 символов',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
+          child: Text(l.entitySearchHintShort, style: TextStyle(color: glass.textMuted)),
         ),
       );
     }
@@ -164,12 +166,7 @@ class _EntitySearchSheetState extends State<EntitySearchSheet> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 24),
         child: Center(
-          child: Text(
-            'Ничего не найдено',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
-          ),
+          child: Text(l.entitySearchNoResults, style: TextStyle(color: glass.textMuted)),
         ),
       );
     }
@@ -177,14 +174,40 @@ class _EntitySearchSheetState extends State<EntitySearchSheet> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _results.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (_, i) {
         final e = _results[i];
-        return ListTile(
-          title: Text(e.label, style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: e.description.isNotEmpty ? Text(e.description) : null,
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).pop(e),
+        return Material(
+          color: glass.elevatedFill,
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.tile),
+            onTap: () => Navigator.of(context).pop(e),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(e.label, style: Theme.of(context).textTheme.titleSmall),
+                        if (e.description.isNotEmpty)
+                          Text(
+                            e.description,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: glass.textMuted),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: glass.textFaint),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );

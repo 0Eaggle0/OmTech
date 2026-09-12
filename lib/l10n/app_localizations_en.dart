@@ -441,6 +441,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupSearchLoading => 'Searching...';
 
   @override
+  String get groupSearchError =>
+      'Couldn\'t find groups. Check your connection.';
+
+  @override
+  String get searchTitle => 'Search';
+
+  @override
+  String get searchSubtitle => 'Groups, teachers and rooms at OmSTU';
+
+  @override
+  String get searchHint => 'e.g. IST, Smith, 8-418...';
+
+  @override
+  String get searchStartTyping => 'Start typing to search';
+
+  @override
+  String get searchNoResults => 'Nothing found';
+
+  @override
+  String get searchRecentTitle => 'Recent searches';
+
+  @override
+  String get searchClearAll => 'Clear all';
+
+  @override
+  String get searchAll => 'All';
+
+  @override
+  String get searchOpenSchedule => 'Schedule';
+
+  @override
+  String get entitySearchTeacherTitle => 'Search teacher';
+
+  @override
+  String get entitySearchTeacherHint => 'Last name, e.g. Smith';
+
+  @override
+  String get entitySearchAuditoriumTitle => 'Search room';
+
+  @override
+  String get entitySearchAuditoriumHint => 'Room number, e.g. 8-418';
+
+  @override
+  String get entitySearchNoResults => 'Nothing found';
+
+  @override
+  String get entitySearchHintShort => 'Type at least 2 characters';
+
+  @override
+  String get entitySearchError => 'Search failed. Check your connection.';
+
+  @override
   String scheduleOnlyMySubgroup(int n) {
     return 'Only subgroup $n';
   }

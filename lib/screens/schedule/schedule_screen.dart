@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/group_controller.dart';
+import '../../controllers/schedule_nav_controller.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/group.dart';
 import '../../models/schedule_entity.dart';
 import '../../models/schedule_event.dart';
 import '../../services/academic_week.dart';
@@ -21,7 +21,7 @@ import '../../widgets/lesson_detail_sheet.dart';
 import '../../widgets/pill_filter_row.dart';
 import '../../widgets/status_banners.dart';
 import '../../widgets/status_pill.dart';
-import '../../widgets/universal_search_sheet.dart';
+import '../search/search_screen.dart';
 
 enum _ScheduleMode { group, teacher, auditorium }
 
@@ -114,6 +114,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         _reload();
       }
     }
+    // Препод/аудитория, выбранные в полноэкранном поиске (на любой вкладке),
+    // прилетают сюда через провайдер — сама вкладка не обязана быть открыта.
+    final nav = context.watch<ScheduleNavController>();
+    final pending = nav.pending;
+    if (pending != null) {
+      nav.clear();
+      _applyPendingEntity(pending);
+    }
   }
 
   void _reload() {
@@ -201,33 +209,31 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
-  Future<void> _openUniversalSearch() async {
-    final entity = await UniversalSearchSheet.show(context);
-    if (entity == null || !mounted) return;
+  /// Полноэкранный поиск сам применяет результат — через `GroupController`
+  /// для группы и через `ScheduleNavController` для препода/аудитории
+  /// (см. `_applyPendingEntity`, вызывается из `didChangeDependencies`).
+  Future<void> _openUniversalSearch() {
+    return Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SearchScreen()),
+    );
+  }
 
-    switch (entity.type) {
-      case EntityType.group:
-        setState(() {
-          _mode = _ScheduleMode.group;
-          _stream = null;
-          _dateFilter = null;
-        });
-        if (!mounted) return;
-        final g = Group(id: entity.id, label: entity.label, description: entity.description);
-        await context.read<GroupController>().select(g);
-      case EntityType.teacher:
-        setState(() {
+  void _applyPendingEntity(ScheduleEntity entity) {
+    setState(() {
+      _dateFilter = null;
+      switch (entity.type) {
+        case EntityType.teacher:
           _mode = _ScheduleMode.teacher;
-          _dateFilter = null;
-        });
-        _setEntityAndReload(teacher: entity);
-      case EntityType.auditorium:
-        setState(() {
+          _teacher = entity;
+          _stream = _watch(EntityType.teacher, entity.id);
+        case EntityType.auditorium:
           _mode = _ScheduleMode.auditorium;
-          _dateFilter = null;
-        });
-        _setEntityAndReload(auditorium: entity);
-    }
+          _auditorium = entity;
+          _stream = _watch(EntityType.auditorium, entity.id);
+        case EntityType.group:
+          break; // группа идёт через GroupController, см. didChangeDependencies
+      }
+    });
   }
 
   Future<void> _pickDate() async {

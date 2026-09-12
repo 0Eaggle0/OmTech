@@ -920,6 +920,108 @@ abstract class AppLocalizations {
   /// **'Поиск...'**
   String get groupSearchLoading;
 
+  /// No description provided for @groupSearchError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось найти группы. Проверьте соединение.'**
+  String get groupSearchError;
+
+  /// No description provided for @searchTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Общий поиск'**
+  String get searchTitle;
+
+  /// No description provided for @searchSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Группы, преподаватели и аудитории ОмГТУ'**
+  String get searchSubtitle;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Например: ИВТ, Иванов, 8-418...'**
+  String get searchHint;
+
+  /// No description provided for @searchStartTyping.
+  ///
+  /// In ru, this message translates to:
+  /// **'Начните вводить запрос'**
+  String get searchStartTyping;
+
+  /// No description provided for @searchNoResults.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ничего не найдено'**
+  String get searchNoResults;
+
+  /// No description provided for @searchRecentTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Недавние запросы'**
+  String get searchRecentTitle;
+
+  /// No description provided for @searchClearAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Очистить всё'**
+  String get searchClearAll;
+
+  /// No description provided for @searchAll.
+  ///
+  /// In ru, this message translates to:
+  /// **'Все'**
+  String get searchAll;
+
+  /// No description provided for @searchOpenSchedule.
+  ///
+  /// In ru, this message translates to:
+  /// **'Расписание'**
+  String get searchOpenSchedule;
+
+  /// No description provided for @entitySearchTeacherTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск преподавателя'**
+  String get entitySearchTeacherTitle;
+
+  /// No description provided for @entitySearchTeacherHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фамилия, например: Иванов'**
+  String get entitySearchTeacherHint;
+
+  /// No description provided for @entitySearchAuditoriumTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск аудитории'**
+  String get entitySearchAuditoriumTitle;
+
+  /// No description provided for @entitySearchAuditoriumHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Номер, например: 8-418'**
+  String get entitySearchAuditoriumHint;
+
+  /// No description provided for @entitySearchNoResults.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ничего не найдено'**
+  String get entitySearchNoResults;
+
+  /// No description provided for @entitySearchHintShort.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите не менее 2 символов'**
+  String get entitySearchHintShort;
+
+  /// No description provided for @entitySearchError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось выполнить поиск. Проверьте соединение.'**
+  String get entitySearchError;
+
   /// No description provided for @scheduleOnlyMySubgroup.
   ///
   /// In ru, this message translates to:

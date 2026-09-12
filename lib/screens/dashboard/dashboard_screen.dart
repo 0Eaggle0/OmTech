@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../controllers/group_controller.dart';
 import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
-import '../../models/group.dart';
 import '../../models/news_item.dart';
 import '../../models/schedule_entity.dart';
 import '../../models/schedule_event.dart';
@@ -27,10 +26,10 @@ import '../../widgets/news_carousel.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/shimmer_placeholder.dart';
 import '../../widgets/tilt_card.dart';
-import '../../widgets/universal_search_sheet.dart';
 import '../grades/grades_screen.dart';
 import '../news/news_detail_screen.dart';
 import '../reports/report_work_screen.dart';
+import '../search/search_screen.dart';
 import '../work/work_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -239,18 +238,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .length;
   }
 
-  Future<void> _openSearch() async {
-    final entity = await UniversalSearchSheet.show(context);
-    if (entity == null || !mounted) return;
-    if (entity.type == EntityType.group) {
-      await context.read<GroupController>().select(
-            Group(id: entity.id, label: entity.label, description: entity.description),
-          );
-      return;
-    }
-    // Преподаватель/аудитория: полноценный переход на них будет в отдельном
-    // экране поиска — пока просто открываем расписание.
-    widget.onOpenTab(1);
+  void _openSearch() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SearchScreen()),
+    );
   }
 
   @override

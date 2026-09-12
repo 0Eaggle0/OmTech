@@ -443,6 +443,59 @@ class AppLocalizationsRu extends AppLocalizations {
   String get groupSearchLoading => 'Поиск...';
 
   @override
+  String get groupSearchError =>
+      'Не удалось найти группы. Проверьте соединение.';
+
+  @override
+  String get searchTitle => 'Общий поиск';
+
+  @override
+  String get searchSubtitle => 'Группы, преподаватели и аудитории ОмГТУ';
+
+  @override
+  String get searchHint => 'Например: ИВТ, Иванов, 8-418...';
+
+  @override
+  String get searchStartTyping => 'Начните вводить запрос';
+
+  @override
+  String get searchNoResults => 'Ничего не найдено';
+
+  @override
+  String get searchRecentTitle => 'Недавние запросы';
+
+  @override
+  String get searchClearAll => 'Очистить всё';
+
+  @override
+  String get searchAll => 'Все';
+
+  @override
+  String get searchOpenSchedule => 'Расписание';
+
+  @override
+  String get entitySearchTeacherTitle => 'Поиск преподавателя';
+
+  @override
+  String get entitySearchTeacherHint => 'Фамилия, например: Иванов';
+
+  @override
+  String get entitySearchAuditoriumTitle => 'Поиск аудитории';
+
+  @override
+  String get entitySearchAuditoriumHint => 'Номер, например: 8-418';
+
+  @override
+  String get entitySearchNoResults => 'Ничего не найдено';
+
+  @override
+  String get entitySearchHintShort => 'Введите не менее 2 символов';
+
+  @override
+  String get entitySearchError =>
+      'Не удалось выполнить поиск. Проверьте соединение.';
+
+  @override
   String scheduleOnlyMySubgroup(int n) {
     return 'Только $n-я подгруппа';
   }
