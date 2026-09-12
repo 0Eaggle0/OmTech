@@ -719,8 +719,38 @@ abstract class AppLocalizations {
   /// No description provided for @lkSslNote.
   ///
   /// In ru, this message translates to:
-  /// **'Безопасное соединение через SSL ОмГТУ'**
+  /// **'Логин и пароль уходят только на сайт ОмГТУ по защищённому соединению'**
   String get lkSslNote;
+
+  /// No description provided for @lkPrivacyNote.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приложение работает автономно: данные хранятся в зашифрованном хранилище телефона и больше никуда не передаются — ни на сторонние серверы, ни разработчику'**
+  String get lkPrivacyNote;
+
+  /// No description provided for @lkOnboardingTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Войдите в личный кабинет'**
+  String get lkOnboardingTitle;
+
+  /// No description provided for @lkOnboardingMessage.
+  ///
+  /// In ru, this message translates to:
+  /// **'Для доступа к контактным работам, отчётам и оценкам нужен аккаунт up.omgtu.ru — те же логин и пароль, что на сайте.'**
+  String get lkOnboardingMessage;
+
+  /// No description provided for @lkConnecting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Подключение к сайту…'**
+  String get lkConnecting;
+
+  /// No description provided for @lkConnectError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ошибка подключения'**
+  String get lkConnectError;
 
   /// No description provided for @lkInvalidCredentials.
   ///
@@ -1333,6 +1363,12 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Поиск'**
   String get scheduleSearch;
+
+  /// No description provided for @scheduleFilters.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фильтры'**
+  String get scheduleFilters;
 
   /// No description provided for @scheduleAllSubgroups.
   ///

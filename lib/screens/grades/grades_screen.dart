@@ -189,17 +189,24 @@ class _GradesScreenState extends State<GradesScreen> {
                 children: [
                   Text(profile.fullName, style: theme.textTheme.titleMedium),
                   const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 14,
-                    runSpacing: 4,
+                  // Column, а не Wrap: Wrap даёт детям неограниченную ширину
+                  // и переносит на новую строку целиком, но не ужимает —
+                  // длинный номер зачётки вылезал за карточку вправо. Здесь
+                  // каждая строка сама ограничена шириной родителя.
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (profile.groupLabel.isNotEmpty)
                         _meta(theme, glass, Icons.groups_outlined, profile.groupLabel),
-                      if (profile.bookNumber.isNotEmpty)
+                      if (profile.bookNumber.isNotEmpty) ...[
+                        const SizedBox(height: 4),
                         _meta(theme, glass, Icons.menu_book_outlined,
                             '${l.lkBookNumber} ${profile.bookNumber}'),
-                      if (profile.studyForm.isNotEmpty)
+                      ],
+                      if (profile.studyForm.isNotEmpty) ...[
+                        const SizedBox(height: 4),
                         _meta(theme, glass, Icons.history_edu_outlined, profile.studyForm),
+                      ],
                     ],
                   ),
                 ],
@@ -239,11 +246,17 @@ class _GradesScreenState extends State<GradesScreen> {
 
   Widget _meta(ThemeData theme, AppGlass glass, IconData icon, String text) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: glass.textMuted),
         const SizedBox(width: 4),
-        Text(text, style: theme.textTheme.bodySmall?.copyWith(color: glass.textMuted)),
+        Flexible(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(color: glass.textMuted),
+          ),
+        ),
       ],
     );
   }

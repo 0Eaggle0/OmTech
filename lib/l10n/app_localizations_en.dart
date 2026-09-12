@@ -342,7 +342,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lkSkipGuest => 'Skip (continue as guest)';
 
   @override
-  String get lkSslNote => 'Secure SSL connection to OmSTU';
+  String get lkSslNote =>
+      'Your login and password go only to the OmSTU site over a secure connection';
+
+  @override
+  String get lkPrivacyNote =>
+      'The app works on its own: your data stays in the phone\'s encrypted storage and is never sent anywhere else — not to third-party servers, not to the developer';
+
+  @override
+  String get lkOnboardingTitle => 'Sign in to your personal account';
+
+  @override
+  String get lkOnboardingMessage =>
+      'Contact work, reports and grades require an up.omgtu.ru account — the same credentials you use on the site.';
+
+  @override
+  String get lkConnecting => 'Connecting to the site…';
+
+  @override
+  String get lkConnectError => 'Connection error';
 
   @override
   String get lkInvalidCredentials => 'Invalid username or password';
@@ -667,6 +685,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scheduleSearch => 'Search';
+
+  @override
+  String get scheduleFilters => 'Filters';
 
   @override
   String get scheduleAllSubgroups => 'All subgroups';

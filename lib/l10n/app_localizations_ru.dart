@@ -344,7 +344,25 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lkSkipGuest => 'Пропустить (продолжить как гость)';
 
   @override
-  String get lkSslNote => 'Безопасное соединение через SSL ОмГТУ';
+  String get lkSslNote =>
+      'Логин и пароль уходят только на сайт ОмГТУ по защищённому соединению';
+
+  @override
+  String get lkPrivacyNote =>
+      'Приложение работает автономно: данные хранятся в зашифрованном хранилище телефона и больше никуда не передаются — ни на сторонние серверы, ни разработчику';
+
+  @override
+  String get lkOnboardingTitle => 'Войдите в личный кабинет';
+
+  @override
+  String get lkOnboardingMessage =>
+      'Для доступа к контактным работам, отчётам и оценкам нужен аккаунт up.omgtu.ru — те же логин и пароль, что на сайте.';
+
+  @override
+  String get lkConnecting => 'Подключение к сайту…';
+
+  @override
+  String get lkConnectError => 'Ошибка подключения';
 
   @override
   String get lkInvalidCredentials => 'Неверный логин или пароль';
@@ -670,6 +688,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get scheduleSearch => 'Поиск';
+
+  @override
+  String get scheduleFilters => 'Фильтры';
 
   @override
   String get scheduleAllSubgroups => 'Все подгруппы';

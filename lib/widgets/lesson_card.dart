@@ -68,8 +68,18 @@ class LessonCard extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(event.discipline, style: theme.textTheme.titleMedium),
                   const SizedBox(height: 8),
-                  if (event.location.isNotEmpty)
-                    _row(context, Icons.place_outlined, event.location),
+                  // Аудитория — пилюлей, как подгруппа: это то, что чаще
+                  // всего ищут глазами в списке пар, обычный серый текст
+                  // среди преподавателя и потока в глаза не бросался.
+                  if (event.location.isNotEmpty) ...[
+                    StatusPill(
+                      event.location,
+                      color: accent,
+                      icon: Icons.place_outlined,
+                      dense: true,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   if (event.lecturer.isNotEmpty)
                     _row(context, Icons.person_outline, event.lecturer),
                   if (event.streamDisplay.isNotEmpty)

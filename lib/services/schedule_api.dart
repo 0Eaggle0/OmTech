@@ -121,14 +121,24 @@ class ScheduleApi {
     var servedCache = false;
 
     if (cached != null) {
-      yield ScheduleSnapshot(
-        events: _parseRaw(cached.rawJson),
-        fetchedAt: cached.savedAt,
-        fromCache: true,
-      );
-      servedCache = true;
-      final age = DateTime.now().difference(cached.savedAt);
-      if (!age.isNegative && age < _ttlFor(finish)) return;
+      // Разбор кэша тоже может упасть (битая запись) — тогда просто идём
+      // в сеть, а не роняем весь стрим.
+      List<ScheduleEvent>? cachedEvents;
+      try {
+        cachedEvents = _parseRaw(cached.rawJson);
+      } catch (_) {
+        cachedEvents = null;
+      }
+      if (cachedEvents != null) {
+        yield ScheduleSnapshot(
+          events: cachedEvents,
+          fetchedAt: cached.savedAt,
+          fromCache: true,
+        );
+        servedCache = true;
+        final age = DateTime.now().difference(cached.savedAt);
+        if (!age.isNegative && age < _ttlFor(finish)) return;
+      }
     }
 
     try {
@@ -155,7 +165,12 @@ class ScheduleApi {
     final future = _requestRaw(type, id, start, finish).then((raw) async {
       await _cache.write(cacheKey, raw);
       return raw;
-    }).whenComplete(() => _inFlight.remove(cacheKey));
+      // Тело блоком, а не стрелкой: `_inFlight.remove` возвращает этот же
+      // Future, и `whenComplete` стал бы ждать его завершения — то есть
+      // самого себя. Запрос тогда не завершается никогда.
+    }).whenComplete(() {
+      _inFlight.remove(cacheKey);
+    });
 
     _inFlight[cacheKey] = future;
     return future;
@@ -194,10 +209,26 @@ class ScheduleApi {
   }
 
   static List<ScheduleEvent> _parseRaw(String rawJson) {
-    final events = (jsonDecode(rawJson) as List<dynamic>)
-        .whereType<Map<String, dynamic>>()
-        .map(ScheduleEvent.fromJson)
-        .toList();
+    // API повторяет одну и ту же пару отдельной строкой на каждый поток или
+    // подгруппу — без этого в списке появляются визуальные дубли.
+    final seen = <String>{};
+    final events = <ScheduleEvent>[];
+    for (final json in (jsonDecode(rawJson) as List<dynamic>)
+        .whereType<Map<String, dynamic>>()) {
+      final e = ScheduleEvent.fromJson(json);
+      final key = [
+        e.date.toIso8601String(),
+        e.beginLesson,
+        e.endLesson,
+        e.discipline,
+        e.lecturer,
+        e.auditorium,
+        e.building,
+        e.kindOfWork,
+        e.rawSubgroup,
+      ].join('|');
+      if (seen.add(key)) events.add(e);
+    }
     events.sort((a, b) {
       final byDate = a.date.compareTo(b.date);
       return byDate != 0 ? byDate : a.beginLesson.compareTo(b.beginLesson);

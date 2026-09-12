@@ -157,16 +157,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     final monday = mondayOf(DateTime.now());
-    await _consumeWeek(groupId, monday, (events) => _thisWeek = events);
+    try {
+      await _consumeWeek(groupId, monday, (events) => _thisWeek = events);
 
-    if (!mounted || groupId != _loadedGroupId) return;
-    if (!_hasUpcoming(_thisWeek)) {
-      await _consumeWeek(groupId, monday.add(const Duration(days: 7)),
-          (events) => _nextWeek = events);
+      if (!mounted || groupId != _loadedGroupId) return;
+      if (!_hasUpcoming(_thisWeek)) {
+        await _consumeWeek(groupId, monday.add(const Duration(days: 7)),
+            (events) => _nextWeek = events);
+      }
+    } finally {
+      // Снимаем шиммер в finally: любой ранний выход (устаревший groupId,
+      // размонтирование, ошибка сети) иначе оставляет его навсегда.
+      if (mounted && groupId == _loadedGroupId) {
+        setState(() => _scheduleLoading = false);
+      }
     }
-
-    if (!mounted || groupId != _loadedGroupId) return;
-    setState(() => _scheduleLoading = false);
   }
 
   Future<void> _consumeWeek(

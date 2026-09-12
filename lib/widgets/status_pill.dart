@@ -55,13 +55,20 @@ class StatusPill extends StatelessWidget {
             Icon(icon, size: dense ? 12 : 13, color: tone),
             const SizedBox(width: 5),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: dense ? 10 : 10.5,
-              fontWeight: FontWeight.w700,
-              color: tone,
-              height: 1.2,
+          // Flexible + ellipsis: длинная подпись (например, полное название
+          // специальности) иначе вылезает за границы родителя — Wrap умеет
+          // перенести пилюлю на новую строку, но не сжать её.
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: dense ? 10 : 10.5,
+                fontWeight: FontWeight.w700,
+                color: tone,
+                height: 1.2,
+              ),
             ),
           ),
         ],

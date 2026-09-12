@@ -57,6 +57,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   bool _hideRetake = false;
   double _dragDx = 0;
 
+  /// Свёрнута ли панель фильтров подгруппы/пересдач. По умолчанию свёрнута —
+  /// разворачивается только когда есть активный фильтр или пользователь сам
+  /// её открыл, чтобы не занимать место каждый день.
+  bool _filtersExpanded = false;
+
   @override
   void initState() {
     super.initState();
@@ -87,6 +92,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     setState(() {
       _subgroupFilter = subgroup;
       _hideRetake = hideRetake;
+      // Если фильтр уже был настроен раньше — сразу показываем панель,
+      // чтобы не прятать активный выбор.
+      if (subgroup != null || hideRetake) _filtersExpanded = true;
     });
   }
 
@@ -334,8 +342,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           _weekSwitcher(l),
           _dayRow(l),
           if (_mode == _ScheduleMode.group) ...[
-            _subgroupFilterRow(l),
-            _retakeFilterRow(l),
+            _filterToggleRow(l),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: !_filtersExpanded
+                  ? const SizedBox(width: double.infinity)
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _subgroupFilterRow(l),
+                        _retakeFilterRow(l),
+                      ],
+                    ),
+            ),
           ],
           Expanded(
             child: GestureDetector(
@@ -362,43 +383,39 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  /// Три действия одной плашкой: вид недели/дня, календарь и поиск.
+  /// Три отдельные кнопки: вид недели/дня, календарь и поиск. Раздельные
+  /// плашки с зазором читаются как кнопки — в отличие от общего контейнера,
+  /// который выглядел просто полоской текста.
   Widget _actionRow(AppLocalizations l) {
-    final glass = context.glass;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: glass.elevatedFill,
-          borderRadius: BorderRadius.circular(AppRadius.tile),
-          border: Border.all(color: glass.hairline),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: _action(
-                icon: _weekView ? Icons.today_outlined : Icons.view_week_outlined,
-                label: _weekView ? l.scheduleDayView : l.scheduleWeekView,
-                active: _weekView,
-                onTap: _toggleView,
-              ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _action(
+              icon: _weekView ? Icons.today_outlined : Icons.view_week_outlined,
+              label: _weekView ? l.scheduleDayView : l.scheduleWeekView,
+              active: _weekView,
+              onTap: _toggleView,
             ),
-            Expanded(
-              child: _action(
-                icon: Icons.calendar_today_outlined,
-                label: l.schedulePickDate,
-                onTap: _pickDate,
-              ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _action(
+              icon: Icons.calendar_today_outlined,
+              label: l.schedulePickDate,
+              onTap: _pickDate,
             ),
-            Expanded(
-              child: _action(
-                icon: Icons.manage_search,
-                label: l.scheduleSearch,
-                onTap: _openUniversalSearch,
-              ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _action(
+              icon: Icons.manage_search,
+              label: l.scheduleSearch,
+              onTap: _openUniversalSearch,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -411,29 +428,47 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }) {
     final theme = Theme.of(context);
     final glass = context.glass;
-    final color = active ? theme.colorScheme.primary : glass.textMuted;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.tile),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 17, color: color),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                ),
+    final primary = theme.colorScheme.primary;
+    final color = active ? primary : glass.textMuted;
+    final shape = BorderRadius.circular(AppRadius.tile);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: active ? glass.tint(primary) : glass.elevatedFill,
+        borderRadius: shape,
+        border: Border.all(
+          color: active ? primary.withValues(alpha: 0.45) : glass.hairline,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: shape,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 6),
+            // scaleDown вместо ellipsis: «Выбрать дату» иначе режется
+            // в «Выбрать д…» на узких экранах.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 17, color: color),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: color,
+                      fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -582,6 +617,77 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
+  /// Кнопка-переключатель панели фильтров (подгруппа + пересдачи).
+  /// Тонированная в акцент, когда какой-то фильтр реально применён — иначе
+  /// нейтральная, как остальные элементы темы.
+  Widget _filterToggleRow(AppLocalizations l) {
+    final theme = Theme.of(context);
+    final glass = context.glass;
+    final primary = theme.colorScheme.primary;
+    final active = _subgroupFilter != null || _hideRetake;
+    final shape = BorderRadius.circular(AppRadius.pill);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: active ? glass.tint(primary) : glass.elevatedFill,
+            borderRadius: shape,
+            border: Border.all(
+              color: active ? primary.withValues(alpha: 0.4) : glass.hairline,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: shape,
+              onTap: () => setState(() => _filtersExpanded = !_filtersExpanded),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.tune, size: 15, color: active ? primary : glass.textMuted),
+                    const SizedBox(width: 6),
+                    Text(
+                      l.scheduleFilters,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: active ? primary : glass.textMuted,
+                      ),
+                    ),
+                    if (active) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(color: primary, shape: BoxShape.circle),
+                      ),
+                    ],
+                    const SizedBox(width: 4),
+                    AnimatedRotation(
+                      turns: _filtersExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 18,
+                        color: active ? primary : glass.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Все подгруппы / 1-я / 2-я — независимо от подгруппы в профиле.
   Widget _subgroupFilterRow(AppLocalizations l) {
     final selected = switch (_subgroupFilter) {
@@ -715,13 +821,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         final data = snapshot.data;
         final at = data?.fetchedAt;
         if (data == null || at == null) return _eventsList(filtered);
+        // Плашка появляется на пару секунд сверху и уезжает — никакой
+        // постоянной строки под списком больше нет, она отъедала место.
         return Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-              child: data.fromCache
-                  ? CacheBanner(updatedAt: at)
-                  : _syncedNotice(l, at),
+            AutoHideBanner(
+              trigger: '${data.fromCache}|${at.millisecondsSinceEpoch}',
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                child: data.fromCache
+                    ? CacheBanner(updatedAt: at)
+                    : _syncedNotice(l, at),
+              ),
             ),
             Expanded(child: _eventsList(filtered)),
           ],
@@ -756,7 +867,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final locale = Localizations.localeOf(context).languageCode;
     final dayFmt = DateFormat('EEEE, d MMMM', locale);
 
-    int cardIndex = 0;
     return ListView.builder(
       padding: EdgeInsets.fromLTRB(16, 8, 16, navBottomPadding(context)),
       itemCount: days.length,
@@ -775,18 +885,25 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
                 ).animate(delay: headerDelay).fadeIn(duration: 250.ms),
               ),
-            for (final e in lessons) ...[
-              () {
-                final delay = (cardIndex++ * 55).ms;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: LessonCard(
-                    event: e,
-                    onTap: () => LessonDetailSheet.show(context, e),
-                  ).animate(delay: delay).fadeIn(duration: 280.ms).slideY(begin: 0.05, curve: Curves.easeOut),
-                );
-              }(),
-            ],
+            for (var j = 0; j < lessons.length; j++)
+              Padding(
+                key: ValueKey(
+                  '${lessons[j].date.toIso8601String()}|'
+                  '${lessons[j].beginLesson}|${lessons[j].discipline}|'
+                  '${lessons[j].rawSubgroup}',
+                ),
+                padding: const EdgeInsets.only(bottom: 10),
+                // Задержку считаем от позиции внутри дня: общий счётчик рос
+                // на каждый вызов itemBuilder, и при скролле карточки
+                // появлялись со всё большим опозданием.
+                child: LessonCard(
+                  event: lessons[j],
+                  onTap: () => LessonDetailSheet.show(context, lessons[j]),
+                )
+                    .animate(delay: (j * 55).ms)
+                    .fadeIn(duration: 280.ms)
+                    .slideY(begin: 0.05, curve: Curves.easeOut),
+              ),
           ],
         );
       },

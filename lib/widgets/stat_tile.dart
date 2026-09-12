@@ -29,14 +29,19 @@ class StatTileRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < tiles.length; i++) ...[
-          if (i > 0) SizedBox(width: spacing),
-          Expanded(child: _Tile(tiles[i])),
+    // Без IntrinsicHeight `stretch` превращается в тугое ограничение по
+    // высоте, и внутри ListView (неограниченная высота) плитки получают
+    // бесконечный размер — весь сливер перестаёт рисоваться.
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < tiles.length; i++) ...[
+            if (i > 0) SizedBox(width: spacing),
+            Expanded(child: _Tile(tiles[i])),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

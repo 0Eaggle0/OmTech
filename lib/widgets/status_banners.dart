@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -42,6 +44,88 @@ class CacheBanner extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Плашка, которая показывается на пару секунд и сворачивается: место над
+/// списком она занимать не должна, а постоянная отметка о кэше живёт
+/// отдельной строкой под контентом.
+class AutoHideBanner extends StatefulWidget {
+  final Widget child;
+
+  /// Смена значения перезапускает показ (пришли новые данные).
+  final Object? trigger;
+
+  final Duration visibleFor;
+
+  const AutoHideBanner({
+    super.key,
+    required this.child,
+    this.trigger,
+    this.visibleFor = const Duration(seconds: 4),
+  });
+
+  @override
+  State<AutoHideBanner> createState() => _AutoHideBannerState();
+}
+
+class _AutoHideBannerState extends State<AutoHideBanner> {
+  static const _fade = Duration(milliseconds: 260);
+
+  Timer? _hideTimer;
+  Timer? _collapseTimer;
+  bool _visible = true;
+  bool _collapsed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restart();
+  }
+
+  @override
+  void didUpdateWidget(AutoHideBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.trigger != widget.trigger) _restart();
+  }
+
+  void _restart() {
+    _hideTimer?.cancel();
+    _collapseTimer?.cancel();
+    _visible = true;
+    _collapsed = false;
+    _hideTimer = Timer(widget.visibleFor, () {
+      if (!mounted) return;
+      // Сначала гасим, и только после фейда схлопываем высоту — иначе
+      // плашка просто пропадает рывком.
+      setState(() => _visible = false);
+      _collapseTimer = Timer(_fade, () {
+        if (mounted) setState(() => _collapsed = true);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _collapseTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+      alignment: Alignment.topCenter,
+      child: _collapsed
+          ? const SizedBox(width: double.infinity)
+          : AnimatedOpacity(
+              duration: _fade,
+              opacity: _visible ? 1 : 0,
+              child: widget.child,
+            ),
     );
   }
 }
