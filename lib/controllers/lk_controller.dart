@@ -152,7 +152,7 @@ class LkController extends ChangeNotifier {
     final label = _profile?.groupLabel ?? '';
     if (label.isEmpty) return;
     try {
-      final api = ScheduleApi();
+      final api = ScheduleApi.instance;
       final results = await api.searchGroups(label);
       final match = results.where((g) => g.label == label).firstOrNull;
       if (match != null) {

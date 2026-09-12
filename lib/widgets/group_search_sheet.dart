@@ -24,7 +24,7 @@ class GroupSearchSheet extends StatefulWidget {
 }
 
 class _GroupSearchSheetState extends State<GroupSearchSheet> {
-  final _api = ScheduleApi();
+  final _api = ScheduleApi.instance;
   final _controller = TextEditingController();
   Timer? _debounce;
   List<Group> _results = [];

@@ -10,6 +10,7 @@ import '../../models/group.dart';
 import '../../models/schedule_entity.dart';
 import '../../models/schedule_event.dart';
 import '../../services/schedule_api.dart';
+import '../../theme/app_metrics.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/entity_search_sheet.dart';
 import '../../widgets/group_search_sheet.dart';
@@ -43,6 +44,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   bool _weekView = false;
   bool _showOnlyMySubgroup = false;
   bool _hideRetake = false;
+  double _dragDx = 0;
 
   @override
   void initState() {
@@ -304,10 +306,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             _retakeFilterRow(),
           Expanded(
             child: GestureDetector(
+              // В пустой день контент — маленький блок по центру, и при
+              // deferToChild свайп по остальной площади не долетает сюда.
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragStart: (_) => _dragDx = 0,
+              onHorizontalDragUpdate: (d) => _dragDx += d.delta.dx,
               onHorizontalDragEnd: (details) {
-                final v = details.primaryVelocity ?? 0;
-                if (v < -300) _shiftDay(1);
-                if (v > 300) _shiftDay(-1);
+                final velocity = details.primaryVelocity ?? 0;
+                final distance = _dragDx;
+                _dragDx = 0;
+                final flicked = velocity.abs() > 300;
+                final dragged = distance.abs() > 60;
+                if (!flicked && !dragged) return;
+                // Медленный, но длинный свайп листает день наравне с рывком.
+                _shiftDay((flicked ? velocity : distance) < 0 ? 1 : -1);
               },
               child: _buildContent(l),
             ),
@@ -666,7 +678,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     int cardIndex = 0;
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, navBottomPadding(context)),
       itemCount: days.length,
       itemBuilder: (context, i) {
         final day = days[i];

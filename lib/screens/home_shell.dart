@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/lk_controller.dart';
 import '../l10n/app_localizations.dart';
 import '../services/lk/lk_credentials_storage.dart';
+import '../widgets/floating_nav_bar.dart';
 import '../widgets/lk_login_dialog.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'news/news_screen.dart';
@@ -24,12 +25,17 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   static const _tabTransition = Duration(milliseconds: 260);
+  static const _navTransition = Duration(milliseconds: 220);
   static const _staticOpacity = AlwaysStoppedAnimation(1.0);
   static const _staticOffset = AlwaysStoppedAnimation(Offset.zero);
 
   int _index = 0;
+
+  /// Откуда едет пилюля нижней панели. `_tabAnim` этого знать не может —
+  /// он выбирает переходы по текущему индексу, а не по паре «откуда-куда».
+  int _prevIndex = 0;
 
   /// Вкладки живут в дереве и не пересоздаются при переключении, иначе
   /// каждый возврат на «Расписание» терял состояние и лез в сеть заново.
@@ -49,13 +55,21 @@ class _HomeShellState extends State<HomeShell>
     end: Offset.zero,
   ).animate(CurvedAnimation(parent: _tabAnim, curve: Curves.easeOut));
 
+  late final AnimationController _navAnim = AnimationController(
+    vsync: this,
+    duration: _navTransition,
+    value: 1,
+  );
+
   void _open(int index) {
     if (index == _index) return;
     setState(() {
+      _prevIndex = _index;
       _index = index;
       _visited.add(index);
     });
     _tabAnim.forward(from: 0);
+    _navAnim.forward(from: 0);
   }
 
   @override
@@ -74,6 +88,7 @@ class _HomeShellState extends State<HomeShell>
   @override
   void dispose() {
     _tabAnim.dispose();
+    _navAnim.dispose();
     super.dispose();
   }
 
@@ -113,14 +128,33 @@ class _HomeShellState extends State<HomeShell>
     final l = AppLocalizations.of(context)!;
 
     final navItems = [
-      (Icons.home_outlined, Icons.home, l.navHome),
-      (Icons.calendar_month_outlined, Icons.calendar_month, l.navSchedule),
-      (Icons.newspaper_outlined, Icons.newspaper, l.navNews),
-      (Icons.assignment_outlined, Icons.assignment, l.navWork),
-      (Icons.person_outline, Icons.person, l.navProfile),
+      NavItemData(icon: Icons.home_outlined, activeIcon: Icons.home, label: l.navHome),
+      NavItemData(
+        icon: Icons.calendar_month_outlined,
+        activeIcon: Icons.calendar_month,
+        label: l.navSchedule,
+      ),
+      NavItemData(
+        icon: Icons.newspaper_outlined,
+        activeIcon: Icons.newspaper,
+        label: l.navNews,
+      ),
+      NavItemData(
+        icon: Icons.assignment_outlined,
+        activeIcon: Icons.assignment,
+        label: l.navWork,
+      ),
+      NavItemData(
+        icon: Icons.person_outline,
+        activeIcon: Icons.person,
+        label: l.navProfile,
+      ),
     ];
 
     return Scaffold(
+      // Содержимое вкладки уходит под плавающую панель, а её высота попадает
+      // в `MediaQuery.padding.bottom` тела — оттуда её берёт `navBottomPadding`.
+      extendBody: true,
       body: Stack(
         children: [
           Positioned.fill(
@@ -157,18 +191,12 @@ class _HomeShellState extends State<HomeShell>
           ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _open,
-        labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-        destinations: List.generate(navItems.length, (i) {
-          final (outlinedIcon, filledIcon, label) = navItems[i];
-          return NavigationDestination(
-            icon: _NavIcon(icon: outlinedIcon, selected: false),
-            selectedIcon: _NavIcon(icon: filledIcon, selected: true),
-            label: label,
-          );
-        }),
+      bottomNavigationBar: FloatingNavBar(
+        items: navItems,
+        index: _index,
+        prevIndex: _prevIndex,
+        progress: _navAnim,
+        onSelected: _open,
       ),
     );
   }
@@ -509,37 +537,5 @@ class _OnboardingSheetState extends State<_OnboardingSheet> {
         ),
       ],
     );
-  }
-}
-
-// ─── NavIcon ──────────────────────────────────────────────────────────────────
-
-class _NavIcon extends StatelessWidget {
-  final IconData icon;
-  final bool selected;
-
-  const _NavIcon({required this.icon, required this.selected});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected
-        ? Theme.of(context).colorScheme.primary
-        : Theme.of(context).colorScheme.onSurfaceVariant;
-
-    if (!selected) return Icon(icon, color: color);
-
-    return Icon(icon, color: color)
-        .animate(key: ValueKey(icon))
-        .scale(
-          begin: const Offset(0.7, 0.7),
-          end: const Offset(1.0, 1.0),
-          duration: 320.ms,
-          curve: Curves.elasticOut,
-        )
-        .shimmer(
-          duration: 600.ms,
-          color: color.withValues(alpha: 0.4),
-          delay: 100.ms,
-        );
   }
 }

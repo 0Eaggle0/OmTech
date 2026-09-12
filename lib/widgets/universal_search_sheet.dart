@@ -22,7 +22,7 @@ class UniversalSearchSheet extends StatefulWidget {
 }
 
 class _UniversalSearchSheetState extends State<UniversalSearchSheet> {
-  final _api = ScheduleApi();
+  final _api = ScheduleApi.instance;
   final _controller = TextEditingController();
   Timer? _debounce;
   List<ScheduleEntity> _results = [];

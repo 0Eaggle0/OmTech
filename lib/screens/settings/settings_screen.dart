@@ -60,7 +60,7 @@ class SettingsScreen extends StatelessWidget {
                 child: const Icon(Icons.school, color: Colors.white, size: 22),
               ),
               title: Text(l.settingsAboutApp, style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text('${l.settingsVersion} 1.1.0-beta'),
+              subtitle: Text('${l.settingsVersion} 1.2.0-beta'),
             ),
           ),
         ],

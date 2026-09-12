@@ -7,6 +7,7 @@ import '../../models/news_item.dart';
 import '../../services/app_routes.dart';
 import '../../services/link_launcher.dart';
 import '../../services/news_service.dart';
+import '../../theme/app_metrics.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/news_card.dart';
 import '../../widgets/news_stories_row.dart';
@@ -110,7 +111,8 @@ class _NewsScreenState extends State<NewsScreen> {
 
                 // Остальные новости
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  padding: EdgeInsets.fromLTRB(
+                      16, 0, 16, navBottomPadding(context)),
                   sliver: SliverList.separated(
                     itemCount: items.length - 1,
                     separatorBuilder: (_, _) =>

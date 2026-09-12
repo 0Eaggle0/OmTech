@@ -15,6 +15,7 @@ import '../../models/schedule_event.dart';
 import '../../services/app_routes.dart';
 import '../../services/news_service.dart';
 import '../../services/schedule_api.dart';
+import '../../theme/app_metrics.dart';
 import '../../widgets/animated_mesh_background.dart';
 import '../../widgets/lesson_card.dart';
 import '../../widgets/lesson_detail_sheet.dart';
@@ -183,8 +184,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       body: AnimatedMeshBackground(
         child: SafeArea(
+          // Низ не отрезаем: список уходит под плавающую панель.
+          bottom: false,
           child: ListView(
-            padding: const EdgeInsets.only(top: 8, bottom: 24),
+            padding: EdgeInsets.only(top: 8, bottom: navBottomPadding(context)),
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),

@@ -21,14 +21,14 @@ class EntitySearchSheet extends StatefulWidget {
         context,
         title: 'Поиск преподавателя',
         hint: 'Фамилия, например: Иванов',
-        search: ScheduleApi().searchTeachers,
+        search: ScheduleApi.instance.searchTeachers,
       );
 
   static Future<ScheduleEntity?> showForAuditorium(BuildContext context) => _show(
         context,
         title: 'Поиск аудитории',
         hint: 'Номер, например: 8-418',
-        search: ScheduleApi().searchAuditoriums,
+        search: ScheduleApi.instance.searchAuditoriums,
       );
 
   static Future<ScheduleEntity?> _show(

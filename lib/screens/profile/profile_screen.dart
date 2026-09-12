@@ -12,6 +12,7 @@ import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/student_record.dart';
 import '../../services/link_launcher.dart';
+import '../../theme/app_metrics.dart';
 import '../../widgets/group_search_sheet.dart';
 import '../../widgets/lk_login_dialog.dart';
 import '../settings/settings_screen.dart';
@@ -367,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: EdgeInsets.fromLTRB(16, 8, 16, navBottomPadding(context)),
         children: [
           _header(context, l, group?.label),
           const SizedBox(height: 20),

@@ -6,6 +6,7 @@ import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/contact_work.dart';
 import '../../services/contact_work_service.dart';
+import '../../theme/app_metrics.dart';
 import '../../widgets/demo_banner.dart';
 import '../../widgets/lk_required_state.dart';
 import 'work_detail_screen.dart';
@@ -144,7 +145,7 @@ class _WorkListScreenState extends State<WorkListScreen> {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
+      padding: EdgeInsets.fromLTRB(0, 8, 0, navBottomPadding(context)),
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
