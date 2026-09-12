@@ -42,10 +42,7 @@ Future<void> shareReportDebugDumps(BuildContext context) async {
 /// Список отчётных работ. Без своего `Scaffold` — живёт внутри
 /// `WorkHubScreen`, который владеет шапкой и переключателем разделов.
 class ReportWorkListView extends StatefulWidget {
-  /// Сообщает хабу число работ для счётчика в переключателе.
-  final ValueChanged<int>? onCount;
-
-  const ReportWorkListView({super.key, this.onCount});
+  const ReportWorkListView({super.key});
 
   @override
   State<ReportWorkListView> createState() => _ReportWorkListViewState();
@@ -88,7 +85,6 @@ class _ReportWorkListViewState extends State<ReportWorkListView> {
           _outcome = out;
           _loading = false;
         });
-        widget.onCount?.call(out.result.otherWorks.length);
       }
     } catch (_) {
       if (!mounted) return;

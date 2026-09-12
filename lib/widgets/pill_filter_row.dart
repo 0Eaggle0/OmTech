@@ -56,6 +56,65 @@ class PillFilterRow extends StatelessWidget {
   }
 }
 
+/// Одна пилюля-переключатель (вкл/выкл), с той же гарантированной
+/// контрастностью, что и у `PillFilterRow` — в отличие от голого
+/// `FilterChip`, у которого в светлой теме заливка почти сливается с фоном.
+class PillToggle extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final bool selected;
+  final ValueChanged<bool> onChanged;
+
+  const PillToggle({
+    super.key,
+    required this.label,
+    this.icon,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final glass = context.glass;
+    final accent = theme.colorScheme.primary;
+
+    return GestureDetector(
+      onTap: () => onChanged(!selected),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? glass.tint(accent) : glass.elevatedFill,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: selected ? accent.withValues(alpha: 0.45) : glass.hairline,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon ?? (selected ? Icons.check : Icons.filter_alt_outlined),
+              size: 15,
+              color: selected ? accent : glass.textMuted,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    color: selected ? accent : glass.textMuted,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _Pill extends StatelessWidget {
   final PillFilterItem item;
   final bool selected;

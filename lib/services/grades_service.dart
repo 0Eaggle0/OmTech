@@ -21,14 +21,27 @@ class GradesService {
 
   GradesService({this.lk});
 
-  /// Поток: сначала кэш (если есть), затем свежие данные.
+  /// Кэш моложе этого возраста отдаём как окончательный ответ — экран
+  /// открывается мгновенно, без похода на сервер при каждом заходе.
+  /// Полный логин-раунд до `student/index` не быстрый (SSO-мост ЛК), а
+  /// оценки не настолько горящие данные, чтобы дёргать его на каждый чих.
+  static const _freshTtl = Duration(minutes: 15);
+
+  /// Поток: сначала кэш (если есть), затем свежие данные — но только если
+  /// кэш не совсем свежий или запрошено принудительное обновление.
   Stream<GradesResult> watch({bool forceRefresh = false}) async* {
     final controller = lk;
     if (controller != null && controller.isConnected) {
-      // Сначала кэш.
       final cached = await controller.gradesApi.readCache();
-      if (cached != null && !forceRefresh) {
+      if (cached != null) {
         yield GradesResult(record: cached, isDemo: false, fromCache: true);
+        if (!forceRefresh) {
+          final cachedAt = await controller.gradesApi.readCacheTime();
+          if (cachedAt != null &&
+              DateTime.now().difference(cachedAt) < _freshTtl) {
+            return;
+          }
+        }
       }
       try {
         final fresh = await controller.gradesApi.fetchFresh();

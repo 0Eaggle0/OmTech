@@ -28,15 +28,10 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell>
     with TickerProviderStateMixin {
   static const _tabTransition = Duration(milliseconds: 260);
-  static const _navTransition = Duration(milliseconds: 220);
   static const _staticOpacity = AlwaysStoppedAnimation(1.0);
   static const _staticOffset = AlwaysStoppedAnimation(Offset.zero);
 
   int _index = 0;
-
-  /// Откуда едет пилюля нижней панели. `_tabAnim` этого знать не может —
-  /// он выбирает переходы по текущему индексу, а не по паре «откуда-куда».
-  int _prevIndex = 0;
 
   /// Вкладки живут в дереве и не пересоздаются при переключении, иначе
   /// каждый возврат на «Расписание» терял состояние и лез в сеть заново.
@@ -56,23 +51,15 @@ class _HomeShellState extends State<HomeShell>
     end: Offset.zero,
   ).animate(CurvedAnimation(parent: _tabAnim, curve: Curves.easeOut));
 
-  late final AnimationController _navAnim = AnimationController(
-    vsync: this,
-    duration: _navTransition,
-    value: 1,
-  );
-
   AppNavController? _appNav;
 
   void _open(int index) {
     if (index == _index) return;
     setState(() {
-      _prevIndex = _index;
       _index = index;
       _visited.add(index);
     });
     _tabAnim.forward(from: 0);
-    _navAnim.forward(from: 0);
   }
 
   /// Экраны, запушенные поверх шелла (например, полноэкранный поиск), не
@@ -111,7 +98,6 @@ class _HomeShellState extends State<HomeShell>
   void dispose() {
     _appNav?.removeListener(_onAppNavChanged);
     _tabAnim.dispose();
-    _navAnim.dispose();
     super.dispose();
   }
 
@@ -217,8 +203,6 @@ class _HomeShellState extends State<HomeShell>
       bottomNavigationBar: FloatingNavBar(
         items: navItems,
         index: _index,
-        prevIndex: _prevIndex,
-        progress: _navAnim,
         onSelected: _open,
       ),
     );

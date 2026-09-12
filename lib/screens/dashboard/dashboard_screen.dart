@@ -55,8 +55,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   LkStatus? _lastLkStatus;
   bool _lkSummaryRequested = false;
   double? _gpa;
-  int? _workCount;
-  int? _reportCount;
 
   @override
   void initState() {
@@ -139,16 +137,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  /// Только кэш — GPA и счётчики на плитках не должны ждать сеть.
+  /// Только кэш — GPA на плитке не должен ждать сеть.
   Future<void> _loadLkSummary(LkController lk) async {
     final record = await lk.gradesApi.readCache();
-    final disciplines = await lk.contactWorkApi.readDisciplinesCache();
-    final reports = await lk.reportWorkApi.readCache();
     if (!mounted) return;
     setState(() {
       _gpa = record == null ? null : calcGpa(record);
-      _workCount = disciplines?.length;
-      _reportCount = reports?.otherWorks.length;
     });
   }
 
@@ -542,9 +536,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: _Tile(
                     icon: Icons.assignment_outlined,
                     label: l.dashboardTasks,
-                    caption: _workCount == null
-                        ? null
-                        : l.dashboardWorkCountCaption(_workCount!),
                     gradient: const LinearGradient(
                       colors: [Color(0xFF26C6DA), Color(0xFF00ACC1)],
                       begin: Alignment.topLeft,
@@ -564,9 +555,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: _Tile(
                     icon: Icons.assignment_turned_in_outlined,
                     label: l.dashboardReportWorks,
-                    caption: _reportCount == null
-                        ? null
-                        : l.dashboardReportCountCaption(_reportCount!),
                     gradient: const LinearGradient(
                       colors: [Color(0xFFE08F4F), Color(0xFFE05A6B)],
                       begin: Alignment.topLeft,

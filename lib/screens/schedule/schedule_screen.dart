@@ -19,6 +19,7 @@ import '../../widgets/group_search_sheet.dart';
 import '../../widgets/lesson_card.dart';
 import '../../widgets/lesson_detail_sheet.dart';
 import '../../widgets/pill_filter_row.dart';
+import '../../widgets/sliding_toggle.dart';
 import '../../widgets/status_banners.dart';
 import '../../widgets/status_pill.dart';
 import '../search/search_screen.dart';
@@ -441,31 +442,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Widget _modeSwitcher(AppLocalizations l) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: SegmentedButton<_ScheduleMode>(
-        style: SegmentedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          textStyle: const TextStyle(fontSize: 13),
-        ),
-        segments: [
-          ButtonSegment(
-            value: _ScheduleMode.group,
-            icon: const Icon(Icons.groups_outlined, size: 16),
-            label: Text(l.scheduleModeGroup),
-          ),
-          ButtonSegment(
-            value: _ScheduleMode.teacher,
-            icon: const Icon(Icons.person_outline, size: 16),
-            label: Text(l.scheduleModeTeacher),
-          ),
-          ButtonSegment(
-            value: _ScheduleMode.auditorium,
-            icon: const Icon(Icons.place_outlined, size: 16),
-            label: Text(l.scheduleModeAuditorium),
-          ),
+      child: SlidingToggle(
+        items: [
+          SlidingToggleItem(icon: Icons.groups_outlined, label: l.scheduleModeGroup),
+          SlidingToggleItem(icon: Icons.person_outline, label: l.scheduleModeTeacher),
+          SlidingToggleItem(icon: Icons.place_outlined, label: l.scheduleModeAuditorium),
         ],
-        selected: {_mode},
-        onSelectionChanged: (s) => _switchMode(s.first),
-        showSelectedIcon: false,
+        selected: _mode.index,
+        onSelected: (i) => _switchMode(_ScheduleMode.values[i]),
       ),
     );
   }
@@ -624,14 +608,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
       child: Row(
         children: [
-          FilterChip(
-            label: Text(l.scheduleHideRetake),
+          PillToggle(
+            label: l.scheduleHideRetake,
+            icon: Icons.filter_alt_outlined,
             selected: _hideRetake,
-            onSelected: (v) {
+            onChanged: (v) {
               setState(() => _hideRetake = v);
               _saveFilterBool(_prefKeyHideRetake, v);
             },
-            visualDensity: VisualDensity.compact,
           ),
         ],
       ),
@@ -667,6 +651,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         actionLabel: _modePlaceholder(l, _mode),
         onAction: _pickEntity,
       );
+    }
+
+    if (_stream == null) {
+      // Сущность уже выбрана, а поток ещё не создан — такого не должно
+      // происходить, но `StreamBuilder(stream: null)` завис бы в спиннере
+      // навсегда без единого шанса на восстановление. Досоздаём поток сразу
+      // после кадра вместо того, чтобы полагаться только на побочный эффект
+      // в `didChangeDependencies`.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _stream == null) _reload();
+      });
+      return const Center(child: CircularProgressIndicator());
     }
 
     return StreamBuilder<ScheduleSnapshot>(

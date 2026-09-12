@@ -96,10 +96,13 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        shape: const StadiumBorder(),
-        side: BorderSide.none,
+        // В светлой теме заливка чипа и фон экрана почти неразличимы —
+        // без рамки чип попросту исчезает. Граница — не декор, а то, что
+        // реально его очерчивает.
+        shape: StadiumBorder(side: BorderSide(color: glass.hairline)),
+        side: BorderSide(color: glass.hairline),
         backgroundColor: glass.elevatedFill,
-        labelStyle: _textTheme.bodySmall,
+        labelStyle: _textTheme.bodySmall?.copyWith(color: glass.textMuted),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(

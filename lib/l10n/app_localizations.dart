@@ -125,7 +125,7 @@ abstract class AppLocalizations {
   /// No description provided for @navWork.
   ///
   /// In ru, this message translates to:
-  /// **'Контактная работа'**
+  /// **'Задания'**
   String get navWork;
 
   /// No description provided for @navProfile.
@@ -407,7 +407,7 @@ abstract class AppLocalizations {
   /// No description provided for @workHubTitle.
   ///
   /// In ru, this message translates to:
-  /// **'Учебные работы'**
+  /// **'Задания'**
   String get workHubTitle;
 
   /// No description provided for @workMaterialsCount.
@@ -1129,18 +1129,6 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Ср. балл {gpa}'**
   String dashboardGpaCaption(String gpa);
-
-  /// No description provided for @dashboardWorkCountCaption.
-  ///
-  /// In ru, this message translates to:
-  /// **'{n} дисциплин'**
-  String dashboardWorkCountCaption(int n);
-
-  /// No description provided for @dashboardReportCountCaption.
-  ///
-  /// In ru, this message translates to:
-  /// **'{n} работ'**
-  String dashboardReportCountCaption(int n);
 
   /// No description provided for @groupSearchTitle.
   ///

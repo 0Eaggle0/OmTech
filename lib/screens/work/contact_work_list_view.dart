@@ -19,10 +19,7 @@ import 'work_detail_screen.dart';
 /// Список дисциплин контактной работы. Без своего `Scaffold` — живёт внутри
 /// `WorkHubScreen`, который владеет шапкой и переключателем разделов.
 class ContactWorkListView extends StatefulWidget {
-  /// Сообщает хабу число дисциплин для счётчика в переключателе.
-  final ValueChanged<int>? onCount;
-
-  const ContactWorkListView({super.key, this.onCount});
+  const ContactWorkListView({super.key});
 
   @override
   State<ContactWorkListView> createState() => _ContactWorkListViewState();
@@ -84,7 +81,6 @@ class _ContactWorkListViewState extends State<ContactWorkListView> {
           _newCounts = counts;
           if (!r.fromCache) _syncedAt = DateTime.now();
         });
-        widget.onCount?.call(r.items.length);
       }
     } catch (_) {
       if (!mounted) return;

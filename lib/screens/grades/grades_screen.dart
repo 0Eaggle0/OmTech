@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -47,7 +49,11 @@ class _GradesScreenState extends State<GradesScreen> {
       _error = null;
     });
     try {
-      await for (final r in service.watch(forceRefresh: forceRefresh)) {
+      final stream = service.watch(forceRefresh: forceRefresh).timeout(
+        const Duration(seconds: 25),
+        onTimeout: (sink) => sink.addError(TimeoutException('grades load timeout')),
+      );
+      await for (final r in stream) {
         if (!mounted) return;
         setState(() {
           _result = r;

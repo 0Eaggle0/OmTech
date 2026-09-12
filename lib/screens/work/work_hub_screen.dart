@@ -5,6 +5,7 @@ import '../../controllers/app_nav_controller.dart';
 import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/lk_required_state.dart';
+import '../../widgets/sliding_toggle.dart';
 import '../reports/report_work_list_view.dart';
 import 'contact_work_list_view.dart';
 
@@ -20,8 +21,6 @@ class WorkHubScreen extends StatefulWidget {
 
 class _WorkHubScreenState extends State<WorkHubScreen> {
   int _section = 0;
-  int? _contactCount;
-  int? _reportCount;
 
   /// Непосещённый раздел не строим: иначе открытие вкладки тянуло бы из сети
   /// сразу оба списка. Посещённый остаётся в дереве и не грузится повторно.
@@ -82,27 +81,19 @@ class _WorkHubScreenState extends State<WorkHubScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                  child: SegmentedButton<int>(
-                    style: SegmentedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      textStyle: const TextStyle(fontSize: 13),
-                    ),
-                    segments: [
-                      ButtonSegment(
-                        value: 0,
-                        icon: const Icon(Icons.groups_2_outlined, size: 16),
-                        label: Text(_label(l.workTitle, _contactCount)),
+                  child: SlidingToggle(
+                    items: [
+                      SlidingToggleItem(
+                        icon: Icons.groups_2_outlined,
+                        label: l.workTitle,
                       ),
-                      ButtonSegment(
-                        value: 1,
-                        icon: const Icon(Icons.assignment_turned_in_outlined,
-                            size: 16),
-                        label: Text(_label(l.reportWorksTitle, _reportCount)),
+                      SlidingToggleItem(
+                        icon: Icons.assignment_turned_in_outlined,
+                        label: l.reportWorksTitle,
                       ),
                     ],
-                    selected: {_section},
-                    onSelectionChanged: (s) => _select(s.first),
-                    showSelectedIcon: false,
+                    selected: _section,
+                    onSelected: _select,
                   ),
                 ),
                 Expanded(
@@ -110,15 +101,11 @@ class _WorkHubScreenState extends State<WorkHubScreen> {
                     index: _section,
                     children: [
                       if (_visited.contains(0))
-                        ContactWorkListView(
-                          onCount: (n) => setState(() => _contactCount = n),
-                        )
+                        const ContactWorkListView()
                       else
                         const SizedBox.shrink(),
                       if (_visited.contains(1))
-                        ReportWorkListView(
-                          onCount: (n) => setState(() => _reportCount = n),
-                        )
+                        const ReportWorkListView()
                       else
                         const SizedBox.shrink(),
                     ],
@@ -128,7 +115,4 @@ class _WorkHubScreenState extends State<WorkHubScreen> {
             ),
     );
   }
-
-  static String _label(String title, int? count) =>
-      count == null ? title : '$title  $count';
 }

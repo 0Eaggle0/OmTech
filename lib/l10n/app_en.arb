@@ -5,7 +5,7 @@
   "navHome": "Home",
   "navSchedule": "Schedule",
   "navNews": "News",
-  "navWork": "Contact work",
+  "navWork": "Tasks",
   "navProfile": "Profile",
 
   "scheduleTitle": "Schedule",
@@ -73,7 +73,7 @@
   "workTaskNoFiles": "No files",
   "workDemoNote": "Demo data. Real tasks will appear after connecting your personal account.",
   "workTeachers": "Teachers",
-  "workHubTitle": "Study works",
+  "workHubTitle": "Tasks",
   "workMaterialsCount": "{n} tasks/materials",
   "@workMaterialsCount": {
     "placeholders": { "n": { "type": "int" } }
@@ -219,14 +219,6 @@
   "dashboardGpaCaption": "GPA {gpa}",
   "@dashboardGpaCaption": {
     "placeholders": { "gpa": { "type": "String" } }
-  },
-  "dashboardWorkCountCaption": "{n} subjects",
-  "@dashboardWorkCountCaption": {
-    "placeholders": { "n": { "type": "int" } }
-  },
-  "dashboardReportCountCaption": "{n} works",
-  "@dashboardReportCountCaption": {
-    "placeholders": { "n": { "type": "int" } }
   },
 
   "groupSearchTitle": "Search group",

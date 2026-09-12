@@ -18,26 +18,74 @@ class NavItemData {
 }
 
 /// Плавающая нижняя панель: скруглённая плашка, оторванная от края экрана,
-/// с «пилюлей», которая едет от предыдущей вкладки к новой.
+/// с «пилюлей», которую можно и тапнуть, и утащить пальцем, и смахнуть.
 ///
-/// Анимация приходит снаружи (`progress` + `prevIndex`), потому что владелец
-/// вкладок и так держит контроллер: панель не хранит своё состояние и не
-/// рассинхронизируется с содержимым.
-class FloatingNavBar extends StatelessWidget {
+/// Индикатор — `AnimatedPositioned`: при обычном тапе едет плавно (duration
+/// > 0), во время перетаскивания следует за пальцем один в один
+/// (duration: 0), а отпустив — довязывает анимацию до ближайшей вкладки.
+/// Так вся анимация живёт в одном месте вместо внешнего контроллера.
+class FloatingNavBar extends StatefulWidget {
   final List<NavItemData> items;
   final int index;
-  final int prevIndex;
-  final Animation<double> progress;
   final ValueChanged<int> onSelected;
 
   const FloatingNavBar({
     super.key,
     required this.items,
     required this.index,
-    required this.prevIndex,
-    required this.progress,
     required this.onSelected,
   });
+
+  @override
+  State<FloatingNavBar> createState() => _FloatingNavBarState();
+}
+
+class _FloatingNavBarState extends State<FloatingNavBar> {
+  /// Индекс, с которого началось перетаскивание. `null` — не тащим сейчас.
+  double? _dragBase;
+
+  /// Накопленное смещение пальца в пикселях с начала жеста.
+  double _dragDx = 0;
+
+  bool get _dragging => _dragBase != null;
+
+  void _onDragStart(DragStartDetails details) {
+    setState(() {
+      _dragBase = widget.index.toDouble();
+      _dragDx = 0;
+    });
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    setState(() => _dragDx += details.delta.dx);
+  }
+
+  void _onDragEnd(DragEndDetails details, double slot) {
+    final base = _dragBase;
+    if (base == null) return;
+    var continuous = base + _dragDx / slot;
+
+    // Короткий быстрый смах — даже если палец прошёл меньше половины
+    // слота, засчитываем переключение на соседнюю вкладку по скорости.
+    final velocity = details.primaryVelocity ?? 0;
+    if (velocity.abs() > 300 && (continuous - base).abs() < 0.5) {
+      continuous = base + (velocity < 0 ? 1 : -1);
+    }
+
+    final target = continuous.round().clamp(0, widget.items.length - 1);
+    setState(() {
+      _dragBase = null;
+      _dragDx = 0;
+    });
+    if (target != widget.index) widget.onSelected(target);
+  }
+
+  void _onDragCancel() {
+    setState(() {
+      _dragBase = null;
+      _dragDx = 0;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,47 +96,55 @@ class FloatingNavBar extends StatelessWidget {
       height: kFloatingNavHeight,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final slot = constraints.maxWidth / items.length;
-          return Stack(
-            children: [
-              // Перестраивается только пилюля: иконки остаются вне анимации.
-              AnimatedBuilder(
-                animation: progress,
-                builder: (context, _) {
-                  final t = Curves.easeOutCubic
-                      .transform(progress.value.clamp(0.0, 1.0));
-                  final pos =
-                      lerpDouble(prevIndex.toDouble(), index.toDouble(), t)!;
-                  return Positioned(
-                    left: pos * slot + 6,
-                    top: 7,
-                    bottom: 7,
-                    width: slot - 12,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: glass.navIndicator,
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                        border: Border.all(
-                          color: glass.accent.withValues(alpha: 0.22),
+          final slot = constraints.maxWidth / widget.items.length;
+          final base = _dragBase;
+          final position = base == null
+              ? widget.index.toDouble()
+              : (base + _dragDx / slot)
+                  .clamp(0.0, widget.items.length - 1.0);
+
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onHorizontalDragStart: _onDragStart,
+            onHorizontalDragUpdate: _onDragUpdate,
+            onHorizontalDragEnd: (d) => _onDragEnd(d, slot),
+            onHorizontalDragCancel: _onDragCancel,
+            child: Stack(
+              children: [
+                // Перестраивается только пилюля: иконки не завязаны на жест.
+                AnimatedPositioned(
+                  duration: _dragging
+                      ? Duration.zero
+                      : const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  left: position * slot + 6,
+                  top: 7,
+                  bottom: 7,
+                  width: slot - 12,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: glass.navIndicator,
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      border: Border.all(
+                        color: glass.accent.withValues(alpha: 0.22),
+                      ),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    for (var i = 0; i < widget.items.length; i++)
+                      Expanded(
+                        child: _NavBarItem(
+                          item: widget.items[i],
+                          selected: i == widget.index,
+                          onTap: () => widget.onSelected(i),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              Row(
-                children: [
-                  for (var i = 0; i < items.length; i++)
-                    Expanded(
-                      child: _NavBarItem(
-                        item: items[i],
-                        selected: i == index,
-                        onTap: () => onSelected(i),
-                      ),
-                    ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           );
         },
       ),

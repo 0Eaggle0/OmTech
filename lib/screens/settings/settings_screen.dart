@@ -205,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: const Icon(Icons.school, color: Colors.white, size: 22),
               ),
               title: Text(l.settingsAboutApp),
-              subtitle: Text('${l.settingsVersion} 1.6.0-beta · ${l.profileBuildBy}'),
+              subtitle: Text('${l.settingsVersion} 1.6.1-beta · ${l.profileBuildBy}'),
             ),
           ),
         ],

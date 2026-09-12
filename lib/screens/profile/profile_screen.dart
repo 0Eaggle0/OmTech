@@ -14,8 +14,10 @@ import '../../models/student_record.dart';
 import '../../services/link_launcher.dart';
 import '../../theme/app_glass.dart';
 import '../../theme/app_metrics.dart';
+import '../../widgets/accent_bar.dart';
 import '../../widgets/group_search_sheet.dart';
 import '../../widgets/lk_login_sheet.dart';
+import '../../widgets/sliding_toggle.dart';
 import '../../widgets/status_pill.dart';
 import '../settings/settings_screen.dart';
 
@@ -224,25 +226,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildAvatar(File? file, double radius) {
     final theme = Theme.of(context);
     final glass = context.glass;
-    if (file != null && file.existsSync()) {
-      return CircleAvatar(radius: radius, backgroundImage: FileImage(file));
-    }
-    final initials = _firstName.isNotEmpty
-        ? _firstName[0].toUpperCase()
-        : _lastName.isNotEmpty
-            ? _lastName[0].toUpperCase()
-            : '?';
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: glass.tint(theme.colorScheme.primary),
-      child: Text(
-        initials,
-        style: TextStyle(
-          fontSize: radius * 0.75,
-          fontWeight: FontWeight.w700,
-          color: theme.colorScheme.primary,
-        ),
+    final inner = (file != null && file.existsSync())
+        ? CircleAvatar(radius: radius, backgroundImage: FileImage(file))
+        : CircleAvatar(
+            radius: radius,
+            backgroundColor: glass.tint(theme.colorScheme.primary),
+            child: Text(
+              _firstName.isNotEmpty
+                  ? _firstName[0].toUpperCase()
+                  : _lastName.isNotEmpty
+                      ? _lastName[0].toUpperCase()
+                      : '?',
+              style: TextStyle(
+                fontSize: radius * 0.75,
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          );
+    return Container(
+      padding: const EdgeInsets.all(2.5),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.55)),
       ),
+      child: inner,
     );
   }
 
@@ -313,18 +321,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    SegmentedButton<int?>(
-                      style: SegmentedButton.styleFrom(
-                        textStyle: const TextStyle(fontSize: 13),
-                      ),
-                      segments: [
-                        ButtonSegment<int?>(value: null, label: Text(l.profileSubgroupAll)),
-                        const ButtonSegment<int?>(value: 1, label: Text('1')),
-                        const ButtonSegment<int?>(value: 2, label: Text('2')),
+                    SlidingToggle(
+                      items: [
+                        SlidingToggleItem(label: l.profileSubgroupAll),
+                        const SlidingToggleItem(label: '1'),
+                        const SlidingToggleItem(label: '2'),
                       ],
-                      selected: {groupCtrl.subgroup},
-                      onSelectionChanged: (s) => groupCtrl.setSubgroup(s.first),
-                      showSelectedIcon: false,
+                      selected: switch (groupCtrl.subgroup) { 1 => 1, 2 => 2, _ => 0 },
+                      onSelected: (i) => groupCtrl.setSubgroup(i == 0 ? null : i),
                     ),
                   ],
                 ),
@@ -424,25 +428,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _lkCard(BuildContext context, AppLocalizations l) {
     final lk = context.watch<LkController>();
     final theme = Theme.of(context);
+    final glass = context.glass;
 
     if (lk.isConnected) {
       final profile = lk.profile;
-      return Card(
-        child: Column(
+      final accent = glass.statusColor(AppStatus.success);
+      final shape = BorderRadius.circular(AppRadius.card);
+      return Material(
+        color: glass.cardFill,
+        borderRadius: shape,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
           children: [
-            ListTile(
-              leading: Icon(Icons.verified_user_outlined, color: theme.colorScheme.primary),
-              title: Text(profile?.fullName.isNotEmpty == true
-                  ? profile!.fullName
-                  : l.lkConnected),
-              subtitle: profile == null ? null : Text(_lkSubtitle(l, profile)),
-              isThreeLine: profile != null,
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.logout_outlined),
-              title: Text(l.lkDisconnect),
-              onTap: () => _confirmDisconnect(l, lk),
+            Positioned(left: 0, top: 0, bottom: 0, child: AccentBar(accent)),
+            Padding(
+              padding: const EdgeInsets.only(left: 5),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: glass.tint(accent),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(Icons.verified_user_outlined, color: accent),
+                    ),
+                    title: Text(profile?.fullName.isNotEmpty == true
+                        ? profile!.fullName
+                        : l.lkConnected),
+                    subtitle: profile == null ? null : Text(_lkSubtitle(l, profile)),
+                    isThreeLine: profile != null,
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Icon(Icons.logout_outlined, color: theme.colorScheme.error),
+                    title: Text(
+                      l.lkDisconnect,
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                    onTap: () => _confirmDisconnect(l, lk),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -527,50 +556,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _servicesGrid(BuildContext context, AppLocalizations l) {
+    final glass = context.glass;
     final items = [
-      (Icons.public, l.profileSiteOmgtu, 'https://www.omgtu.ru/'),
-      (Icons.calendar_month_outlined, l.profileSiteSchedule, 'https://rasp.omgtu.ru/ruz/main'),
-      (Icons.newspaper_outlined, l.profileSiteNews, 'https://www.omgtu.ru/news/'),
-      (Icons.dashboard_outlined, l.profileSitePortal, 'https://up.omgtu.ru/'),
+      (Icons.public, l.profileSiteOmgtu, 'https://www.omgtu.ru/', glass.accent),
+      (Icons.calendar_month_outlined, l.profileSiteSchedule,
+          'https://rasp.omgtu.ru/ruz/main', glass.statusColor(AppStatus.info)),
+      (Icons.newspaper_outlined, l.profileSiteNews, 'https://www.omgtu.ru/news/',
+          glass.statusColor(AppStatus.warning)),
+      (Icons.dashboard_outlined, l.profileSitePortal, 'https://up.omgtu.ru/',
+          glass.statusColor(AppStatus.success)),
     ];
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      childAspectRatio: 2.4,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 2.2,
       children: [
-        for (final (icon, label, url) in items) _serviceTile(context, icon, label, url),
+        for (final (icon, label, url, color) in items)
+          _serviceTile(context, icon, label, url, color),
       ],
     );
   }
 
-  Widget _serviceTile(BuildContext context, IconData icon, String label, String url) {
+  Widget _serviceTile(
+      BuildContext context, IconData icon, String label, String url, Color color) {
     final theme = Theme.of(context);
     final glass = context.glass;
-    return Material(
-      color: glass.cardFill,
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        onTap: () => openExternal(context, url),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
-              Icon(icon, size: 18, color: theme.colorScheme.primary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall,
+    final shape = BorderRadius.circular(AppRadius.card);
+    return DecoratedBox(
+      decoration: BoxDecoration(borderRadius: shape, boxShadow: glass.glow(color)),
+      child: Material(
+        color: glass.cardFill,
+        borderRadius: shape,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => openExternal(context, url),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: glass.tint(color),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 17, color: color),
                 ),
-              ),
-              Icon(Icons.open_in_new, size: 14, color: glass.textFaint),
-            ],
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -680,21 +726,28 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     final theme = Theme.of(context);
     final glass = context.glass;
     final file = _avatarPath != null ? File(_avatarPath!) : null;
-    if (file != null && file.existsSync()) {
-      return CircleAvatar(radius: 52, backgroundImage: FileImage(file));
-    }
-    final initials = _firstCtrl.text.isNotEmpty
-        ? _firstCtrl.text[0].toUpperCase()
-        : _lastCtrl.text.isNotEmpty
-            ? _lastCtrl.text[0].toUpperCase()
-            : '?';
-    return CircleAvatar(
-      radius: 52,
-      backgroundColor: glass.tint(theme.colorScheme.primary),
-      child: Text(
-        initials,
-        style: TextStyle(fontSize: 39, fontWeight: FontWeight.w700, color: theme.colorScheme.primary),
+    final inner = (file != null && file.existsSync())
+        ? CircleAvatar(radius: 52, backgroundImage: FileImage(file))
+        : CircleAvatar(
+            radius: 52,
+            backgroundColor: glass.tint(theme.colorScheme.primary),
+            child: Text(
+              _firstCtrl.text.isNotEmpty
+                  ? _firstCtrl.text[0].toUpperCase()
+                  : _lastCtrl.text.isNotEmpty
+                      ? _lastCtrl.text[0].toUpperCase()
+                      : '?',
+              style: TextStyle(
+                  fontSize: 39, fontWeight: FontWeight.w700, color: theme.colorScheme.primary),
+            ),
+          );
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.55)),
       ),
+      child: inner,
     );
   }
 

@@ -21,7 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navNews => 'News';
 
   @override
-  String get navWork => 'Contact work';
+  String get navWork => 'Tasks';
 
   @override
   String get navProfile => 'Profile';
@@ -178,7 +178,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workTeachers => 'Teachers';
 
   @override
-  String get workHubTitle => 'Study works';
+  String get workHubTitle => 'Tasks';
 
   @override
   String workMaterialsCount(int n) {
@@ -559,16 +559,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String dashboardGpaCaption(String gpa) {
     return 'GPA $gpa';
-  }
-
-  @override
-  String dashboardWorkCountCaption(int n) {
-    return '$n subjects';
-  }
-
-  @override
-  String dashboardReportCountCaption(int n) {
-    return '$n works';
   }
 
   @override
