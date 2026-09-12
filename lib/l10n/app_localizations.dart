@@ -404,6 +404,48 @@ abstract class AppLocalizations {
   /// **'Преподаватели'**
   String get workTeachers;
 
+  /// No description provided for @workHubTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Учебные работы'**
+  String get workHubTitle;
+
+  /// No description provided for @workMaterialsCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'{n} заданий/материалов'**
+  String workMaterialsCount(int n);
+
+  /// No description provided for @workNewCount.
+  ///
+  /// In ru, this message translates to:
+  /// **'+{n} новых'**
+  String workNewCount(int n);
+
+  /// No description provided for @workSyncedAt.
+  ///
+  /// In ru, this message translates to:
+  /// **'Синхронизировано с сервером ОмГТУ: {time}'**
+  String workSyncedAt(String time);
+
+  /// No description provided for @workLecturer.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ведущий лектор'**
+  String get workLecturer;
+
+  /// No description provided for @workLecturerStub.
+  ///
+  /// In ru, this message translates to:
+  /// **'Заглушка: данных о лекторе пока нет — источник ещё не подключён.'**
+  String get workLecturerStub;
+
+  /// No description provided for @workServerUnavailable.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сервер недоступен'**
+  String get workServerUnavailable;
+
   /// No description provided for @reportWorksTitle.
   ///
   /// In ru, this message translates to:
@@ -443,7 +485,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportStatusRejected.
   ///
   /// In ru, this message translates to:
-  /// **'Отклонена'**
+  /// **'Доработка'**
   String get reportStatusRejected;
 
   /// No description provided for @reportFilterAll.
@@ -476,12 +518,6 @@ abstract class AppLocalizations {
   /// **'Загруженных работ пока нет'**
   String get reportEmpty;
 
-  /// No description provided for @reportUploadStub.
-  ///
-  /// In ru, this message translates to:
-  /// **'Загрузка работ — в разработке'**
-  String get reportUploadStub;
-
   /// No description provided for @reportDemoNote.
   ///
   /// In ru, this message translates to:
@@ -505,6 +541,18 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Учебный год'**
   String get reportAcademicYear;
+
+  /// No description provided for @reportRegistrationNumber.
+  ///
+  /// In ru, this message translates to:
+  /// **'Регистрационный №'**
+  String get reportRegistrationNumber;
+
+  /// No description provided for @reportCopied.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скопировано'**
+  String get reportCopied;
 
   /// No description provided for @profileTitle.
   ///

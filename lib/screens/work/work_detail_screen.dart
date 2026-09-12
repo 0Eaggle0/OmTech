@@ -8,8 +8,13 @@ import '../../l10n/app_localizations.dart';
 import '../../models/contact_work.dart';
 import '../../services/contact_work_service.dart';
 import '../../services/link_launcher.dart';
-import '../../widgets/link_text.dart';
 import '../../services/lk/lk_file_downloader.dart';
+import '../../theme/app_glass.dart';
+import '../../theme/app_metrics.dart';
+import '../../widgets/link_text.dart';
+import '../../widgets/status_banners.dart';
+import '../../widgets/status_pill.dart';
+import '../../widgets/work_file_row.dart';
 
 class WorkDetailScreen extends StatefulWidget {
   final WorkDiscipline discipline;
@@ -25,6 +30,8 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
   bool _loading = false;
   bool _fromCache = false;
   String? _error;
+  bool _errorDismissed = false;
+  DateTime? _cachedAt;
 
   bool get _isRealDiscipline => widget.discipline.id != null;
 
@@ -44,6 +51,7 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
     setState(() {
       if (_items.isEmpty) _loading = true;
       _error = null;
+      _errorDismissed = false;
     });
     var sawAny = false;
     try {
@@ -54,6 +62,7 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
           _items = list;
           _loading = false;
           _fromCache = !sawAny; // первая эмиссия — кэш, вторая — свежие
+          if (_fromCache) _cachedAt = DateTime.now();
           sawAny = true;
         });
       }
@@ -79,12 +88,13 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final glass = context.glass;
     final locale = Localizations.localeOf(context).languageCode;
-    final dateFmt = DateFormat('yyyy-MM-dd HH:mm', locale);
+    final dateFmt = DateFormat('d MMMM, HH:mm', locale);
 
     final sorted = [..._items]
-      ..sort(
-          (a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+      ..sort((a, b) =>
+          (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
 
     final body = _loading && _items.isEmpty
         ? const Center(child: CircularProgressIndicator())
@@ -92,7 +102,7 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
             onRefresh: () => _isRealDiscipline
                 ? _load(forceRefresh: true)
                 : Future<void>.value(),
-            child: _buildContent(context, l, theme, dateFmt, sorted),
+            child: _buildContent(context, l, theme, glass, dateFmt, sorted),
           );
 
     return Scaffold(
@@ -109,10 +119,8 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       widget.discipline.teachers.join(', '),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.55),
-                      ),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: glass.textMuted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -128,73 +136,78 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
     BuildContext context,
     AppLocalizations l,
     ThemeData theme,
+    AppGlass glass,
     DateFormat dateFmt,
     List<ContactWorkItem> sorted,
   ) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
       children: [
-        if (_fromCache)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _cacheBanner(context, l, theme),
+        if (_error != null && !_errorDismissed) ...[
+          ErrorBanner(
+            _error!,
+            title: l.workServerUnavailable,
+            onRetry: () => _load(forceRefresh: true),
+            onDismiss: () => setState(() => _errorDismissed = true),
           ),
-        if (_error != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: _errorBanner(context, theme),
-          ),
+          const SizedBox(height: 10),
+        ],
+        if (_fromCache) ...[
+          CacheBanner(updatedAt: _cachedAt),
+          const SizedBox(height: 6),
+        ],
+        _lecturerStub(context, l, theme, glass),
+        const SizedBox(height: 12),
         if (sorted.isEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 40, 16, 16),
             child: Center(
               child: Text(
                 l.workTaskNoFiles,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(color: glass.textMuted),
               ),
             ),
           )
         else
           ...sorted.asMap().entries.map(
-              (e) => _itemCard(context, l, theme, dateFmt, e.value, e.key)),
+                (e) => _itemCard(context, l, theme, glass, dateFmt, e.value, e.key),
+              ),
       ],
     );
   }
 
-  Widget _cacheBanner(BuildContext context, AppLocalizations l, ThemeData theme) {
-    return Row(
-      children: [
-        Icon(Icons.offline_pin_outlined,
-            size: 16,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            l.lkCacheShown,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _errorBanner(BuildContext context, ThemeData theme) {
+  /// Ведущего лектора взять пока неоткуда — рисуем явную заглушку,
+  /// чтобы место в макете было занято осознанно, а не выглядело как данные.
+  Widget _lecturerStub(
+      BuildContext context, AppLocalizations l, ThemeData theme, AppGlass glass) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: theme.colorScheme.error.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(10),
+        color: glass.elevatedFill,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: glass.hairline),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, size: 18, color: theme.colorScheme.error),
-          const SizedBox(width: 8),
-          Expanded(child: Text(_error!)),
+          Icon(Icons.school_outlined, size: 20, color: glass.textFaint),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l.workLecturer,
+                  style: theme.textTheme.labelSmall?.copyWith(color: glass.textMuted),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  l.workLecturerStub,
+                  style: theme.textTheme.bodySmall?.copyWith(color: glass.textFaint),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -204,6 +217,7 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
     BuildContext context,
     AppLocalizations l,
     ThemeData theme,
+    AppGlass glass,
     DateFormat dateFmt,
     ContactWorkItem item,
     int index,
@@ -218,55 +232,38 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '№ ${item.number}',
-                      style: TextStyle(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                    ),
+                  StatusPill(
+                    '№ ${item.number}',
+                    status: AppStatus.accent,
+                    dense: true,
                   ),
                   const Spacer(),
                   if (item.createdAt != null)
                     Text(
                       dateFmt.format(item.createdAt!),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.45),
-                      ),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: glass.textFaint),
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
-              if (item.comment.isNotEmpty)
+              if (item.comment.isNotEmpty) ...[
+                const SizedBox(height: 10),
                 LinkText(
                   text: item.comment,
-                  style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
+                  style: theme.textTheme.bodyMedium,
                 ),
+              ],
               if (item.teacher.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Row(
                   children: [
-                    Icon(Icons.person_outline,
-                        size: 14,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.45)),
-                    const SizedBox(width: 4),
+                    Icon(Icons.person_outline, size: 14, color: glass.textMuted),
+                    const SizedBox(width: 5),
                     Expanded(
                       child: Text(
                         item.teacher,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.55),
-                        ),
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: glass.textMuted),
                       ),
                     ),
                   ],
@@ -274,12 +271,15 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
               ],
               if (item.files.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Divider(
-                    height: 1,
-                    color:
-                        theme.colorScheme.onSurface.withValues(alpha: 0.08)),
-                const SizedBox(height: 8),
-                ...item.files.map((f) => _fileRow(context, l, theme, f)),
+                for (final f in item.files)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: WorkFileRow(
+                      file: f,
+                      onOpen: () => _openFile(context, f),
+                      onSave: () => _saveFile(context, f),
+                    ),
+                  ),
               ],
             ],
           ),
@@ -288,34 +288,6 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
           .animate(delay: (index * 55).ms)
           .fadeIn(duration: 280.ms)
           .slideY(begin: 0.05, curve: Curves.easeOut),
-    );
-  }
-
-  Widget _fileRow(BuildContext context, AppLocalizations l, ThemeData theme, WorkFile file) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              icon: Icon(_iconFor(file.type), size: 18),
-              label: Text(file.name, overflow: TextOverflow.ellipsis, maxLines: 1),
-              style: OutlinedButton.styleFrom(
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                foregroundColor: theme.colorScheme.primary,
-              ),
-              onPressed: () => _openFile(context, file),
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton.outlined(
-            tooltip: l.fileSave,
-            icon: const Icon(Icons.download_outlined, size: 20),
-            onPressed: () => _saveFile(context, file),
-          ),
-        ],
-      ),
     );
   }
 
@@ -338,25 +310,4 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
       await openExternal(context, file.url);
     }
   }
-
-  IconData _iconFor(String type) {
-    switch (type) {
-      case 'pdf':
-        return Icons.picture_as_pdf_outlined;
-      case 'docx':
-      case 'doc':
-        return Icons.description_outlined;
-      case 'pptx':
-      case 'ppt':
-        return Icons.slideshow_outlined;
-      case 'xlsx':
-      case 'xls':
-        return Icons.table_chart_outlined;
-      case 'link':
-        return Icons.link_outlined;
-      default:
-        return Icons.insert_drive_file_outlined;
-    }
-  }
-
 }

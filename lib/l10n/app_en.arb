@@ -73,6 +73,22 @@
   "workTaskNoFiles": "No files",
   "workDemoNote": "Demo data. Real tasks will appear after connecting your personal account.",
   "workTeachers": "Teachers",
+  "workHubTitle": "Study works",
+  "workMaterialsCount": "{n} tasks/materials",
+  "@workMaterialsCount": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "workNewCount": "+{n} new",
+  "@workNewCount": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "workSyncedAt": "Synced with OmSTU server: {time}",
+  "@workSyncedAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "workLecturer": "Lead lecturer",
+  "workLecturerStub": "Placeholder: no lecturer data yet — the source isn't wired up.",
+  "workServerUnavailable": "Server unavailable",
 
   "reportWorksTitle": "Submitted works",
   "reportWorksDashboardTile": "Submitted works",
@@ -80,17 +96,18 @@
   "reportOtherWorks": "Other works",
   "reportStatusPending": "In review",
   "reportStatusAccepted": "Accepted",
-  "reportStatusRejected": "Rejected",
+  "reportStatusRejected": "Needs revision",
   "reportFilterAll": "All",
   "reportSearch": "Search by title or subject",
   "reportTeacher": "Teacher",
   "reportComment": "Comment",
   "reportEmpty": "No submitted works yet",
-  "reportUploadStub": "Upload is under development",
   "reportDemoNote": "Demo data. Real list of works will appear after connecting your personal account.",
   "reportWorkNumberLabel": "No.",
   "reportSemesterLabel": "semester",
   "reportAcademicYear": "Academic year",
+  "reportRegistrationNumber": "Registration No.",
+  "reportCopied": "Copied",
 
   "profileTitle": "Profile",
   "profileNameHint": "Your full name",

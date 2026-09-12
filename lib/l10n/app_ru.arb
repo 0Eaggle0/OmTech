@@ -73,6 +73,22 @@
   "workTaskNoFiles": "Нет файлов",
   "workDemoNote": "Демонстрационные данные. Реальные задания появятся после подключения личного кабинета.",
   "workTeachers": "Преподаватели",
+  "workHubTitle": "Учебные работы",
+  "workMaterialsCount": "{n} заданий/материалов",
+  "@workMaterialsCount": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "workNewCount": "+{n} новых",
+  "@workNewCount": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "workSyncedAt": "Синхронизировано с сервером ОмГТУ: {time}",
+  "@workSyncedAt": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "workLecturer": "Ведущий лектор",
+  "workLecturerStub": "Заглушка: данных о лекторе пока нет — источник ещё не подключён.",
+  "workServerUnavailable": "Сервер недоступен",
 
   "reportWorksTitle": "Отчётные работы",
   "reportWorksDashboardTile": "Отчётные работы",
@@ -80,17 +96,18 @@
   "reportOtherWorks": "Прочие работы",
   "reportStatusPending": "На проверке",
   "reportStatusAccepted": "Принята",
-  "reportStatusRejected": "Отклонена",
+  "reportStatusRejected": "Доработка",
   "reportFilterAll": "Все",
   "reportSearch": "Поиск по названию или предмету",
   "reportTeacher": "Преподаватель",
   "reportComment": "Комментарий",
   "reportEmpty": "Загруженных работ пока нет",
-  "reportUploadStub": "Загрузка работ — в разработке",
   "reportDemoNote": "Демонстрационные данные. Реальный список работ появится после подключения личного кабинета.",
   "reportWorkNumberLabel": "№",
   "reportSemesterLabel": "семестр",
   "reportAcademicYear": "Учебный год",
+  "reportRegistrationNumber": "Регистрационный №",
+  "reportCopied": "Скопировано",
 
   "profileTitle": "Профиль",
   "profileNameHint": "Ваше ФИО",

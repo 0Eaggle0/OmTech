@@ -178,6 +178,34 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workTeachers => 'Преподаватели';
 
   @override
+  String get workHubTitle => 'Учебные работы';
+
+  @override
+  String workMaterialsCount(int n) {
+    return '$n заданий/материалов';
+  }
+
+  @override
+  String workNewCount(int n) {
+    return '+$n новых';
+  }
+
+  @override
+  String workSyncedAt(String time) {
+    return 'Синхронизировано с сервером ОмГТУ: $time';
+  }
+
+  @override
+  String get workLecturer => 'Ведущий лектор';
+
+  @override
+  String get workLecturerStub =>
+      'Заглушка: данных о лекторе пока нет — источник ещё не подключён.';
+
+  @override
+  String get workServerUnavailable => 'Сервер недоступен';
+
+  @override
   String get reportWorksTitle => 'Отчётные работы';
 
   @override
@@ -196,7 +224,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get reportStatusAccepted => 'Принята';
 
   @override
-  String get reportStatusRejected => 'Отклонена';
+  String get reportStatusRejected => 'Доработка';
 
   @override
   String get reportFilterAll => 'Все';
@@ -214,9 +242,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get reportEmpty => 'Загруженных работ пока нет';
 
   @override
-  String get reportUploadStub => 'Загрузка работ — в разработке';
-
-  @override
   String get reportDemoNote =>
       'Демонстрационные данные. Реальный список работ появится после подключения личного кабинета.';
 
@@ -228,6 +253,12 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get reportAcademicYear => 'Учебный год';
+
+  @override
+  String get reportRegistrationNumber => 'Регистрационный №';
+
+  @override
+  String get reportCopied => 'Скопировано';
 
   @override
   String get profileTitle => 'Профиль';

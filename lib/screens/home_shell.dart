@@ -16,7 +16,7 @@ import 'dashboard/dashboard_screen.dart';
 import 'news/news_screen.dart';
 import 'profile/profile_screen.dart';
 import 'schedule/schedule_screen.dart';
-import 'work/work_list_screen.dart';
+import 'work/work_hub_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -90,7 +90,7 @@ class _HomeShellState extends State<HomeShell>
       DashboardScreen(onOpenTab: _open),
       const ScheduleScreen(),
       const NewsScreen(),
-      const WorkListScreen(),
+      const WorkHubScreen(),
       const ProfileScreen(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstLaunch());

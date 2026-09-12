@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../controllers/app_nav_controller.dart';
 import '../../controllers/group_controller.dart';
 import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
@@ -28,9 +29,7 @@ import '../../widgets/shimmer_placeholder.dart';
 import '../../widgets/tilt_card.dart';
 import '../grades/grades_screen.dart';
 import '../news/news_detail_screen.dart';
-import '../reports/report_work_screen.dart';
 import '../search/search_screen.dart';
-import '../work/work_list_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final ValueChanged<int> onOpenTab;
@@ -552,9 +551,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       end: Alignment.bottomRight,
                     ),
                     neonColor: const Color(0xFF26C6DA),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const WorkListScreen()),
-                    ),
+                    onTap: () => context
+                        .read<AppNavController>()
+                        .openTab(3, workSection: 0),
                   ),
                 ),
               ),
@@ -574,9 +573,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       end: Alignment.bottomRight,
                     ),
                     neonColor: const Color(0xFFE08F4F),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const ReportWorkScreen()),
-                    ),
+                    onTap: () => context
+                        .read<AppNavController>()
+                        .openTab(3, workSection: 1),
                   ),
                 ),
               ),

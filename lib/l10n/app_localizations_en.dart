@@ -178,6 +178,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workTeachers => 'Teachers';
 
   @override
+  String get workHubTitle => 'Study works';
+
+  @override
+  String workMaterialsCount(int n) {
+    return '$n tasks/materials';
+  }
+
+  @override
+  String workNewCount(int n) {
+    return '+$n new';
+  }
+
+  @override
+  String workSyncedAt(String time) {
+    return 'Synced with OmSTU server: $time';
+  }
+
+  @override
+  String get workLecturer => 'Lead lecturer';
+
+  @override
+  String get workLecturerStub =>
+      'Placeholder: no lecturer data yet — the source isn\'t wired up.';
+
+  @override
+  String get workServerUnavailable => 'Server unavailable';
+
+  @override
   String get reportWorksTitle => 'Submitted works';
 
   @override
@@ -196,7 +224,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reportStatusAccepted => 'Accepted';
 
   @override
-  String get reportStatusRejected => 'Rejected';
+  String get reportStatusRejected => 'Needs revision';
 
   @override
   String get reportFilterAll => 'All';
@@ -214,9 +242,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reportEmpty => 'No submitted works yet';
 
   @override
-  String get reportUploadStub => 'Upload is under development';
-
-  @override
   String get reportDemoNote =>
       'Demo data. Real list of works will appear after connecting your personal account.';
 
@@ -228,6 +253,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportAcademicYear => 'Academic year';
+
+  @override
+  String get reportRegistrationNumber => 'Registration No.';
+
+  @override
+  String get reportCopied => 'Copied';
 
   @override
   String get profileTitle => 'Profile';

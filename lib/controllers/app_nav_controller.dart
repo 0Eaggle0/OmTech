@@ -8,9 +8,13 @@ import 'package:flutter/foundation.dart';
 /// вкладки — здесь только просьба, а не факт переключения.
 class AppNavController extends ChangeNotifier {
   int? _pendingTab;
+  int? _pendingWorkSection;
 
-  void openTab(int index) {
+  /// [workSection] — какой раздел показать внутри вкладки «Задания»
+  /// (0 — контактная работа, 1 — отчётные). Забирает его сам хаб.
+  void openTab(int index, {int? workSection}) {
     _pendingTab = index;
+    if (workSection != null) _pendingWorkSection = workSection;
     notifyListeners();
   }
 
@@ -19,5 +23,11 @@ class AppNavController extends ChangeNotifier {
     final tab = _pendingTab;
     _pendingTab = null;
     return tab;
+  }
+
+  int? consumeWorkSection() {
+    final section = _pendingWorkSection;
+    _pendingWorkSection = null;
+    return section;
   }
 }
