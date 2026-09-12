@@ -297,7 +297,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSiteNews => 'News';
 
   @override
+  String get profileSitePortal => 'Portal up.omgtu.ru';
+
+  @override
   String get profileSettings => 'Settings';
+
+  @override
+  String get profileBuildBy => 'build by Eaggle';
 
   @override
   String get lkSection => 'OmGTU personal account';
@@ -315,16 +321,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lkLoginTitle => 'Sign in to personal account';
 
   @override
+  String get lkLoginSubtitle => 'OmSTU • Information system';
+
+  @override
   String get lkLoginHint => 'Use the same credentials as on up.omgtu.ru';
 
   @override
-  String get lkUsername => 'Username';
+  String get lkUsername => 'Student login';
 
   @override
   String get lkPassword => 'Password';
 
   @override
   String get lkLoginButton => 'Sign in';
+
+  @override
+  String get lkForgotPassword => 'Forgot?';
+
+  @override
+  String get lkSkipGuest => 'Skip (continue as guest)';
+
+  @override
+  String get lkSslNote => 'Secure SSL connection to OmSTU';
 
   @override
   String get lkInvalidCredentials => 'Invalid username or password';
@@ -417,6 +435,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAboutApp => 'OmTech';
+
+  @override
+  String get settingsNotifications => 'Notifications';
+
+  @override
+  String get settingsNotifTasks => 'New tasks';
+
+  @override
+  String get settingsNotifTasksHint => 'Contact work: new tasks appeared';
+
+  @override
+  String get settingsNotifReports => 'Submitted work status';
+
+  @override
+  String get settingsNotifReportsHint =>
+      'Work accepted or sent back for revision';
+
+  @override
+  String get settingsNotifGrades => 'New grades';
+
+  @override
+  String get settingsNotifGradesHint => 'New grades appeared in your record';
+
+  @override
+  String get settingsNotifTest => 'Send a test notification';
+
+  @override
+  String get settingsNotifTestTask => 'New task';
+
+  @override
+  String get settingsNotifTestAccepted => 'Work accepted';
+
+  @override
+  String get settingsNotifTestRejected => 'Work needs revision';
+
+  @override
+  String get settingsNotifTestGrade => 'New grade';
+
+  @override
+  String get settingsData => 'Data';
+
+  @override
+  String get settingsClearCache => 'Clear cache';
+
+  @override
+  String settingsCacheSize(String size) {
+    return 'Using: $size';
+  }
+
+  @override
+  String get settingsCacheCounting => 'Measuring…';
+
+  @override
+  String get settingsClearCacheTitle => 'Clear cache?';
+
+  @override
+  String get settingsClearCacheBody =>
+      'This removes: saved schedule, personal account data, news cache, downloaded files and search history.';
+
+  @override
+  String get settingsClearCacheKept =>
+      'Your sign-in, group, theme and language stay untouched.';
+
+  @override
+  String get settingsCacheCleared => 'Cache cleared';
 
   @override
   String get dashboardGreeting => 'Welcome!';

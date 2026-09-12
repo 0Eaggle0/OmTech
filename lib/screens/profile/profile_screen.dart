@@ -12,9 +12,11 @@ import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/student_record.dart';
 import '../../services/link_launcher.dart';
+import '../../theme/app_glass.dart';
 import '../../theme/app_metrics.dart';
 import '../../widgets/group_search_sheet.dart';
-import '../../widgets/lk_login_dialog.dart';
+import '../../widgets/lk_login_sheet.dart';
+import '../../widgets/status_pill.dart';
 import '../settings/settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -142,136 +144,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _pickAvatar(ImageSource source) async {
+  Future<String?> _pickAvatar(ImageSource source) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: source, imageQuality: 85);
-    if (picked == null || !mounted) return;
+    if (picked == null) return _avatarPath;
     final dir = await getApplicationDocumentsDirectory();
     final dest = File(p.join(dir.path, 'avatar${p.extension(picked.path)}'));
     await File(picked.path).copy(dest.path);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_avatarKey, dest.path);
     if (mounted) setState(() => _avatarPath = dest.path);
+    return dest.path;
   }
 
   Future<void> _removeAvatar() async {
+    final path = _avatarPath;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_avatarKey);
+    if (path != null) {
+      final file = File(path);
+      if (await file.exists()) await file.delete();
+    }
     if (mounted) setState(() => _avatarPath = null);
   }
 
   void _showEditProfileSheet(BuildContext context, AppLocalizations l) {
-    final lastCtrl = TextEditingController(text: _lastName);
-    final firstCtrl = TextEditingController(text: _firstName);
-    final patronymicCtrl = TextEditingController(text: _patronymic);
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) {
-          final avatarFile = _avatarPath != null ? File(_avatarPath!) : null;
-          return SingleChildScrollView(
-            child: Padding(
-            padding: EdgeInsets.only(
-              left: 24,
-              right: 24,
-              top: 24,
-              bottom: MediaQuery.viewInsetsOf(ctx).bottom + 24,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  l.profileEditTitle,
-                  style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 24),
-                Center(
-                  child: GestureDetector(
-                    onTap: () => _showAvatarPickerMenu(ctx, l,
-                        onPick: (source) async {
-                      await _pickAvatar(source);
-                      setSheetState(() {});
-                    }, onRemove: () async {
-                      await _removeAvatar();
-                      setSheetState(() {});
-                    }),
-                    child: Stack(
-                      children: [
-                        _buildAvatar(avatarFile, 52),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: Theme.of(ctx).colorScheme.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(ctx).colorScheme.surface,
-                                width: 2,
-                              ),
-                            ),
-                            child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: lastCtrl,
-                  decoration: InputDecoration(
-                    labelText: l.profileLastName,
-                    hintText: 'Иванов',
-                    border: const OutlineInputBorder(),
-                  ),
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: firstCtrl,
-                  decoration: InputDecoration(
-                    labelText: l.profileFirstName,
-                    hintText: 'Иван',
-                    border: const OutlineInputBorder(),
-                  ),
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: patronymicCtrl,
-                  decoration: InputDecoration(
-                    labelText: l.profilePatronymic,
-                    hintText: 'Иванович',
-                    border: const OutlineInputBorder(),
-                  ),
-                  textInputAction: TextInputAction.done,
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: () {
-                    _saveName(
-                      lastCtrl.text.trim(),
-                      firstCtrl.text.trim(),
-                      patronymicCtrl.text.trim(),
-                    );
-                    Navigator.pop(ctx);
-                  },
-                  child: Text(l.save),
-                ),
-              ],
-            ),
-          ),
-          );
-        },
+      builder: (_) => _EditProfileSheet(
+        lastName: _lastName,
+        firstName: _firstName,
+        patronymic: _patronymic,
+        avatarPath: _avatarPath,
+        onSave: _saveName,
+        onPickAvatar: _pickAvatar,
+        onRemoveAvatar: _removeAvatar,
       ),
     );
   }
@@ -284,9 +192,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     showModalBottomSheet(
       context: ctx,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -318,6 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildAvatar(File? file, double radius) {
     final theme = Theme.of(context);
+    final glass = context.glass;
     if (file != null && file.existsSync()) {
       return CircleAvatar(radius: radius, backgroundImage: FileImage(file));
     }
@@ -328,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             : '?';
     return CircleAvatar(
       radius: radius,
-      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
+      backgroundColor: glass.tint(theme.colorScheme.primary),
       child: Text(
         initials,
         style: TextStyle(
@@ -396,15 +302,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Text(
                       l.profileSubgroup,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        fontWeight: FontWeight.w700,
+                        color: context.glass.textMuted,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       l.profileSubgroupHint,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                        color: context.glass.textMuted,
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -432,17 +337,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _lkCard(context, l),
           const SizedBox(height: 16),
           _sectionTitle(context, l.profileServices),
-          Card(
-            child: Column(
-              children: [
-                _link(context, Icons.public, l.profileSiteOmgtu, 'https://www.omgtu.ru/'),
-                const Divider(height: 1),
-                _link(context, Icons.calendar_month_outlined, l.profileSiteSchedule, 'https://rasp.omgtu.ru/ruz/main'),
-                const Divider(height: 1),
-                _link(context, Icons.newspaper_outlined, l.profileSiteNews, 'https://www.omgtu.ru/news/'),
-              ],
-            ),
-          ),
+          _servicesGrid(context, l),
+          const SizedBox(height: 20),
+          _footer(context, l),
         ],
       ),
     );
@@ -450,15 +347,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _header(BuildContext context, AppLocalizations l, String? groupLabel) {
     final theme = Theme.of(context);
+    final glass = context.glass;
     final avatarFile = _avatarPath != null ? File(_avatarPath!) : null;
     final displayName = _displayName.isNotEmpty ? _displayName : l.profileNameHint;
+    final specialty = context.watch<LkController>().profile?.specialty ?? '';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
           onTap: () => _showAvatarPickerMenu(context, l,
-              onPick: _pickAvatar, onRemove: _removeAvatar),
+              onPick: (s) async { await _pickAvatar(s); },
+              onRemove: _removeAvatar),
           child: Stack(
             children: [
               _buildAvatar(avatarFile, 36),
@@ -484,23 +384,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                displayName,
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              if (groupLabel != null)
-                Text(
-                  groupLabel,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Text(displayName, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 6),
+              if (groupLabel != null || specialty.isNotEmpty)
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    if (groupLabel != null)
+                      StatusPill(groupLabel, status: AppStatus.accent, dense: true),
+                    if (specialty.isNotEmpty)
+                      StatusPill(specialty, color: glass.textMuted, filled: false, dense: true),
+                  ],
                 ),
+              const SizedBox(height: 6),
               Text(
                 l.profileUniversity,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: glass.textMuted),
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
@@ -562,7 +462,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: connecting
               ? null
               : () async {
-                  final ok = await LkLoginDialog.show(context);
+                  final ok = await LkLoginSheet.show(context);
                   if (ok == true && context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(l.lkConnected)),
@@ -620,19 +520,261 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          color: context.glass.textMuted,
         ),
       ),
     );
   }
 
-  Widget _link(BuildContext context, IconData icon, String label, String url) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      trailing: const Icon(Icons.open_in_new, size: 18),
-      onTap: () => openExternal(context, url),
+  Widget _servicesGrid(BuildContext context, AppLocalizations l) {
+    final items = [
+      (Icons.public, l.profileSiteOmgtu, 'https://www.omgtu.ru/'),
+      (Icons.calendar_month_outlined, l.profileSiteSchedule, 'https://rasp.omgtu.ru/ruz/main'),
+      (Icons.newspaper_outlined, l.profileSiteNews, 'https://www.omgtu.ru/news/'),
+      (Icons.dashboard_outlined, l.profileSitePortal, 'https://up.omgtu.ru/'),
+    ];
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      childAspectRatio: 2.4,
+      children: [
+        for (final (icon, label, url) in items) _serviceTile(context, icon, label, url),
+      ],
+    );
+  }
+
+  Widget _serviceTile(BuildContext context, IconData icon, String label, String url) {
+    final theme = Theme.of(context);
+    final glass = context.glass;
+    return Material(
+      color: glass.cardFill,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        onTap: () => openExternal(context, url),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: theme.colorScheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+              Icon(Icons.open_in_new, size: 14, color: glass.textFaint),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _footer(BuildContext context, AppLocalizations l) {
+    final glass = context.glass;
+    return Center(
+      child: Text(
+        '${l.appTitle} · ${l.profileBuildBy}',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: glass.textFaint),
+      ),
+    );
+  }
+}
+
+/// Шторка редактирования ФИО и аватара — отдельный виджет со своим `State`,
+/// чтобы контроллеры полей корректно диспозились (раньше их создавал builder
+/// без владельца, и они утекали при каждом открытии шторки).
+class _EditProfileSheet extends StatefulWidget {
+  final String lastName;
+  final String firstName;
+  final String patronymic;
+  final String? avatarPath;
+  final void Function(String lastName, String firstName, String patronymic) onSave;
+  final Future<String?> Function(ImageSource) onPickAvatar;
+  final Future<void> Function() onRemoveAvatar;
+
+  const _EditProfileSheet({
+    required this.lastName,
+    required this.firstName,
+    required this.patronymic,
+    required this.avatarPath,
+    required this.onSave,
+    required this.onPickAvatar,
+    required this.onRemoveAvatar,
+  });
+
+  @override
+  State<_EditProfileSheet> createState() => _EditProfileSheetState();
+}
+
+class _EditProfileSheetState extends State<_EditProfileSheet> {
+  late final _lastCtrl = TextEditingController(text: widget.lastName);
+  late final _firstCtrl = TextEditingController(text: widget.firstName);
+  late final _patronymicCtrl = TextEditingController(text: widget.patronymic);
+  String? _avatarPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _avatarPath = widget.avatarPath;
+  }
+
+  @override
+  void dispose() {
+    _lastCtrl.dispose();
+    _firstCtrl.dispose();
+    _patronymicCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pick(ImageSource source) async {
+    final path = await widget.onPickAvatar(source);
+    if (mounted) setState(() => _avatarPath = path);
+  }
+
+  Future<void> _remove() async {
+    await widget.onRemoveAvatar();
+    if (mounted) setState(() => _avatarPath = null);
+  }
+
+  void _showAvatarMenu(AppLocalizations l) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: Text(l.profilePhotoGallery),
+              onTap: () { Navigator.pop(context); _pick(ImageSource.gallery); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: Text(l.profilePhotoCamera),
+              onTap: () { Navigator.pop(context); _pick(ImageSource.camera); },
+            ),
+            if (_avatarPath != null)
+              ListTile(
+                leading: Icon(Icons.delete_outline,
+                    color: Theme.of(context).colorScheme.error),
+                title: Text(l.profilePhotoRemove,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                onTap: () { Navigator.pop(context); _remove(); },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _avatar(BuildContext context) {
+    final theme = Theme.of(context);
+    final glass = context.glass;
+    final file = _avatarPath != null ? File(_avatarPath!) : null;
+    if (file != null && file.existsSync()) {
+      return CircleAvatar(radius: 52, backgroundImage: FileImage(file));
+    }
+    final initials = _firstCtrl.text.isNotEmpty
+        ? _firstCtrl.text[0].toUpperCase()
+        : _lastCtrl.text.isNotEmpty
+            ? _lastCtrl.text[0].toUpperCase()
+            : '?';
+    return CircleAvatar(
+      radius: 52,
+      backgroundColor: glass.tint(theme.colorScheme.primary),
+      child: Text(
+        initials,
+        style: TextStyle(fontSize: 39, fontWeight: FontWeight.w700, color: theme.colorScheme.primary),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return SingleChildScrollView(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(l.profileEditTitle, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 24),
+            Center(
+              child: GestureDetector(
+                onTap: () => _showAvatarMenu(l),
+                child: Stack(
+                  children: [
+                    _avatar(context),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.surface,
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _lastCtrl,
+              decoration: InputDecoration(labelText: l.profileLastName),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _firstCtrl,
+              decoration: InputDecoration(labelText: l.profileFirstName),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _patronymicCtrl,
+              decoration: InputDecoration(labelText: l.profilePatronymic),
+              textInputAction: TextInputAction.done,
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: () {
+                widget.onSave(
+                  _lastCtrl.text.trim(),
+                  _firstCtrl.text.trim(),
+                  _patronymicCtrl.text.trim(),
+                );
+                Navigator.pop(context);
+              },
+              child: Text(l.save),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

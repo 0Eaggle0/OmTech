@@ -4,6 +4,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/lk_controller.dart';
+import '../controllers/settings_controller.dart';
 import '../models/report_work.dart';
 import '../models/student_record.dart';
 import 'lk/lk_contact_work_api.dart';
@@ -62,8 +63,28 @@ class NotificationService {
 
   // ─────────────────────── show helpers ───────────────────────
 
-  Future<void> _show(String title, String body, String channelId,
-      String channelName) async {
+  /// Категория канала — по ней читаем пользовательский флаг. Проверка живёт
+  /// именно здесь: так её соблюдает и фоновый изолят, а сами проверки при
+  /// выключенных уведомлениях продолжают обновлять свои baseline'ы — иначе
+  /// после повторного включения прилетела бы пачка устаревших сообщений.
+  static NotifCategory _categoryOf(String channelId) => switch (channelId) {
+        _chReports => NotifCategory.reports,
+        _chGrades => NotifCategory.grades,
+        _ => NotifCategory.tasks,
+      };
+
+  Future<void> _show(
+    String title,
+    String body,
+    String channelId,
+    String channelName, {
+    bool respectPrefs = true,
+  }) async {
+    if (respectPrefs) {
+      final prefs = await SharedPreferences.getInstance();
+      final key = SettingsController.prefKeyFor(_categoryOf(channelId));
+      if (prefs.getBool(key) == false) return;
+    }
     await init();
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -268,11 +289,15 @@ class NotificationService {
 
   // ─────────────────────── test methods ───────────────────────
 
+  // Тестовые уведомления игнорируют флаги категорий: пользователь просит
+  // показать конкретное сообщение прямо сейчас и ждёт, что оно придёт.
+
   Future<void> testTask() => _show(
         '📚 Вставай, есть задание!',
         'Математика: +1 — само себя не сделает',
         _chTasks,
         'Контактная работа',
+        respectPrefs: false,
       );
 
   Future<void> testReportAccepted() => _show(
@@ -280,6 +305,7 @@ class NotificationService {
         '«Лабораторная работа №3» — зачтено, можно выдохнуть',
         _chReports,
         'Отчётные работы',
+        respectPrefs: false,
       );
 
   Future<void> testReportRejected() => _show(
@@ -287,6 +313,7 @@ class NotificationService {
         '«Курсовая работа» — вернули на правки',
         _chReports,
         'Отчётные работы',
+        respectPrefs: false,
       );
 
   Future<void> testGrade() => _show(
@@ -294,5 +321,6 @@ class NotificationService {
         '6 семестр — загляни, пока не поздно',
         _chGrades,
         'Оценки',
+        respectPrefs: false,
       );
 }

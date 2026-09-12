@@ -626,11 +626,23 @@ abstract class AppLocalizations {
   /// **'Новости'**
   String get profileSiteNews;
 
+  /// No description provided for @profileSitePortal.
+  ///
+  /// In ru, this message translates to:
+  /// **'Портал up.omgtu.ru'**
+  String get profileSitePortal;
+
   /// No description provided for @profileSettings.
   ///
   /// In ru, this message translates to:
   /// **'Настройки'**
   String get profileSettings;
+
+  /// No description provided for @profileBuildBy.
+  ///
+  /// In ru, this message translates to:
+  /// **'сборка by Eaggle'**
+  String get profileBuildBy;
 
   /// No description provided for @lkSection.
   ///
@@ -662,6 +674,12 @@ abstract class AppLocalizations {
   /// **'Вход в личный кабинет'**
   String get lkLoginTitle;
 
+  /// No description provided for @lkLoginSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'ОмГТУ • Информационная система'**
+  String get lkLoginSubtitle;
+
   /// No description provided for @lkLoginHint.
   ///
   /// In ru, this message translates to:
@@ -671,7 +689,7 @@ abstract class AppLocalizations {
   /// No description provided for @lkUsername.
   ///
   /// In ru, this message translates to:
-  /// **'Логин'**
+  /// **'Логин студента'**
   String get lkUsername;
 
   /// No description provided for @lkPassword.
@@ -685,6 +703,24 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Войти'**
   String get lkLoginButton;
+
+  /// No description provided for @lkForgotPassword.
+  ///
+  /// In ru, this message translates to:
+  /// **'Забыли?'**
+  String get lkForgotPassword;
+
+  /// No description provided for @lkSkipGuest.
+  ///
+  /// In ru, this message translates to:
+  /// **'Пропустить (продолжить как гость)'**
+  String get lkSkipGuest;
+
+  /// No description provided for @lkSslNote.
+  ///
+  /// In ru, this message translates to:
+  /// **'Безопасное соединение через SSL ОмГТУ'**
+  String get lkSslNote;
 
   /// No description provided for @lkInvalidCredentials.
   ///
@@ -865,6 +901,126 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'OmTech'**
   String get settingsAboutApp;
+
+  /// No description provided for @settingsNotifications.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уведомления'**
+  String get settingsNotifications;
+
+  /// No description provided for @settingsNotifTasks.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новые задания'**
+  String get settingsNotifTasks;
+
+  /// No description provided for @settingsNotifTasksHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Контактная работа: появились новые задания'**
+  String get settingsNotifTasksHint;
+
+  /// No description provided for @settingsNotifReports.
+  ///
+  /// In ru, this message translates to:
+  /// **'Статусы отчётных работ'**
+  String get settingsNotifReports;
+
+  /// No description provided for @settingsNotifReportsHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Работу приняли или вернули на доработку'**
+  String get settingsNotifReportsHint;
+
+  /// No description provided for @settingsNotifGrades.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новые оценки'**
+  String get settingsNotifGrades;
+
+  /// No description provided for @settingsNotifGradesHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'В зачётке появились новые оценки'**
+  String get settingsNotifGradesHint;
+
+  /// No description provided for @settingsNotifTest.
+  ///
+  /// In ru, this message translates to:
+  /// **'Проверить уведомление'**
+  String get settingsNotifTest;
+
+  /// No description provided for @settingsNotifTestTask.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новое задание'**
+  String get settingsNotifTestTask;
+
+  /// No description provided for @settingsNotifTestAccepted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Работа принята'**
+  String get settingsNotifTestAccepted;
+
+  /// No description provided for @settingsNotifTestRejected.
+  ///
+  /// In ru, this message translates to:
+  /// **'Работа на доработку'**
+  String get settingsNotifTestRejected;
+
+  /// No description provided for @settingsNotifTestGrade.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новая оценка'**
+  String get settingsNotifTestGrade;
+
+  /// No description provided for @settingsData.
+  ///
+  /// In ru, this message translates to:
+  /// **'Данные'**
+  String get settingsData;
+
+  /// No description provided for @settingsClearCache.
+  ///
+  /// In ru, this message translates to:
+  /// **'Очистить кэш'**
+  String get settingsClearCache;
+
+  /// No description provided for @settingsCacheSize.
+  ///
+  /// In ru, this message translates to:
+  /// **'Занято: {size}'**
+  String settingsCacheSize(String size);
+
+  /// No description provided for @settingsCacheCounting.
+  ///
+  /// In ru, this message translates to:
+  /// **'Считаем размер…'**
+  String get settingsCacheCounting;
+
+  /// No description provided for @settingsClearCacheTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Очистить кэш?'**
+  String get settingsClearCacheTitle;
+
+  /// No description provided for @settingsClearCacheBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Будут удалены: сохранённое расписание, данные ЛК, кэш новостей, скачанные файлы и история поиска.'**
+  String get settingsClearCacheBody;
+
+  /// No description provided for @settingsClearCacheKept.
+  ///
+  /// In ru, this message translates to:
+  /// **'Вход в ЛК, группа, тема и язык останутся на месте.'**
+  String get settingsClearCacheKept;
+
+  /// No description provided for @settingsCacheCleared.
+  ///
+  /// In ru, this message translates to:
+  /// **'Кэш очищен'**
+  String get settingsCacheCleared;
 
   /// No description provided for @dashboardGreeting.
   ///

@@ -11,7 +11,7 @@ import '../controllers/lk_controller.dart';
 import '../l10n/app_localizations.dart';
 import '../services/lk/lk_credentials_storage.dart';
 import '../widgets/floating_nav_bar.dart';
-import '../widgets/lk_login_dialog.dart';
+import '../widgets/lk_login_sheet.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'news/news_screen.dart';
 import 'profile/profile_screen.dart';
@@ -140,7 +140,7 @@ class _HomeShellState extends State<HomeShell>
       builder: (_) => _OnboardingSheet(
         onLogin: () async {
           if (!mounted) return;
-          await LkLoginDialog.show(context);
+          await LkLoginSheet.show(context, allowSkip: true);
         },
       ),
     );
@@ -385,7 +385,6 @@ class _OnboardingSheetState extends State<_OnboardingSheet> {
   late final ConfettiController _confetti;
   bool _logging = false;
   bool _success = false;
-  String? _error;
 
   @override
   void initState() {
@@ -399,8 +398,11 @@ class _OnboardingSheetState extends State<_OnboardingSheet> {
     super.dispose();
   }
 
+  /// Ждём, пока шторка входа не закроется. Она сама решает, чем закончить:
+  /// успехом, отменой или «Пропустить» — здесь нет отдельной ошибки для
+  /// отмены, реальный сбой логина остаётся виден прямо в открытой шторке.
   Future<void> _doLogin() async {
-    setState(() { _logging = true; _error = null; });
+    setState(() => _logging = true);
     await widget.onLogin();
     if (!mounted) return;
     final lk = context.read<LkController>();
@@ -410,10 +412,8 @@ class _OnboardingSheetState extends State<_OnboardingSheet> {
       await Future.delayed(const Duration(seconds: 2));
       if (mounted) Navigator.pop(context);
     } else {
-      setState(() {
-        _logging = false;
-        _error = lk.errorMessage ?? 'Ошибка подключения';
-      });
+      setState(() => _logging = false);
+      if (mounted) Navigator.pop(context);
     }
   }
 
@@ -488,30 +488,6 @@ class _OnboardingSheetState extends State<_OnboardingSheet> {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        if (_error != null) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.error.withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.error_outline, size: 18, color: theme.colorScheme.error),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _error!,
-                                    style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                              .animate()
-                              .shake(hz: 4, offset: const Offset(6, 0)),
-                        ],
                         const SizedBox(height: 20),
                         if (_success)
                           const Icon(Icons.check_circle, color: Color(0xFF49C18B), size: 48)

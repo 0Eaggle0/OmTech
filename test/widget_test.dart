@@ -9,6 +9,7 @@ import 'package:campus2_0/controllers/group_controller.dart';
 import 'package:campus2_0/controllers/lk_controller.dart';
 import 'package:campus2_0/controllers/locale_controller.dart';
 import 'package:campus2_0/controllers/schedule_nav_controller.dart';
+import 'package:campus2_0/controllers/settings_controller.dart';
 import 'package:campus2_0/controllers/theme_controller.dart';
 import 'package:campus2_0/widgets/floating_nav_bar.dart';
 
@@ -26,6 +27,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => LkController()),
           ChangeNotifierProvider(create: (_) => AppNavController()),
           ChangeNotifierProvider(create: (_) => ScheduleNavController()),
+          ChangeNotifierProvider(create: (_) => SettingsController()),
         ],
         child: const CampusApp(),
       ),

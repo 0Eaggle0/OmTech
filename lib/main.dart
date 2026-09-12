@@ -11,6 +11,7 @@ import 'controllers/group_controller.dart';
 import 'controllers/lk_controller.dart';
 import 'controllers/locale_controller.dart';
 import 'controllers/schedule_nav_controller.dart';
+import 'controllers/settings_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'services/background_worker.dart';
 import 'services/news_service.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
   final groupController = GroupController();
   final localeController = LocaleController();
   final newsService = NewsService();
+  final settingsController = SettingsController();
   final lkController = await LkController.create();
 
   // До первого кадра ждём только то, без чего интерфейс мигнёт неверной
@@ -42,6 +44,9 @@ Future<void> main() async {
 
   unawaited(NotificationService.instance.init());
   unawaited(newsService.init());
+  // Флаги уведомлений не нужны первому кадру — их читает только экран
+  // настроек, а фоновые проверки берут те же значения прямо из prefs.
+  unawaited(settingsController.load());
 
   // Ежечасная фоновая проверка уведомлений. На Android реальная периодичность
   // соблюдается приближённо (Doze, App Standby). На iOS — best-effort.
@@ -69,6 +74,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: lkController),
         ChangeNotifierProvider(create: (_) => AppNavController()),
         ChangeNotifierProvider(create: (_) => ScheduleNavController()),
+        ChangeNotifierProvider.value(value: settingsController),
         Provider<NewsService>.value(value: newsService),
       ],
       child: const CampusApp(),

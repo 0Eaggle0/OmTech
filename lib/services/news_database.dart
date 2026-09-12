@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -55,6 +56,20 @@ class NewsDatabase {
         )
       '''),
     );
+  }
+
+  /// Полная очистка кэша новостей. База остаётся открытой и рабочей —
+  /// следующий запрос просто снова сходит в сеть.
+  Future<void> deleteAll() async {
+    await init();
+    await _db?.delete(_table);
+  }
+
+  /// Размер файла базы на диске, для строки «занято в кэше».
+  Future<int> fileSizeBytes() async {
+    final dbPath = await getDatabasesPath();
+    final file = File(join(dbPath, _dbName));
+    return await file.exists() ? file.length() : 0;
   }
 
   Future<void> upsertList(List<NewsItem> items) async {

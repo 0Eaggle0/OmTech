@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import 'lk_login_dialog.dart';
+import 'lk_login_sheet.dart';
 
 /// Заглушка для экранов, требующих авторизации в ЛК.
 class LkRequiredState extends StatelessWidget {
@@ -46,7 +46,7 @@ class LkRequiredState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: () => LkLoginDialog.show(context),
+              onPressed: () => LkLoginSheet.show(context),
               icon: const Icon(Icons.login_rounded),
               label: Text(l.lkRequiredAction),
             ),

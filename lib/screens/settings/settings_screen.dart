@@ -1,18 +1,125 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../controllers/lk_controller.dart';
 import '../../controllers/locale_controller.dart';
+import '../../controllers/settings_controller.dart';
 import '../../controllers/theme_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../services/cache_manager.dart';
+import '../../services/news_service.dart';
+import '../../services/notification_service.dart';
+import '../../theme/app_glass.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  int? _cacheSize;
+  bool _clearing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _measureCache();
+  }
+
+  CacheManager get _cacheManager =>
+      CacheManager(newsDb: context.read<NewsService>().db);
+
+  Future<void> _measureCache() async {
+    final size = await _cacheManager.totalSize();
+    if (!mounted) return;
+    setState(() => _cacheSize = size);
+  }
+
+  Future<void> _confirmClearCache(AppLocalizations l) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.settingsClearCacheTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l.settingsClearCacheBody),
+            const SizedBox(height: 12),
+            Text(
+              l.settingsClearCacheKept,
+              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: ctx.glass.textMuted,
+                  ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.settingsClearCache),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _clearing = true);
+    final messenger = ScaffoldMessenger.of(context);
+    await _cacheManager.clearAll(context.read<LkController>());
+    if (!mounted) return;
+    setState(() {
+      _clearing = false;
+      _cacheSize = null;
+    });
+    messenger.showSnackBar(SnackBar(content: Text(l.settingsCacheCleared)));
+    _measureCache();
+  }
+
+  void _showTestMenu(AppLocalizations l) {
+    final service = NotificationService.instance;
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final (label, action) in <(String, Future<void> Function())>[
+              (l.settingsNotifTestTask, service.testTask),
+              (l.settingsNotifTestAccepted, service.testReportAccepted),
+              (l.settingsNotifTestRejected, service.testReportRejected),
+              (l.settingsNotifTestGrade, service.testGrade),
+            ])
+              ListTile(
+                leading: const Icon(Icons.notifications_active_outlined),
+                title: Text(label),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  action();
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final themeController = context.watch<ThemeController>();
     final localeController = context.watch<LocaleController>();
+    final settings = context.watch<SettingsController>();
 
     return Scaffold(
       appBar: AppBar(title: Text(l.settingsTitle)),
@@ -43,6 +150,48 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          _sectionTitle(context, l.settingsNotifications),
+          Card(
+            child: Column(
+              children: [
+                _notifSwitch(settings, NotifCategory.tasks,
+                    l.settingsNotifTasks, l.settingsNotifTasksHint),
+                const Divider(height: 1),
+                _notifSwitch(settings, NotifCategory.reports,
+                    l.settingsNotifReports, l.settingsNotifReportsHint),
+                const Divider(height: 1),
+                _notifSwitch(settings, NotifCategory.grades,
+                    l.settingsNotifGrades, l.settingsNotifGradesHint),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.notifications_none_outlined),
+                  title: Text(l.settingsNotifTest),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showTestMenu(l),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _sectionTitle(context, l.settingsData),
+          Card(
+            child: ListTile(
+              leading: _clearing
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.cleaning_services_outlined),
+              title: Text(l.settingsClearCache),
+              subtitle: Text(_cacheSize == null
+                  ? l.settingsCacheCounting
+                  : l.settingsCacheSize(CacheManager.formatBytes(_cacheSize!))),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _clearing ? null : () => _confirmClearCache(l),
+            ),
+          ),
+          const SizedBox(height: 16),
           _sectionTitle(context, l.settingsAbout),
           Card(
             child: ListTile(
@@ -50,21 +199,27 @@ class SettingsScreen extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6C5CE7), Color(0xFF8B5CF6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: context.glass.accentGradient,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.school, color: Colors.white, size: 22),
               ),
-              title: Text(l.settingsAboutApp, style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text('${l.settingsVersion} 1.4.1-beta'),
+              title: Text(l.settingsAboutApp),
+              subtitle: Text('${l.settingsVersion} 1.6.0-beta · ${l.profileBuildBy}'),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _notifSwitch(
+      SettingsController settings, NotifCategory category, String label, String hint) {
+    return SwitchListTile(
+      value: settings.isEnabled(category),
+      onChanged: (v) => settings.setEnabled(category, v),
+      title: Text(label),
+      subtitle: Text(hint),
     );
   }
 
@@ -74,8 +229,7 @@ class SettingsScreen extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: context.glass.textMuted,
             ),
       ),
     );

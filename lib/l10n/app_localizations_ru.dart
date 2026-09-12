@@ -298,7 +298,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get profileSiteNews => 'Новости';
 
   @override
+  String get profileSitePortal => 'Портал up.omgtu.ru';
+
+  @override
   String get profileSettings => 'Настройки';
+
+  @override
+  String get profileBuildBy => 'сборка by Eaggle';
 
   @override
   String get lkSection => 'Личный кабинет ОмГТУ';
@@ -316,17 +322,29 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lkLoginTitle => 'Вход в личный кабинет';
 
   @override
+  String get lkLoginSubtitle => 'ОмГТУ • Информационная система';
+
+  @override
   String get lkLoginHint =>
       'Используются те же логин и пароль, что и на up.omgtu.ru';
 
   @override
-  String get lkUsername => 'Логин';
+  String get lkUsername => 'Логин студента';
 
   @override
   String get lkPassword => 'Пароль';
 
   @override
   String get lkLoginButton => 'Войти';
+
+  @override
+  String get lkForgotPassword => 'Забыли?';
+
+  @override
+  String get lkSkipGuest => 'Пропустить (продолжить как гость)';
+
+  @override
+  String get lkSslNote => 'Безопасное соединение через SSL ОмГТУ';
 
   @override
   String get lkInvalidCredentials => 'Неверный логин или пароль';
@@ -419,6 +437,72 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsAboutApp => 'OmTech';
+
+  @override
+  String get settingsNotifications => 'Уведомления';
+
+  @override
+  String get settingsNotifTasks => 'Новые задания';
+
+  @override
+  String get settingsNotifTasksHint =>
+      'Контактная работа: появились новые задания';
+
+  @override
+  String get settingsNotifReports => 'Статусы отчётных работ';
+
+  @override
+  String get settingsNotifReportsHint =>
+      'Работу приняли или вернули на доработку';
+
+  @override
+  String get settingsNotifGrades => 'Новые оценки';
+
+  @override
+  String get settingsNotifGradesHint => 'В зачётке появились новые оценки';
+
+  @override
+  String get settingsNotifTest => 'Проверить уведомление';
+
+  @override
+  String get settingsNotifTestTask => 'Новое задание';
+
+  @override
+  String get settingsNotifTestAccepted => 'Работа принята';
+
+  @override
+  String get settingsNotifTestRejected => 'Работа на доработку';
+
+  @override
+  String get settingsNotifTestGrade => 'Новая оценка';
+
+  @override
+  String get settingsData => 'Данные';
+
+  @override
+  String get settingsClearCache => 'Очистить кэш';
+
+  @override
+  String settingsCacheSize(String size) {
+    return 'Занято: $size';
+  }
+
+  @override
+  String get settingsCacheCounting => 'Считаем размер…';
+
+  @override
+  String get settingsClearCacheTitle => 'Очистить кэш?';
+
+  @override
+  String get settingsClearCacheBody =>
+      'Будут удалены: сохранённое расписание, данные ЛК, кэш новостей, скачанные файлы и история поиска.';
+
+  @override
+  String get settingsClearCacheKept =>
+      'Вход в ЛК, группа, тема и язык останутся на месте.';
+
+  @override
+  String get settingsCacheCleared => 'Кэш очищен';
 
   @override
   String get dashboardGreeting => 'Добро пожаловать!';
