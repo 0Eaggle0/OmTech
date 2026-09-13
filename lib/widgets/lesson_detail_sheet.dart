@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../models/schedule_event.dart';
 import '../services/campus_map.dart';
 import '../theme/app_colors.dart';
+import 'teacher_contacts_card.dart';
 
 class LessonDetailSheet extends StatelessWidget {
   final ScheduleEvent event;
@@ -26,6 +27,7 @@ class LessonDetailSheet extends StatelessWidget {
     final accent = AppColors.forKindOfWork(event.kindOfWork);
     final e = event;
     final address = campusAddresses[e.building];
+    final lecturers = _lecturerNames(e.lecturer);
 
     final bottomPad = MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom;
     return SingleChildScrollView(
@@ -103,11 +105,26 @@ class LessonDetailSheet extends StatelessWidget {
 
             if (e.lecturer.isNotEmpty)
               _teacherRow(context, l, e.lecturer, accent),
+
+            // Контакты из контактной работы — только если что-то нашлось.
+            for (final name in lecturers)
+              TeacherContactsLookup(
+                lecturer: name,
+                discipline: e.discipline,
+                showName: lecturers.length > 1,
+              ),
           ],
         ),
       ),
     );
   }
+
+  /// У пары может быть несколько преподавателей через запятую.
+  static List<String> _lecturerNames(String raw) => raw
+      .split(RegExp(r'[,;]'))
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
 
   Widget _infoRow(BuildContext context, IconData icon, String text, Color accent) {
     final theme = Theme.of(context);
@@ -221,13 +238,6 @@ class LessonDetailSheet extends StatelessWidget {
                 lecturer,
                 style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
-            ),
-            ListTile(
-              leading: Icon(Icons.contacts_outlined, color: dimColor),
-              title: Text(l.lessonDetailContacts, style: TextStyle(color: dimColor)),
-              subtitle: Text('В разработке', style: TextStyle(color: dimColor, fontSize: 12)),
-              enabled: false,
-              onTap: null,
             ),
             ListTile(
               leading: Icon(Icons.star_outline, color: dimColor),

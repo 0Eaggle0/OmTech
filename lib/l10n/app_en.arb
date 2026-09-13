@@ -26,10 +26,23 @@
   "lessonDetailNote": "Your note",
   "lessonDetailShare": "Share note",
   "lessonDetailTeacherOptions": "Teacher actions",
-  "lessonDetailContacts": "Show contacts",
   "lessonDetailReviews": "Reviews",
   "lessonDetailOpenMaps": "Open in maps",
   "lessonDetailStream": "stream",
+
+  "teacherContactsTitle": "Contacts",
+  "teacherContactsFor": "Contacts · {name}",
+  "@teacherContactsFor": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "teacherContactsSource": "From contact work · {discipline}",
+  "@teacherContactsSource": {
+    "placeholders": { "discipline": { "type": "String" } }
+  },
+  "contactKindEmail": "Email",
+  "contactKindPhone": "Phone",
+  "contactKindVk": "VK",
+  "contactCopy": "Copy",
 
   "newsTitle": "News",
   "newsLoadError": "Failed to load news",
@@ -87,7 +100,6 @@
     "placeholders": { "time": { "type": "String" } }
   },
   "workLecturer": "Lead lecturer",
-  "workLecturerStub": "Placeholder: no lecturer data yet — the source isn't wired up.",
   "workServerUnavailable": "Server unavailable",
 
   "reportWorksTitle": "Submitted works",
@@ -108,6 +120,45 @@
   "reportAcademicYear": "Academic year",
   "reportRegistrationNumber": "Registration No.",
   "reportCopied": "Copied",
+  "reportUploadCta": "Upload a work",
+  "reportUploadCtaHint": "PDF up to 10 MB — to “Other works”",
+  "reportUploadTitle": "Upload work",
+  "reportUploadHeroSubtitle": "Pick a discipline, name the work and attach a PDF",
+  "reportUploadDiscipline": "Discipline",
+  "reportUploadDisciplineHint": "Choose a discipline",
+  "reportUploadDisciplinesLoading": "Loading disciplines…",
+  "reportUploadDisciplinesError": "Couldn't load the list of disciplines",
+  "reportUploadNoDisciplines": "The site returned no disciplines to upload to",
+  "reportUploadSearch": "Search discipline",
+  "reportUploadWorkTitle": "Work title",
+  "reportUploadWorkTitleHint": "e.g. Lab report #1",
+  "reportUploadTitleRequired": "Enter the work title",
+  "reportUploadFile": "Work file",
+  "reportUploadPickFile": "Choose a file",
+  "reportUploadFileHint": "PDF, up to 10 MB",
+  "reportUploadFileRequired": "Attach a PDF file",
+  "reportUploadOnlyPdf": "The file must be a PDF",
+  "reportUploadTooLarge": "The file is over 10 MB — the site won't accept it",
+  "reportUploadPickFailed": "Couldn't pick the file",
+  "reportUploadRemoveFile": "Remove file",
+  "reportUploadSend": "Upload",
+  "reportUploadSending": "Uploading {percent}%",
+  "@reportUploadSending": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "reportUploadProcessing": "Processing file…",
+  "reportUploadDone": "Work uploaded",
+  "reportUploadFailed": "Couldn't upload the work. Please try again",
+  "reportUploadServerError": "Work not uploaded",
+  "reportUploadNote": "Once uploaded, the work appears in the list as “In review”",
+  "reportDelete": "Delete work",
+  "reportDeleteTitle": "Delete this work?",
+  "reportDeleteBody": "“{title}” will be removed from the OmSTU site. This can't be undone.",
+  "@reportDeleteBody": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "reportDeleted": "Work deleted",
+  "reportDeleteFailed": "Couldn't delete the work",
 
   "profileTitle": "Profile",
   "profileNameHint": "Your full name",
@@ -197,6 +248,28 @@
   "settingsClearCacheBody": "This removes: saved schedule, personal account data, news cache, downloaded files and search history.",
   "settingsClearCacheKept": "Your sign-in, group, theme and language stay untouched.",
   "settingsCacheCleared": "Cache cleared",
+
+  "bugReportAction": "Report a problem",
+  "bugReportSettingsHint": "Email the developer with a diagnostics file",
+  "bugReportTitle": "Report a problem",
+  "bugReportSubtitle": "The email goes to {email}",
+  "@bugReportSubtitle": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "bugReportHint": "What went wrong? What were you doing before that?",
+  "bugReportIncluded": "The email will include",
+  "bugReportIncDevice": "App version, OS, group and account status",
+  "bugReportIncLog": "Recent activity log — without login or password",
+  "bugReportAttachPages": "Attach account pages",
+  "bugReportAttachPagesHint": "Helps fix data parsing. They contain your name and list of works",
+  "bugReportScreens": "Screenshots",
+  "bugReportAddScreen": "Add",
+  "bugReportScreensHint": "A snapshot of the screen you reported from is attached. Remove it if it shows something private",
+  "bugReportSend": "Compose email",
+  "bugReportFailed": "Couldn't open email. The address {email} was copied",
+  "@bugReportFailed": {
+    "placeholders": { "email": { "type": "String" } }
+  },
 
   "dashboardGreeting": "Welcome!",
   "dashboardHello": "Hi, {name}!",
@@ -298,7 +371,6 @@
   "reportDownloading": "Downloading...",
   "reportNoFiles": "File not available",
   "reportAllSubjects": "All subjects",
-  "reportShareHtml": "Share page HTML",
 
   "fileOpen": "Open",
   "fileSave": "Save",

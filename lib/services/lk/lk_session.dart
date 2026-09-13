@@ -207,10 +207,8 @@ class LkSession {
         return await send();
       } on DioException catch (e) {
         lastError = e;
-        if (kDebugMode) {
-          debugPrint('[LK] попытка ${attempt + 1}/${delays.length + 1}'
-              ' не удалась: ${e.type.name}');
-        }
+        debugPrint('[LK] попытка ${attempt + 1}/${delays.length + 1}'
+            ' не удалась: ${e.type.name}');
       }
     }
     // response != null означает 5xx: сайт жив, но отвечает ошибкой.
@@ -267,9 +265,7 @@ class LkSession {
   }
 
   bool _finishSso(List<String> trace, bool ok) {
-    if (kDebugMode) {
-      debugPrint('[LK SSO] ${ok ? 'ok' : 'FAILED'} ${trace.join(' ')}');
-    }
+    debugPrint('[LK SSO] ${ok ? 'ok' : 'FAILED'} ${trace.join(' ')}');
     return ok;
   }
 
@@ -442,6 +438,41 @@ class LkSession {
     }
     final bytes = res.data ?? const <int>[];
     final html = decodeCp1251(bytes);
+    if (_looksLikeLoginPage(html)) {
+      throw LkLoginException(
+          LkLoginResult.invalidCredentials, _msgSessionExpired);
+    }
+    return html;
+  }
+
+  /// multipart POST под `/ecab/...` — загрузка файла отчётной работы.
+  /// Таймауты шире общих: PDF до 10 МБ по мобильной сети за 20 с не уходит,
+  /// а после отправки сервер ещё обрабатывает файл.
+  Future<String> postEcabMultipart(
+    String path,
+    FormData data, {
+    ProgressCallback? onSendProgress,
+  }) async {
+    final url = _ecabUrl(path);
+    final res = await _dio.post<List<int>>(
+      url,
+      data: data,
+      onSendProgress: onSendProgress,
+      options: Options(
+        responseType: ResponseType.bytes,
+        sendTimeout: const Duration(minutes: 3),
+        receiveTimeout: const Duration(seconds: 90),
+        headers: {
+          'Referer': '$_ecabHost/ecab/vkr2.php',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      ),
+    );
+    if (res.statusCode != 200) {
+      throw LkLoginException(LkLoginResult.networkError, _msgServerDown,
+          diagnostics: 'HTTP ${res.statusCode} для $path');
+    }
+    final html = decodeCp1251(res.data ?? const <int>[]);
     if (_looksLikeLoginPage(html)) {
       throw LkLoginException(
           LkLoginResult.invalidCredentials, _msgSessionExpired);

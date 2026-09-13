@@ -7,6 +7,7 @@ import '../controllers/lk_controller.dart';
 import 'news_database.dart';
 import 'schedule_cache.dart';
 import 'search_history.dart';
+import 'teacher_contacts_service.dart';
 
 /// Подсчёт и очистка того, что приложение накопило на устройстве.
 ///
@@ -25,6 +26,7 @@ class CacheManager {
     'lk_report_works_cache',
     'lk_work_',
     'search_recent_v1',
+    TeacherContactsService.cachePrefix,
   ];
 
   /// Снимки для уведомлений: без них следующая проверка просто заново
@@ -61,6 +63,7 @@ class CacheManager {
     await lk.gradesApi.clearCache();
     await lk.contactWorkApi.clearCache();
     await lk.reportWorkApi.clearCache();
+    await TeacherContactsService.clearCache();
     await newsDb.deleteAll();
     await SearchHistoryService().clearAll();
 

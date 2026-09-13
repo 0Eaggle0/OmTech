@@ -8,6 +8,7 @@ import 'controllers/theme_controller.dart';
 import 'l10n/app_localizations.dart';
 import 'screens/home_shell.dart';
 import 'services/background_worker.dart';
+import 'services/screen_capture.dart';
 import 'theme/app_theme.dart';
 
 /// Корневой виджет приложения: тема, локализация ru, домашний экран.
@@ -51,6 +52,10 @@ class _CampusAppState extends State<CampusApp> {
       locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // Граница перерисовки над навигатором — чтобы отчёт об ошибке мог
+      // снять экран вместе с открытыми шторками.
+      builder: (context, child) =>
+          RepaintBoundary(key: ScreenCapture.boundaryKey, child: child),
       home: const HomeShell(),
     );
   }

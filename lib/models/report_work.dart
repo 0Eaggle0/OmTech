@@ -176,3 +176,27 @@ class ReportWorksResult {
         academicYear: json['academicYear'] as int?,
       );
 }
+
+/// Дисциплина, в которую можно загрузить «прочую» работу, — строка списка
+/// в форме загрузки: `seldisc('<hexnrec>','<название>','<группа>','<семестр>')`.
+class ReportUploadDiscipline {
+  /// Внутренний id дисциплины (`dischexnrec`), уходит в POST загрузки.
+  final String hexnrec;
+
+  final String name;
+
+  /// Группа, например «ИСТ-241».
+  final String group;
+
+  /// Семестр строкой — ровно так он уходит в поле `semester`.
+  final String semester;
+
+  const ReportUploadDiscipline({
+    required this.hexnrec,
+    required this.name,
+    required this.group,
+    required this.semester,
+  });
+
+  int get semesterNumber => int.tryParse(semester) ?? 0;
+}

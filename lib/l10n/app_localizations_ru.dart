@@ -74,9 +74,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lessonDetailTeacherOptions => 'Действия с преподавателем';
 
   @override
-  String get lessonDetailContacts => 'Показать контакты';
-
-  @override
   String get lessonDetailReviews => 'Отзывы';
 
   @override
@@ -84,6 +81,31 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get lessonDetailStream => 'поток';
+
+  @override
+  String get teacherContactsTitle => 'Контакты';
+
+  @override
+  String teacherContactsFor(String name) {
+    return 'Контакты · $name';
+  }
+
+  @override
+  String teacherContactsSource(String discipline) {
+    return 'Из контактной работы · $discipline';
+  }
+
+  @override
+  String get contactKindEmail => 'Почта';
+
+  @override
+  String get contactKindPhone => 'Телефон';
+
+  @override
+  String get contactKindVk => 'ВКонтакте';
+
+  @override
+  String get contactCopy => 'Копировать';
 
   @override
   String get newsTitle => 'Новости';
@@ -199,10 +221,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get workLecturer => 'Ведущий лектор';
 
   @override
-  String get workLecturerStub =>
-      'Заглушка: данных о лекторе пока нет — источник ещё не подключён.';
-
-  @override
   String get workServerUnavailable => 'Сервер недоступен';
 
   @override
@@ -259,6 +277,115 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get reportCopied => 'Скопировано';
+
+  @override
+  String get reportUploadCta => 'Загрузить работу';
+
+  @override
+  String get reportUploadCtaHint => 'PDF до 10 МБ — в «Прочие работы»';
+
+  @override
+  String get reportUploadTitle => 'Загрузка работы';
+
+  @override
+  String get reportUploadHeroSubtitle =>
+      'Выберите дисциплину, назовите работу и прикрепите PDF';
+
+  @override
+  String get reportUploadDiscipline => 'Дисциплина';
+
+  @override
+  String get reportUploadDisciplineHint => 'Выберите дисциплину';
+
+  @override
+  String get reportUploadDisciplinesLoading => 'Загружаем список дисциплин…';
+
+  @override
+  String get reportUploadDisciplinesError =>
+      'Не удалось получить список дисциплин';
+
+  @override
+  String get reportUploadNoDisciplines =>
+      'Сайт не вернул дисциплин для загрузки';
+
+  @override
+  String get reportUploadSearch => 'Поиск дисциплины';
+
+  @override
+  String get reportUploadWorkTitle => 'Название работы';
+
+  @override
+  String get reportUploadWorkTitleHint =>
+      'Например: Отчёт по лабораторной работе №1';
+
+  @override
+  String get reportUploadTitleRequired => 'Введите название работы';
+
+  @override
+  String get reportUploadFile => 'Файл работы';
+
+  @override
+  String get reportUploadPickFile => 'Выберите файл';
+
+  @override
+  String get reportUploadFileHint => 'PDF, не более 10 МБ';
+
+  @override
+  String get reportUploadFileRequired => 'Прикрепите PDF-файл';
+
+  @override
+  String get reportUploadOnlyPdf => 'Нужен файл в формате PDF';
+
+  @override
+  String get reportUploadTooLarge => 'Файл больше 10 МБ — сайт его не примет';
+
+  @override
+  String get reportUploadPickFailed => 'Не удалось выбрать файл';
+
+  @override
+  String get reportUploadRemoveFile => 'Убрать файл';
+
+  @override
+  String get reportUploadSend => 'Загрузить';
+
+  @override
+  String reportUploadSending(int percent) {
+    return 'Загрузка $percent%';
+  }
+
+  @override
+  String get reportUploadProcessing => 'Обрабатываем файл…';
+
+  @override
+  String get reportUploadDone => 'Работа загружена';
+
+  @override
+  String get reportUploadFailed =>
+      'Не удалось загрузить работу. Попробуйте ещё раз';
+
+  @override
+  String get reportUploadServerError => 'Работа не загружена';
+
+  @override
+  String get reportUploadNote =>
+      'После загрузки работа появится в списке со статусом «На проверке»';
+
+  @override
+  String get reportDelete => 'Удалить работу';
+
+  @override
+  String get reportDeleteTitle => 'Удалить работу?';
+
+  @override
+  String reportDeleteBody(String title) {
+    return '«$title» будет удалена с сайта ОмГТУ. Отменить это нельзя.';
+  }
+
+  @override
+  String get reportDeleted => 'Работа удалена';
+
+  @override
+  String get reportDeleteFailed => 'Не удалось удалить работу';
 
   @override
   String get profileTitle => 'Профиль';
@@ -523,6 +650,60 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsCacheCleared => 'Кэш очищен';
 
   @override
+  String get bugReportAction => 'Сообщить об ошибке';
+
+  @override
+  String get bugReportSettingsHint =>
+      'Письмо разработчику с файлом диагностики';
+
+  @override
+  String get bugReportTitle => 'Сообщить об ошибке';
+
+  @override
+  String bugReportSubtitle(String email) {
+    return 'Письмо уйдёт на $email';
+  }
+
+  @override
+  String get bugReportHint => 'Что пошло не так? Что вы делали перед этим?';
+
+  @override
+  String get bugReportIncluded => 'В письмо попадёт';
+
+  @override
+  String get bugReportIncDevice =>
+      'Версия приложения, система, группа и состояние ЛК';
+
+  @override
+  String get bugReportIncLog =>
+      'Журнал последних действий — без логина и пароля';
+
+  @override
+  String get bugReportAttachPages => 'Приложить страницы ЛК';
+
+  @override
+  String get bugReportAttachPagesHint =>
+      'Помогает починить разбор данных. В них есть ваше ФИО и список работ';
+
+  @override
+  String get bugReportScreens => 'Скриншоты';
+
+  @override
+  String get bugReportAddScreen => 'Добавить';
+
+  @override
+  String get bugReportScreensHint =>
+      'Снимок экрана, где вы открыли отчёт, уже приложен. Уберите его, если на нём личное';
+
+  @override
+  String get bugReportSend => 'Составить письмо';
+
+  @override
+  String bugReportFailed(String email) {
+    return 'Не удалось открыть почту. Адрес $email скопирован';
+  }
+
+  @override
   String get dashboardGreeting => 'Добро пожаловать!';
 
   @override
@@ -777,9 +958,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get reportAllSubjects => 'Все предметы';
-
-  @override
-  String get reportShareHtml => 'Поделиться HTML страницы';
 
   @override
   String get fileOpen => 'Открыть';

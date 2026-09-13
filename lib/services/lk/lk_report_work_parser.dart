@@ -158,6 +158,60 @@ List<ReportWork> parseOtherWorks(Document doc) {
   return result;
 }
 
+// ───────────────────────── форма загрузки ─────────────────────────
+
+/// Дисциплины формы новой «прочей» работы (`otherpage.php`, `fileid=0`):
+/// `<div class="discline" onclick="seldisc('hex','Название','ИСТ-241','1')">`.
+/// Аргументы разбираем по кавычкам, а не по запятым, как [_extractCallArgs]:
+/// в названии дисциплины запятая вполне возможна.
+List<ReportUploadDiscipline> parseUploadDisciplines(Document doc) {
+  final argRe = RegExp(r"'((?:[^'\\]|\\.)*)'" r'|"((?:[^"\\]|\\.)*)"');
+  final result = <ReportUploadDiscipline>[];
+  final seen = <String>{};
+  for (final el in doc.querySelectorAll('[onclick]')) {
+    final onclick = el.attributes['onclick'] ?? '';
+    final start = onclick.indexOf('seldisc(');
+    if (start < 0) continue;
+    final args = argRe
+        .allMatches(onclick.substring(start))
+        .take(4)
+        .map((m) => _unescapeJs(m.group(1) ?? m.group(2) ?? '').trim())
+        .toList();
+    if (args.isEmpty || args[0].isEmpty || !seen.add(args[0])) continue;
+
+    var name = args.length > 1 ? _normalize(args[1]) : '';
+    if (name.isEmpty) {
+      // Текст строки: «Физика (гр. ИСТ-241, сем. 3)» → «Физика».
+      name = _textOneLine(el).replaceFirst(RegExp(r'\s*\(гр\..*$'), '');
+    }
+    result.add(ReportUploadDiscipline(
+      hexnrec: args[0],
+      name: name,
+      group: args.length > 2 ? args[2] : '',
+      semester: args.length > 3 ? args[3] : '',
+    ));
+  }
+  return result;
+}
+
+/// Id для удаления «прочей» работы — аргумент `otherdel('…')` у кнопки на
+/// странице работы. Смотрим только атрибуты: определение самой функции
+/// в `<script>` встречается и в форме новой работы.
+String? parseOtherDeleteId(Document doc) {
+  final re = RegExp(r"""otherdel\(\s*['"]?([^'"\s)]+)""");
+  for (final el in doc.querySelectorAll('[onclick], [href]')) {
+    for (final attr in [el.attributes['onclick'], el.attributes['href']]) {
+      if (attr == null) continue;
+      final m = re.firstMatch(attr);
+      if (m != null) return m.group(1);
+    }
+  }
+  return null;
+}
+
+String _unescapeJs(String s) =>
+    s.replaceAllMapped(RegExp(r'\\(.)'), (m) => m.group(1)!);
+
 // ───────────────────────── helpers ─────────────────────────
 
 bool _hasInlineCall(Element scope, String fn) {

@@ -9,11 +9,12 @@ import '../../models/contact_work.dart';
 import '../../services/contact_work_service.dart';
 import '../../services/link_launcher.dart';
 import '../../services/lk/lk_file_downloader.dart';
+import '../../services/teacher_contacts_service.dart';
 import '../../theme/app_glass.dart';
-import '../../theme/app_metrics.dart';
 import '../../widgets/link_text.dart';
 import '../../widgets/status_banners.dart';
 import '../../widgets/status_pill.dart';
+import '../../widgets/teacher_contacts_card.dart';
 import '../../widgets/work_file_row.dart';
 
 class WorkDetailScreen extends StatefulWidget {
@@ -157,8 +158,7 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
           CacheBanner(updatedAt: _cachedAt),
           const SizedBox(height: 6),
         ],
-        _lecturerStub(context, l, theme, glass),
-        const SizedBox(height: 12),
+        ..._lecturerContacts(),
         if (sorted.isEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 40, 16, 16),
@@ -177,40 +177,26 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
     );
   }
 
-  /// Ведущего лектора взять пока неоткуда — рисуем явную заглушку,
-  /// чтобы место в макете было занято осознанно, а не выглядело как данные.
-  Widget _lecturerStub(
-      BuildContext context, AppLocalizations l, ThemeData theme, AppGlass glass) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: glass.elevatedFill,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: glass.hairline),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.school_outlined, size: 20, color: glass.textFaint),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l.workLecturer,
-                  style: theme.textTheme.labelSmall?.copyWith(color: glass.textMuted),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  l.workLecturerStub,
-                  style: theme.textTheme.bodySmall?.copyWith(color: glass.textFaint),
-                ),
-              ],
+  /// Контакты преподаватели обычно пишут в первом задании дисциплины —
+  /// показываем найденное там. Ничего не нашли — блока нет.
+  List<Widget> _lecturerContacts() {
+    final discipline = widget.discipline;
+    return [
+      for (final teacher in discipline.teachers)
+        if (scanTasksForContacts(_items, teacher) case final items
+            when items.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: TeacherContactsCard(
+              contacts: TeacherContacts(
+                items: items,
+                discipline: discipline.discipline,
+              ),
+              name: teacher,
+              showSource: false,
             ),
           ),
-        ],
-      ),
-    );
+    ];
   }
 
   Widget _itemCard(

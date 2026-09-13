@@ -218,12 +218,6 @@ abstract class AppLocalizations {
   /// **'Действия с преподавателем'**
   String get lessonDetailTeacherOptions;
 
-  /// No description provided for @lessonDetailContacts.
-  ///
-  /// In ru, this message translates to:
-  /// **'Показать контакты'**
-  String get lessonDetailContacts;
-
   /// No description provided for @lessonDetailReviews.
   ///
   /// In ru, this message translates to:
@@ -241,6 +235,48 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'поток'**
   String get lessonDetailStream;
+
+  /// No description provided for @teacherContactsTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Контакты'**
+  String get teacherContactsTitle;
+
+  /// No description provided for @teacherContactsFor.
+  ///
+  /// In ru, this message translates to:
+  /// **'Контакты · {name}'**
+  String teacherContactsFor(String name);
+
+  /// No description provided for @teacherContactsSource.
+  ///
+  /// In ru, this message translates to:
+  /// **'Из контактной работы · {discipline}'**
+  String teacherContactsSource(String discipline);
+
+  /// No description provided for @contactKindEmail.
+  ///
+  /// In ru, this message translates to:
+  /// **'Почта'**
+  String get contactKindEmail;
+
+  /// No description provided for @contactKindPhone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Телефон'**
+  String get contactKindPhone;
+
+  /// No description provided for @contactKindVk.
+  ///
+  /// In ru, this message translates to:
+  /// **'ВКонтакте'**
+  String get contactKindVk;
+
+  /// No description provided for @contactCopy.
+  ///
+  /// In ru, this message translates to:
+  /// **'Копировать'**
+  String get contactCopy;
 
   /// No description provided for @newsTitle.
   ///
@@ -434,12 +470,6 @@ abstract class AppLocalizations {
   /// **'Ведущий лектор'**
   String get workLecturer;
 
-  /// No description provided for @workLecturerStub.
-  ///
-  /// In ru, this message translates to:
-  /// **'Заглушка: данных о лекторе пока нет — источник ещё не подключён.'**
-  String get workLecturerStub;
-
   /// No description provided for @workServerUnavailable.
   ///
   /// In ru, this message translates to:
@@ -553,6 +583,204 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Скопировано'**
   String get reportCopied;
+
+  /// No description provided for @reportUploadCta.
+  ///
+  /// In ru, this message translates to:
+  /// **'Загрузить работу'**
+  String get reportUploadCta;
+
+  /// No description provided for @reportUploadCtaHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'PDF до 10 МБ — в «Прочие работы»'**
+  String get reportUploadCtaHint;
+
+  /// No description provided for @reportUploadTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Загрузка работы'**
+  String get reportUploadTitle;
+
+  /// No description provided for @reportUploadHeroSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите дисциплину, назовите работу и прикрепите PDF'**
+  String get reportUploadHeroSubtitle;
+
+  /// No description provided for @reportUploadDiscipline.
+  ///
+  /// In ru, this message translates to:
+  /// **'Дисциплина'**
+  String get reportUploadDiscipline;
+
+  /// No description provided for @reportUploadDisciplineHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите дисциплину'**
+  String get reportUploadDisciplineHint;
+
+  /// No description provided for @reportUploadDisciplinesLoading.
+  ///
+  /// In ru, this message translates to:
+  /// **'Загружаем список дисциплин…'**
+  String get reportUploadDisciplinesLoading;
+
+  /// No description provided for @reportUploadDisciplinesError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось получить список дисциплин'**
+  String get reportUploadDisciplinesError;
+
+  /// No description provided for @reportUploadNoDisciplines.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сайт не вернул дисциплин для загрузки'**
+  String get reportUploadNoDisciplines;
+
+  /// No description provided for @reportUploadSearch.
+  ///
+  /// In ru, this message translates to:
+  /// **'Поиск дисциплины'**
+  String get reportUploadSearch;
+
+  /// No description provided for @reportUploadWorkTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Название работы'**
+  String get reportUploadWorkTitle;
+
+  /// No description provided for @reportUploadWorkTitleHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Например: Отчёт по лабораторной работе №1'**
+  String get reportUploadWorkTitleHint;
+
+  /// No description provided for @reportUploadTitleRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Введите название работы'**
+  String get reportUploadTitleRequired;
+
+  /// No description provided for @reportUploadFile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Файл работы'**
+  String get reportUploadFile;
+
+  /// No description provided for @reportUploadPickFile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Выберите файл'**
+  String get reportUploadPickFile;
+
+  /// No description provided for @reportUploadFileHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'PDF, не более 10 МБ'**
+  String get reportUploadFileHint;
+
+  /// No description provided for @reportUploadFileRequired.
+  ///
+  /// In ru, this message translates to:
+  /// **'Прикрепите PDF-файл'**
+  String get reportUploadFileRequired;
+
+  /// No description provided for @reportUploadOnlyPdf.
+  ///
+  /// In ru, this message translates to:
+  /// **'Нужен файл в формате PDF'**
+  String get reportUploadOnlyPdf;
+
+  /// No description provided for @reportUploadTooLarge.
+  ///
+  /// In ru, this message translates to:
+  /// **'Файл больше 10 МБ — сайт его не примет'**
+  String get reportUploadTooLarge;
+
+  /// No description provided for @reportUploadPickFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось выбрать файл'**
+  String get reportUploadPickFailed;
+
+  /// No description provided for @reportUploadRemoveFile.
+  ///
+  /// In ru, this message translates to:
+  /// **'Убрать файл'**
+  String get reportUploadRemoveFile;
+
+  /// No description provided for @reportUploadSend.
+  ///
+  /// In ru, this message translates to:
+  /// **'Загрузить'**
+  String get reportUploadSend;
+
+  /// No description provided for @reportUploadSending.
+  ///
+  /// In ru, this message translates to:
+  /// **'Загрузка {percent}%'**
+  String reportUploadSending(int percent);
+
+  /// No description provided for @reportUploadProcessing.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обрабатываем файл…'**
+  String get reportUploadProcessing;
+
+  /// No description provided for @reportUploadDone.
+  ///
+  /// In ru, this message translates to:
+  /// **'Работа загружена'**
+  String get reportUploadDone;
+
+  /// No description provided for @reportUploadFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось загрузить работу. Попробуйте ещё раз'**
+  String get reportUploadFailed;
+
+  /// No description provided for @reportUploadServerError.
+  ///
+  /// In ru, this message translates to:
+  /// **'Работа не загружена'**
+  String get reportUploadServerError;
+
+  /// No description provided for @reportUploadNote.
+  ///
+  /// In ru, this message translates to:
+  /// **'После загрузки работа появится в списке со статусом «На проверке»'**
+  String get reportUploadNote;
+
+  /// No description provided for @reportDelete.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить работу'**
+  String get reportDelete;
+
+  /// No description provided for @reportDeleteTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Удалить работу?'**
+  String get reportDeleteTitle;
+
+  /// No description provided for @reportDeleteBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'«{title}» будет удалена с сайта ОмГТУ. Отменить это нельзя.'**
+  String reportDeleteBody(String title);
+
+  /// No description provided for @reportDeleted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Работа удалена'**
+  String get reportDeleted;
+
+  /// No description provided for @reportDeleteFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось удалить работу'**
+  String get reportDeleteFailed;
 
   /// No description provided for @profileTitle.
   ///
@@ -1052,6 +1280,96 @@ abstract class AppLocalizations {
   /// **'Кэш очищен'**
   String get settingsCacheCleared;
 
+  /// No description provided for @bugReportAction.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сообщить об ошибке'**
+  String get bugReportAction;
+
+  /// No description provided for @bugReportSettingsHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Письмо разработчику с файлом диагностики'**
+  String get bugReportSettingsHint;
+
+  /// No description provided for @bugReportTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Сообщить об ошибке'**
+  String get bugReportTitle;
+
+  /// No description provided for @bugReportSubtitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Письмо уйдёт на {email}'**
+  String bugReportSubtitle(String email);
+
+  /// No description provided for @bugReportHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Что пошло не так? Что вы делали перед этим?'**
+  String get bugReportHint;
+
+  /// No description provided for @bugReportIncluded.
+  ///
+  /// In ru, this message translates to:
+  /// **'В письмо попадёт'**
+  String get bugReportIncluded;
+
+  /// No description provided for @bugReportIncDevice.
+  ///
+  /// In ru, this message translates to:
+  /// **'Версия приложения, система, группа и состояние ЛК'**
+  String get bugReportIncDevice;
+
+  /// No description provided for @bugReportIncLog.
+  ///
+  /// In ru, this message translates to:
+  /// **'Журнал последних действий — без логина и пароля'**
+  String get bugReportIncLog;
+
+  /// No description provided for @bugReportAttachPages.
+  ///
+  /// In ru, this message translates to:
+  /// **'Приложить страницы ЛК'**
+  String get bugReportAttachPages;
+
+  /// No description provided for @bugReportAttachPagesHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Помогает починить разбор данных. В них есть ваше ФИО и список работ'**
+  String get bugReportAttachPagesHint;
+
+  /// No description provided for @bugReportScreens.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скриншоты'**
+  String get bugReportScreens;
+
+  /// No description provided for @bugReportAddScreen.
+  ///
+  /// In ru, this message translates to:
+  /// **'Добавить'**
+  String get bugReportAddScreen;
+
+  /// No description provided for @bugReportScreensHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Снимок экрана, где вы открыли отчёт, уже приложен. Уберите его, если на нём личное'**
+  String get bugReportScreensHint;
+
+  /// No description provided for @bugReportSend.
+  ///
+  /// In ru, this message translates to:
+  /// **'Составить письмо'**
+  String get bugReportSend;
+
+  /// No description provided for @bugReportFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось открыть почту. Адрес {email} скопирован'**
+  String bugReportFailed(String email);
+
   /// No description provided for @dashboardGreeting.
   ///
   /// In ru, this message translates to:
@@ -1531,12 +1849,6 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Все предметы'**
   String get reportAllSubjects;
-
-  /// No description provided for @reportShareHtml.
-  ///
-  /// In ru, this message translates to:
-  /// **'Поделиться HTML страницы'**
-  String get reportShareHtml;
 
   /// No description provided for @fileOpen.
   ///

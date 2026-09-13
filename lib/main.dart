@@ -14,12 +14,15 @@ import 'controllers/locale_controller.dart';
 import 'controllers/schedule_nav_controller.dart';
 import 'controllers/settings_controller.dart';
 import 'controllers/theme_controller.dart';
+import 'services/app_log.dart';
 import 'services/background_worker.dart';
 import 'services/news_service.dart';
 import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Первым делом: всё, что упадёт дальше, должно попасть в журнал отчёта.
+  AppLog.install();
 
   // Вёрстка рассчитана только на портрет — альбомную ориентацию не даём.
   await SystemChrome.setPreferredOrientations([

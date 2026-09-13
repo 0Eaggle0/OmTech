@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../app_version.dart';
 import '../../controllers/lk_controller.dart';
 import '../../controllers/locale_controller.dart';
 import '../../controllers/settings_controller.dart';
@@ -10,6 +11,7 @@ import '../../services/cache_manager.dart';
 import '../../services/news_service.dart';
 import '../../services/notification_service.dart';
 import '../../theme/app_glass.dart';
+import 'bug_report_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -194,18 +196,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 16),
           _sectionTitle(context, l.settingsAbout),
           Card(
-            child: ListTile(
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  gradient: context.glass.accentGradient,
-                  borderRadius: BorderRadius.circular(10),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: context.glass.accentGradient,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.school, color: Colors.white, size: 22),
+                  ),
+                  title: Text(l.settingsAboutApp),
+                  subtitle: Text('${l.settingsVersion} $kAppVersionLabel · ${l.profileBuildBy}'),
                 ),
-                child: const Icon(Icons.school, color: Colors.white, size: 22),
-              ),
-              title: Text(l.settingsAboutApp),
-              subtitle: Text('${l.settingsVersion} 1.0 · ${l.profileBuildBy}'),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.bug_report_outlined),
+                  title: Text(l.bugReportAction),
+                  subtitle: Text(l.bugReportSettingsHint),
+                  trailing: const Icon(Icons.chevron_right),
+                  // Снимок самих настроек разработчику ничего не скажет.
+                  onTap: () => BugReportSheet.show(context, captureScreen: false),
+                ),
+              ],
             ),
           ),
         ],

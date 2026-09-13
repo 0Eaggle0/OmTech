@@ -10,6 +10,7 @@ import '../services/lk/lk_grades_api.dart';
 import '../services/lk/lk_report_work_api.dart';
 import '../services/lk/lk_session.dart';
 import '../services/schedule_api.dart';
+import '../services/teacher_contacts_service.dart';
 import 'group_controller.dart';
 
 enum LkStatus { disconnected, connecting, connected, error }
@@ -126,13 +127,11 @@ class LkController extends ChangeNotifier {
       unawaited(_refreshProfileSilently());
       return true;
     } on LkLoginException catch (e) {
-      if (kDebugMode && e.diagnostics != null) {
-        debugPrint('[LK] логин не удался: ${e.diagnostics}');
-      }
+      debugPrint('[LK] логин не удался: ${e.diagnostics ?? e.result.name}');
       _fail(e.message, silent: silent);
       return false;
     } catch (e) {
-      if (kDebugMode) debugPrint('[LK] логин не удался: $e');
+      debugPrint('[LK] логин не удался: $e');
       _fail('Не удалось войти, попробуйте позже', silent: silent);
       return false;
     }
@@ -173,6 +172,7 @@ class LkController extends ChangeNotifier {
     await gradesApi.clearCache();
     await contactWorkApi.clearCache();
     await reportWorkApi.clearCache();
+    await TeacherContactsService.clearCache();
     _status = LkStatus.disconnected;
     _profile = null;
     _errorMessage = null;

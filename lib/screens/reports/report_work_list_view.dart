@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
@@ -17,27 +16,7 @@ import '../../widgets/section_caption.dart';
 import '../../widgets/status_banners.dart';
 import '../../widgets/status_pill.dart';
 import 'report_work_detail_screen.dart';
-
-/// Отладка: делится сырыми HTML-дампами страниц отчётных работ.
-/// Свободная функция, а не метод вью — состояние экрана ей не нужно,
-/// поэтому кнопку может держать шапка хаба.
-Future<void> shareReportDebugDumps(BuildContext context) async {
-  final messenger = ScaffoldMessenger.of(context);
-  final api = context.read<LkController>().reportWorkApi;
-  final paths = <String>[];
-  for (final name in ['vkr2_shell', 'otherlist']) {
-    final p = await api.lastDumpPath(name);
-    if (p != null) paths.add(p);
-  }
-  if (paths.isEmpty) {
-    messenger.showSnackBar(const SnackBar(
-      content: Text('Дампы пока не сохранены — потяни список вниз для обновления.'),
-    ));
-    return;
-  }
-  await Share.shareXFiles(paths.map((p) => XFile(p)).toList(),
-      subject: 'reports debug dumps');
-}
+import 'report_work_upload_screen.dart';
 
 /// Список отчётных работ. Без своего `Scaffold` — живёт внутри
 /// `WorkHubScreen`, который владеет шапкой и переключателем разделов.
@@ -86,13 +65,35 @@ class _ReportWorkListViewState extends State<ReportWorkListView> {
           _loading = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[Reports] список не обновился: $e');
       if (!mounted) return;
       setState(() {
         _loading = false;
         _error = AppLocalizations.of(context)!.lkLoadError;
       });
     }
+  }
+
+  Future<void> _openWork(ReportWork work) async {
+    final l = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final deleted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => ReportWorkDetailScreen(work: work)),
+    );
+    if (deleted != true || !mounted) return;
+    messenger.showSnackBar(SnackBar(content: Text(l.reportDeleted)));
+    await _load(forceRefresh: true);
+  }
+
+  Future<void> _openUpload() async {
+    final l = AppLocalizations.of(context)!;
+    final messenger = ScaffoldMessenger.of(context);
+    final uploaded = await ReportWorkUploadScreen.open(context);
+    if (uploaded != true || !mounted) return;
+    messenger.showSnackBar(SnackBar(content: Text(l.reportUploadDone)));
+    await _load(forceRefresh: true);
   }
 
   @override
@@ -169,6 +170,8 @@ class _ReportWorkListViewState extends State<ReportWorkListView> {
           const SizedBox(height: 8),
         ],
         SectionCaption(l.reportOtherWorks),
+        _uploadCta(context, l, enabled: !out.isDemo),
+        const SizedBox(height: 12),
         TextField(
           controller: _searchController,
           onChanged: (v) => setState(() => _query = v),
@@ -244,6 +247,72 @@ class _ReportWorkListViewState extends State<ReportWorkListView> {
                 child: _otherWorkCard(context, l, w),
               )),
       ],
+    );
+  }
+
+  /// Кнопка «Загрузить работу» — акцентная плитка над фильтрами.
+  Widget _uploadCta(BuildContext context, AppLocalizations l,
+      {required bool enabled}) {
+    final theme = Theme.of(context);
+    final glass = context.glass;
+    final shape = BorderRadius.circular(AppRadius.card);
+
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: glass.accentGradient,
+          borderRadius: shape,
+          boxShadow: enabled ? glass.glow(glass.accent) : null,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: shape,
+            onTap: enabled ? _openUpload : null,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: const Icon(Icons.upload_file_rounded,
+                        color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l.reportUploadCta,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          l.reportUploadCtaHint,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: Colors.white),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -397,10 +466,7 @@ class _ReportWorkListViewState extends State<ReportWorkListView> {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         borderRadius: shape,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => ReportWorkDetailScreen(work: w)),
-        ),
+        onTap: () => _openWork(w),
         child: Stack(
           children: [
             Positioned(left: 0, top: 0, bottom: 0, child: AccentBar(accent)),

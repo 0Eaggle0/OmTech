@@ -26,10 +26,23 @@
   "lessonDetailNote": "Ваша заметка",
   "lessonDetailShare": "Поделиться заметкой",
   "lessonDetailTeacherOptions": "Действия с преподавателем",
-  "lessonDetailContacts": "Показать контакты",
   "lessonDetailReviews": "Отзывы",
   "lessonDetailOpenMaps": "Открыть на карте",
   "lessonDetailStream": "поток",
+
+  "teacherContactsTitle": "Контакты",
+  "teacherContactsFor": "Контакты · {name}",
+  "@teacherContactsFor": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "teacherContactsSource": "Из контактной работы · {discipline}",
+  "@teacherContactsSource": {
+    "placeholders": { "discipline": { "type": "String" } }
+  },
+  "contactKindEmail": "Почта",
+  "contactKindPhone": "Телефон",
+  "contactKindVk": "ВКонтакте",
+  "contactCopy": "Копировать",
 
   "newsTitle": "Новости",
   "newsLoadError": "Не удалось загрузить новости",
@@ -87,7 +100,6 @@
     "placeholders": { "time": { "type": "String" } }
   },
   "workLecturer": "Ведущий лектор",
-  "workLecturerStub": "Заглушка: данных о лекторе пока нет — источник ещё не подключён.",
   "workServerUnavailable": "Сервер недоступен",
 
   "reportWorksTitle": "Отчётные работы",
@@ -108,6 +120,45 @@
   "reportAcademicYear": "Учебный год",
   "reportRegistrationNumber": "Регистрационный №",
   "reportCopied": "Скопировано",
+  "reportUploadCta": "Загрузить работу",
+  "reportUploadCtaHint": "PDF до 10 МБ — в «Прочие работы»",
+  "reportUploadTitle": "Загрузка работы",
+  "reportUploadHeroSubtitle": "Выберите дисциплину, назовите работу и прикрепите PDF",
+  "reportUploadDiscipline": "Дисциплина",
+  "reportUploadDisciplineHint": "Выберите дисциплину",
+  "reportUploadDisciplinesLoading": "Загружаем список дисциплин…",
+  "reportUploadDisciplinesError": "Не удалось получить список дисциплин",
+  "reportUploadNoDisciplines": "Сайт не вернул дисциплин для загрузки",
+  "reportUploadSearch": "Поиск дисциплины",
+  "reportUploadWorkTitle": "Название работы",
+  "reportUploadWorkTitleHint": "Например: Отчёт по лабораторной работе №1",
+  "reportUploadTitleRequired": "Введите название работы",
+  "reportUploadFile": "Файл работы",
+  "reportUploadPickFile": "Выберите файл",
+  "reportUploadFileHint": "PDF, не более 10 МБ",
+  "reportUploadFileRequired": "Прикрепите PDF-файл",
+  "reportUploadOnlyPdf": "Нужен файл в формате PDF",
+  "reportUploadTooLarge": "Файл больше 10 МБ — сайт его не примет",
+  "reportUploadPickFailed": "Не удалось выбрать файл",
+  "reportUploadRemoveFile": "Убрать файл",
+  "reportUploadSend": "Загрузить",
+  "reportUploadSending": "Загрузка {percent}%",
+  "@reportUploadSending": {
+    "placeholders": { "percent": { "type": "int" } }
+  },
+  "reportUploadProcessing": "Обрабатываем файл…",
+  "reportUploadDone": "Работа загружена",
+  "reportUploadFailed": "Не удалось загрузить работу. Попробуйте ещё раз",
+  "reportUploadServerError": "Работа не загружена",
+  "reportUploadNote": "После загрузки работа появится в списке со статусом «На проверке»",
+  "reportDelete": "Удалить работу",
+  "reportDeleteTitle": "Удалить работу?",
+  "reportDeleteBody": "«{title}» будет удалена с сайта ОмГТУ. Отменить это нельзя.",
+  "@reportDeleteBody": {
+    "placeholders": { "title": { "type": "String" } }
+  },
+  "reportDeleted": "Работа удалена",
+  "reportDeleteFailed": "Не удалось удалить работу",
 
   "profileTitle": "Профиль",
   "profileNameHint": "Ваше ФИО",
@@ -197,6 +248,28 @@
   "settingsClearCacheBody": "Будут удалены: сохранённое расписание, данные ЛК, кэш новостей, скачанные файлы и история поиска.",
   "settingsClearCacheKept": "Вход в ЛК, группа, тема и язык останутся на месте.",
   "settingsCacheCleared": "Кэш очищен",
+
+  "bugReportAction": "Сообщить об ошибке",
+  "bugReportSettingsHint": "Письмо разработчику с файлом диагностики",
+  "bugReportTitle": "Сообщить об ошибке",
+  "bugReportSubtitle": "Письмо уйдёт на {email}",
+  "@bugReportSubtitle": {
+    "placeholders": { "email": { "type": "String" } }
+  },
+  "bugReportHint": "Что пошло не так? Что вы делали перед этим?",
+  "bugReportIncluded": "В письмо попадёт",
+  "bugReportIncDevice": "Версия приложения, система, группа и состояние ЛК",
+  "bugReportIncLog": "Журнал последних действий — без логина и пароля",
+  "bugReportAttachPages": "Приложить страницы ЛК",
+  "bugReportAttachPagesHint": "Помогает починить разбор данных. В них есть ваше ФИО и список работ",
+  "bugReportScreens": "Скриншоты",
+  "bugReportAddScreen": "Добавить",
+  "bugReportScreensHint": "Снимок экрана, где вы открыли отчёт, уже приложен. Уберите его, если на нём личное",
+  "bugReportSend": "Составить письмо",
+  "bugReportFailed": "Не удалось открыть почту. Адрес {email} скопирован",
+  "@bugReportFailed": {
+    "placeholders": { "email": { "type": "String" } }
+  },
 
   "dashboardGreeting": "Добро пожаловать!",
   "dashboardHello": "Привет, {name}!",
@@ -298,7 +371,6 @@
   "reportDownloading": "Скачивание...",
   "reportNoFiles": "Файл недоступен",
   "reportAllSubjects": "Все предметы",
-  "reportShareHtml": "Поделиться HTML страницы",
 
   "fileOpen": "Открыть",
   "fileSave": "Сохранить",

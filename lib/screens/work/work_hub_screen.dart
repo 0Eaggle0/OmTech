@@ -66,14 +66,6 @@ class _WorkHubScreenState extends State<WorkHubScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.workHubTitle),
-        actions: [
-          if (lk.isConnected && _section == 1)
-            IconButton(
-              tooltip: l.reportShareHtml,
-              icon: const Icon(Icons.bug_report_outlined),
-              onPressed: () => shareReportDebugDumps(context),
-            ),
-        ],
       ),
       body: !lk.isConnected
           ? const LkRequiredState()

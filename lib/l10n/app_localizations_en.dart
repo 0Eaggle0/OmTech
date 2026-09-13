@@ -74,9 +74,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lessonDetailTeacherOptions => 'Teacher actions';
 
   @override
-  String get lessonDetailContacts => 'Show contacts';
-
-  @override
   String get lessonDetailReviews => 'Reviews';
 
   @override
@@ -84,6 +81,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lessonDetailStream => 'stream';
+
+  @override
+  String get teacherContactsTitle => 'Contacts';
+
+  @override
+  String teacherContactsFor(String name) {
+    return 'Contacts · $name';
+  }
+
+  @override
+  String teacherContactsSource(String discipline) {
+    return 'From contact work · $discipline';
+  }
+
+  @override
+  String get contactKindEmail => 'Email';
+
+  @override
+  String get contactKindPhone => 'Phone';
+
+  @override
+  String get contactKindVk => 'VK';
+
+  @override
+  String get contactCopy => 'Copy';
 
   @override
   String get newsTitle => 'News';
@@ -199,10 +221,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workLecturer => 'Lead lecturer';
 
   @override
-  String get workLecturerStub =>
-      'Placeholder: no lecturer data yet — the source isn\'t wired up.';
-
-  @override
   String get workServerUnavailable => 'Server unavailable';
 
   @override
@@ -259,6 +277,115 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportCopied => 'Copied';
+
+  @override
+  String get reportUploadCta => 'Upload a work';
+
+  @override
+  String get reportUploadCtaHint => 'PDF up to 10 MB — to “Other works”';
+
+  @override
+  String get reportUploadTitle => 'Upload work';
+
+  @override
+  String get reportUploadHeroSubtitle =>
+      'Pick a discipline, name the work and attach a PDF';
+
+  @override
+  String get reportUploadDiscipline => 'Discipline';
+
+  @override
+  String get reportUploadDisciplineHint => 'Choose a discipline';
+
+  @override
+  String get reportUploadDisciplinesLoading => 'Loading disciplines…';
+
+  @override
+  String get reportUploadDisciplinesError =>
+      'Couldn\'t load the list of disciplines';
+
+  @override
+  String get reportUploadNoDisciplines =>
+      'The site returned no disciplines to upload to';
+
+  @override
+  String get reportUploadSearch => 'Search discipline';
+
+  @override
+  String get reportUploadWorkTitle => 'Work title';
+
+  @override
+  String get reportUploadWorkTitleHint => 'e.g. Lab report #1';
+
+  @override
+  String get reportUploadTitleRequired => 'Enter the work title';
+
+  @override
+  String get reportUploadFile => 'Work file';
+
+  @override
+  String get reportUploadPickFile => 'Choose a file';
+
+  @override
+  String get reportUploadFileHint => 'PDF, up to 10 MB';
+
+  @override
+  String get reportUploadFileRequired => 'Attach a PDF file';
+
+  @override
+  String get reportUploadOnlyPdf => 'The file must be a PDF';
+
+  @override
+  String get reportUploadTooLarge =>
+      'The file is over 10 MB — the site won\'t accept it';
+
+  @override
+  String get reportUploadPickFailed => 'Couldn\'t pick the file';
+
+  @override
+  String get reportUploadRemoveFile => 'Remove file';
+
+  @override
+  String get reportUploadSend => 'Upload';
+
+  @override
+  String reportUploadSending(int percent) {
+    return 'Uploading $percent%';
+  }
+
+  @override
+  String get reportUploadProcessing => 'Processing file…';
+
+  @override
+  String get reportUploadDone => 'Work uploaded';
+
+  @override
+  String get reportUploadFailed =>
+      'Couldn\'t upload the work. Please try again';
+
+  @override
+  String get reportUploadServerError => 'Work not uploaded';
+
+  @override
+  String get reportUploadNote =>
+      'Once uploaded, the work appears in the list as “In review”';
+
+  @override
+  String get reportDelete => 'Delete work';
+
+  @override
+  String get reportDeleteTitle => 'Delete this work?';
+
+  @override
+  String reportDeleteBody(String title) {
+    return '“$title” will be removed from the OmSTU site. This can\'t be undone.';
+  }
+
+  @override
+  String get reportDeleted => 'Work deleted';
+
+  @override
+  String get reportDeleteFailed => 'Couldn\'t delete the work';
 
   @override
   String get profileTitle => 'Profile';
@@ -520,6 +647,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsCacheCleared => 'Cache cleared';
 
   @override
+  String get bugReportAction => 'Report a problem';
+
+  @override
+  String get bugReportSettingsHint =>
+      'Email the developer with a diagnostics file';
+
+  @override
+  String get bugReportTitle => 'Report a problem';
+
+  @override
+  String bugReportSubtitle(String email) {
+    return 'The email goes to $email';
+  }
+
+  @override
+  String get bugReportHint =>
+      'What went wrong? What were you doing before that?';
+
+  @override
+  String get bugReportIncluded => 'The email will include';
+
+  @override
+  String get bugReportIncDevice => 'App version, OS, group and account status';
+
+  @override
+  String get bugReportIncLog =>
+      'Recent activity log — without login or password';
+
+  @override
+  String get bugReportAttachPages => 'Attach account pages';
+
+  @override
+  String get bugReportAttachPagesHint =>
+      'Helps fix data parsing. They contain your name and list of works';
+
+  @override
+  String get bugReportScreens => 'Screenshots';
+
+  @override
+  String get bugReportAddScreen => 'Add';
+
+  @override
+  String get bugReportScreensHint =>
+      'A snapshot of the screen you reported from is attached. Remove it if it shows something private';
+
+  @override
+  String get bugReportSend => 'Compose email';
+
+  @override
+  String bugReportFailed(String email) {
+    return 'Couldn\'t open email. The address $email was copied';
+  }
+
+  @override
   String get dashboardGreeting => 'Welcome!';
 
   @override
@@ -774,9 +955,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportAllSubjects => 'All subjects';
-
-  @override
-  String get reportShareHtml => 'Share page HTML';
 
   @override
   String get fileOpen => 'Open';
