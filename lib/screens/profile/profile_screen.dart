@@ -11,6 +11,7 @@ import '../../controllers/group_controller.dart';
 import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/student_record.dart';
+import '../../services/avatar_store.dart';
 import '../../services/link_launcher.dart';
 import '../../theme/app_glass.dart';
 import '../../theme/app_metrics.dart';
@@ -33,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const _lastNameKey = 'user_last_name';
   static const _patronymicKey = 'user_patronymic';
   static const _legacyNameKey = 'user_name';
-  static const _avatarKey = 'user_avatar_path';
+  static const _avatarKey = AvatarStore.key;
 
   String _firstName = '';
   String _lastName = '';
@@ -151,23 +152,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final picked = await picker.pickImage(source: source, imageQuality: 85);
     if (picked == null) return _avatarPath;
     final dir = await getApplicationDocumentsDirectory();
-    final dest = File(p.join(dir.path, 'avatar${p.extension(picked.path)}'));
+    // Новое имя на каждый выбор: по старому пути `FileImage` отдал бы
+    // закэшированную картинку прежнего фото.
+    final dest = File(p.join(dir.path,
+        'avatar_${DateTime.now().millisecondsSinceEpoch}${p.extension(picked.path)}'));
     await File(picked.path).copy(dest.path);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_avatarKey, dest.path);
+    await _deleteAvatarFile(_avatarPath);
+    await AvatarStore.set(dest.path);
     if (mounted) setState(() => _avatarPath = dest.path);
     return dest.path;
   }
 
   Future<void> _removeAvatar() async {
     final path = _avatarPath;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_avatarKey);
-    if (path != null) {
-      final file = File(path);
-      if (await file.exists()) await file.delete();
-    }
+    await AvatarStore.set(null);
+    await _deleteAvatarFile(path);
     if (mounted) setState(() => _avatarPath = null);
+  }
+
+  Future<void> _deleteAvatarFile(String? path) async {
+    if (path == null) return;
+    final file = File(path);
+    if (await file.exists()) await file.delete();
   }
 
   void _showEditProfileSheet(BuildContext context, AppLocalizations l) {

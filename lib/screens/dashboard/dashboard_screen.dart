@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +15,7 @@ import '../../models/schedule_entity.dart';
 import '../../models/schedule_event.dart';
 import '../../services/academic_week.dart';
 import '../../services/app_routes.dart';
+import '../../services/avatar_store.dart';
 import '../../services/grades_summary.dart';
 import '../../services/news_service.dart';
 import '../../services/schedule_api.dart';
@@ -64,6 +67,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // не мешает, если запрос упадёт: строка погоды просто не появится.
     _weatherFuture = _weatherService.fetch();
     _loadUserName();
+    AvatarStore.load();
   }
 
   Future<void> _loadUserName() async {
@@ -306,14 +310,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         GestureDetector(
           onTap: () => widget.onOpenTab(4),
-          child: CircleAvatar(
-            radius: 19,
-            backgroundColor: glass.tint(theme.colorScheme.primary),
-            child: Text(
-              initial,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(color: theme.colorScheme.primary),
-            ),
+          child: ValueListenableBuilder<String?>(
+            valueListenable: AvatarStore.path,
+            builder: (context, path, _) {
+              final file = path != null ? File(path) : null;
+              if (file != null && file.existsSync()) {
+                return CircleAvatar(
+                  radius: 19,
+                  backgroundImage: FileImage(file),
+                );
+              }
+              return CircleAvatar(
+                radius: 19,
+                backgroundColor: glass.tint(theme.colorScheme.primary),
+                child: Text(
+                  initial,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(color: theme.colorScheme.primary),
+                ),
+              );
+            },
           ),
         ),
         const SizedBox(width: 12),

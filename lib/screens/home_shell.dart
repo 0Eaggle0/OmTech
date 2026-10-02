@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -10,6 +12,7 @@ import '../l10n/app_localizations.dart';
 import '../services/lk/lk_credentials_storage.dart';
 import '../services/update_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_glass.dart';
 import '../widgets/floating_nav_bar.dart';
 import '../widgets/lk_login_sheet.dart';
 import '../widgets/update_sheet.dart';
@@ -188,11 +191,10 @@ class _HomeShellState extends State<HomeShell>
               ],
             ),
           ),
-          const Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: _LkConnectionBanner(),
+          // Над навбаром и сквозной для тапов: сверху плашка закрывала
+          // кнопки шапок (в том числе настройки в профиле).
+          const Positioned.fill(
+            child: IgnorePointer(child: _LkConnectionBanner()),
           ),
         ],
       ),
@@ -270,84 +272,172 @@ class _LkConnectionBannerState extends State<_LkConnectionBanner> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSlide(
-          offset: _bannerState == _BannerState.hidden
-              ? const Offset(0, -1)
-              : Offset.zero,
-          duration: const Duration(milliseconds: 320),
-          curve: Curves.easeOutCubic,
-          child: AnimatedOpacity(
-            opacity: _bannerState == _BannerState.hidden ? 0 : 1,
-            duration: const Duration(milliseconds: 280),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                child: _buildBannerContent(context),
-              ),
+    final hidden = _bannerState == _BannerState.hidden;
+    // `MediaQuery.padding.bottom` тела уже включает высоту навбара
+    // (extendBody), так что пилюля садится ровно над ним.
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 0, 24, MediaQuery.paddingOf(context).bottom + 10),
+        child: AnimatedSlide(
+          offset: hidden ? const Offset(0, 0.8) : Offset.zero,
+          duration: const Duration(milliseconds: 380),
+          curve: hidden ? Curves.easeInCubic : Curves.easeOutBack,
+          child: AnimatedScale(
+            scale: hidden ? 0.85 : 1,
+            duration: const Duration(milliseconds: 380),
+            curve: hidden ? Curves.easeInCubic : Curves.easeOutBack,
+            child: AnimatedOpacity(
+              opacity: hidden ? 0 : 1,
+              duration: const Duration(milliseconds: 240),
+              child: _buildPill(context),
             ),
           ),
-        );
-  }
-
-  Widget _buildBannerContent(BuildContext context) {
-    final theme = Theme.of(context);
-    final l = AppLocalizations.of(context)!;
-    final (color, icon, text) = switch (_bannerState) {
-      _BannerState.connecting => (
-          theme.colorScheme.primary,
-          null,
-          l.lkConnecting,
-        ),
-      _BannerState.success => (
-          AppColors.statusSuccess,
-          Icons.check_circle_outline,
-          l.lkConnected,
-        ),
-      _BannerState.error => (
-          theme.colorScheme.error,
-          Icons.error_outline,
-          _errorMessage ?? l.lkConnectError,
-        ),
-      _BannerState.hidden => (theme.colorScheme.primary, null, ''),
-    };
-
-    return Material(
-      elevation: 4,
-      borderRadius: BorderRadius.circular(12),
-      color: color.withValues(alpha: 0.95),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null)
-              Icon(icon, size: 18, color: Colors.white)
-            else
-              const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation(Colors.white),
-                ),
-              ),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
+  }
+
+  Widget _buildPill(BuildContext context) {
+    final theme = Theme.of(context);
+    final glass = context.glass;
+    final l = AppLocalizations.of(context)!;
+    final (color, text) = switch (_bannerState) {
+      _BannerState.connecting => (theme.colorScheme.primary, l.lkConnecting),
+      _BannerState.success => (AppColors.statusSuccess, l.lkConnected),
+      _BannerState.error => (
+          theme.colorScheme.error,
+          _errorMessage ?? l.lkConnectError,
+        ),
+      _BannerState.hidden => (theme.colorScheme.primary, ''),
+    };
+
+    Widget pill = DecoratedBox(
+      decoration: BoxDecoration(
+        color: glass.navFill,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+        boxShadow: glass.floatShadow,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 26,
+                height: 18,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, anim) => ScaleTransition(
+                    scale: CurvedAnimation(
+                        parent: anim, curve: Curves.easeOutBack),
+                    child: FadeTransition(opacity: anim, child: child),
+                  ),
+                  child: switch (_bannerState) {
+                    _BannerState.success => Icon(Icons.check_rounded,
+                        key: const ValueKey('ok'), size: 18, color: color),
+                    _BannerState.error => Icon(Icons.close_rounded,
+                        key: const ValueKey('err'), size: 18, color: color),
+                    _ => _LinkingDots(key: const ValueKey('link'), color: color),
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Text(
+                    text,
+                    key: ValueKey(text),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelLarge
+                        ?.copyWith(color: theme.colorScheme.onSurface),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (_bannerState == _BannerState.error) {
+      // Короткое «нет» головой — понятнее красного цвета в одиночку.
+      pill = pill
+          .animate(key: const ValueKey('shake'))
+          .shakeX(hz: 5, amount: 4, duration: 420.ms);
+    }
+    return pill;
   }
 }
 
 enum _BannerState { hidden, connecting, success, error }
 
+/// Две точки тянутся друг к другу и сцепляются перемычкой — «подключаемся».
+class _LinkingDots extends StatefulWidget {
+  final Color color;
+
+  const _LinkingDots({super.key, required this.color});
+
+  @override
+  State<_LinkingDots> createState() => _LinkingDotsState();
+}
+
+class _LinkingDotsState extends State<_LinkingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+        painter: _LinkingDotsPainter(
+          CurvedAnimation(parent: _c, curve: Curves.easeInOutCubic),
+          widget.color,
+        ),
+      );
+}
+
+class _LinkingDotsPainter extends CustomPainter {
+  final Animation<double> t;
+  final Color color;
+
+  _LinkingDotsPainter(this.t, this.color) : super(repaint: t);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final v = t.value;
+    final cy = size.height / 2;
+    final gap = lerpDouble(size.width / 2 - 4, 4, v)!;
+    final left = Offset(size.width / 2 - gap, cy);
+    final right = Offset(size.width / 2 + gap, cy);
+    final paint = Paint()..color = color;
+
+    canvas.drawLine(
+      left,
+      right,
+      Paint()
+        ..color = color.withValues(alpha: 0.5 * v)
+        ..strokeWidth = 2
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawCircle(left, 3.5, paint);
+    canvas.drawCircle(right, 3.5, paint);
+  }
+
+  @override
+  bool shouldRepaint(_LinkingDotsPainter old) => old.color != color;
+}
