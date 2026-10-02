@@ -1,7 +1,7 @@
-/// Подпись версии на экране настроек. Менять только по просьбе пользователя.
-const kAppVersionLabel = 'v1.2.2';
-
-/// Полная версия для отчёта об ошибке.
-/// Поднимать вместе с `version:` в pubspec.yaml.
+/// Версия приложения. Поднимает scripts/release.ps1 (release.bat) вместе с
+/// `version:` в pubspec.yaml — руками не править.
 const kAppVersion = '1.2.2';
 const kAppBuild = 40;
+
+/// Подпись версии на экране настроек.
+const kAppVersionLabel = 'v$kAppVersion';
