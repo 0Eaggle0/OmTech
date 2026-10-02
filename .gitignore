@@ -88,3 +88,7 @@ migrate_working_dir/
 # ─── Local AI assistant notes (not published) ───
 CLAUDE.md
 .claude/
+
+# Local release tooling (not published)
+release.bat
+scripts/release.ps1

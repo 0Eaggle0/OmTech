@@ -1,5 +1,4 @@
-/// Версия приложения. Поднимает scripts/release.ps1 (release.bat) вместе с
-/// `version:` в pubspec.yaml — руками не править.
+/// Версия приложения. Поднимать вместе с `version:` в pubspec.yaml.
 const kAppVersion = '1.2.2';
 const kAppBuild = 40;
 

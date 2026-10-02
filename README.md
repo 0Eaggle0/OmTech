@@ -73,20 +73,13 @@ keyPassword=...
 
 ### Выпуск новой версии
 
-Запустите `release.bat` (двойным кликом или из терминала). Скрипт:
-
-1. поднимает версию в `pubspec.yaml` и `lib/app_version.dart`;
-2. прогоняет `flutter analyze` и `flutter test`;
-3. коммитит изменения, ставит тег `vX.Y.Z` и пушит на GitHub;
-4. ждёт, пока GitHub Actions ([release.yml](.github/workflows/release.yml)) соберёт подписанный APK и опубликует релиз, и сообщает результат окном.
-
-```bat
-release.bat              :: 1.2.2 -> 1.2.3
-release.bat minor        :: 1.2.2 -> 1.3.0
-release.bat -DryRun      :: только показать, что будет
-```
-
-Установленные приложения предложат обновиться при следующем запуске.
+1. Поднимите `version:` в `pubspec.yaml`, а также `kAppVersion` и `kAppBuild` в `lib/app_version.dart`. Номер сборки после `+` должен расти, иначе Android не поставит обновление поверх.
+2. Закоммитьте и поставьте тег с той же версией:
+   ```bash
+   git tag v1.2.3
+   git push origin master --tags
+   ```
+3. GitHub Actions ([release.yml](.github/workflows/release.yml)) соберёт подписанный APK и опубликует релиз. Установленные приложения предложат обновиться при следующем запуске.
 
 Секреты репозитория для CI: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
 
