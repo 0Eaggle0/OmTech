@@ -12,7 +12,7 @@ import 'lk/lk_file_downloader.dart';
 /// его поверх текущей версии (тот же applicationId и ключ подписи, выше
 /// versionCode), поэтому данные и вход в ЛК сохраняются.
 class UpdateService {
-  static const repo = '0Eaggle0/campus2_0';
+  static const repo = '0Eaggle0/OmTech';
   static const _skippedKey = 'update_skipped_version';
 
   /// Новый релиз или null: не Android, нет сети, нет APK, версия не новее

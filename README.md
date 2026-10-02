@@ -9,9 +9,9 @@
 ![Flutter](https://img.shields.io/badge/Flutter-3.38-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.10-0175C2?logo=dart&logoColor=white)
 ![Android](https://img.shields.io/badge/Android-APK-3DDC84?logo=android&logoColor=white)
-[![Release](https://img.shields.io/github/v/release/0Eaggle0/campus2_0?label=%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F)](https://github.com/0Eaggle0/campus2_0/releases/latest)
+[![Release](https://img.shields.io/github/v/release/0Eaggle0/OmTech?label=%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F)](https://github.com/0Eaggle0/OmTech/releases/latest)
 
-[**⬇ Скачать последнюю версию**](https://github.com/0Eaggle0/campus2_0/releases/latest)
+[**⬇ Скачать последнюю версию**](https://github.com/0Eaggle0/OmTech/releases/latest)
 
 </div>
 
@@ -33,7 +33,7 @@
 
 ## Установка
 
-1. Откройте страницу [последнего релиза](https://github.com/0Eaggle0/campus2_0/releases/latest) с телефона.
+1. Откройте страницу [последнего релиза](https://github.com/0Eaggle0/OmTech/releases/latest) с телефона.
 2. Скачайте файл `OmTech-vX.Y.Z.apk`.
 3. Откройте его и разрешите установку из этого источника, если Android спросит.
 
