@@ -30,7 +30,7 @@ Future<void> openWorkFile(
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const _DownloadProgressDialog(),
+    builder: (_) => const DownloadProgressDialog(),
   );
 
   try {
@@ -72,7 +72,7 @@ Future<void> saveWorkFile(
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const _DownloadProgressDialog(),
+    builder: (_) => const DownloadProgressDialog(),
   );
 
   try {
@@ -98,6 +98,16 @@ Future<void> saveWorkFile(
   }
 }
 
+/// Скачанные из ЛК файлы держим в своей подпапке временной папки: так их
+/// можно стереть целиком при очистке кэша, не задев чужие файлы (например
+/// PDF, скопированный туда системным диалогом выбора файла).
+const lkFilesDirName = 'lk_files';
+
+Future<Directory> lkFilesDir() async {
+  final dir = await getTemporaryDirectory();
+  return Directory('${dir.path}${Platform.pathSeparator}$lkFilesDirName');
+}
+
 Future<String> _downloadToTemp(LkSession session, WorkFile file) async {
   // Referer подбираем под хост: для /ecab/-файлов — vkr2.php, иначе
   // — портал зачётки. Если хост не угадан, передаём null — downloadBytes
@@ -109,7 +119,8 @@ Future<String> _downloadToTemp(LkSession session, WorkFile file) async {
     referer = 'https://up.omgtu.ru/index.php?r=remote/read';
   }
   final bytes = await session.downloadBytes(file.url, referer: referer);
-  final dir = await getTemporaryDirectory();
+  final dir = await lkFilesDir();
+  await dir.create(recursive: true);
   final safeName = _safeFileName(file.name);
   final path = '${dir.path}${Platform.pathSeparator}$safeName';
   await File(path).writeAsBytes(bytes, flush: true);
@@ -130,8 +141,8 @@ String _displayPath(String path) {
   return segs.sublist(segs.length - 2).join('/');
 }
 
-class _DownloadProgressDialog extends StatelessWidget {
-  const _DownloadProgressDialog();
+class DownloadProgressDialog extends StatelessWidget {
+  const DownloadProgressDialog({super.key});
 
   @override
   Widget build(BuildContext context) {

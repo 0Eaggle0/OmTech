@@ -94,8 +94,13 @@ class LessonDetailSheet extends StatelessWidget {
             // Инфо-строки
             if (e.streamDisplay.isNotEmpty)
               _infoRow(context, Icons.groups_2_outlined, '${l.lessonDetailStream}: ${e.streamDisplay}', accent),
-            if (e.subgroupLabel.isNotEmpty)
-              _infoRow(context, Icons.people_outline, '${l.lessonDetailSubgroup}: ${e.subgroupLabel}', accent),
+            if (e.subgroupNumber.isNotEmpty)
+              _infoRow(
+                  context,
+                  Icons.people_outline,
+                  '${l.lessonDetailSubgroup}: '
+                      '${l.scheduleSubgroupN(int.parse(e.subgroupNumber))}',
+                  accent),
 
             if (e.auditorium.isNotEmpty)
               _infoRow(context, Icons.door_front_door_outlined, e.auditorium, accent),
@@ -242,7 +247,8 @@ class LessonDetailSheet extends StatelessWidget {
             ListTile(
               leading: Icon(Icons.star_outline, color: dimColor),
               title: Text(l.lessonDetailReviews, style: TextStyle(color: dimColor)),
-              subtitle: Text('В разработке', style: TextStyle(color: dimColor, fontSize: 12)),
+              subtitle: Text(l.lessonDetailComingSoon,
+                  style: TextStyle(color: dimColor, fontSize: 12)),
               enabled: false,
               onTap: null,
             ),

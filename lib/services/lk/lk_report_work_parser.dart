@@ -2,6 +2,7 @@ import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../../models/report_work.dart';
+import 'lk_parse_utils.dart';
 
 /// Парсер страницы https://omgtu.ru/ecab/vkr2.php — список загруженных
 /// студентом отчётных работ.
@@ -24,7 +25,7 @@ List<ReportCourseWork> parseCourseWorks(Document doc) {
   // Заголовок секции — div с текстом «Курсовые работы».
   Element? header;
   for (final el in doc.querySelectorAll('div')) {
-    final t = _textOneLine(el);
+    final t = textOneLine(el);
     if (t == 'Курсовые работы') {
       header = el;
       break;
@@ -61,12 +62,12 @@ List<ReportCourseWork> parseCourseWorks(Document doc) {
         _extractCallId(tr, 'getvkrpage') ?? _stripTrPrefix(tr.id);
     if (hexnrec == null || hexnrec.isEmpty) continue;
 
-    final group = _textOneLine(tds[0]);
-    final student = _textOneLine(tds[1]);
+    final group = textOneLine(tds[0]);
+    final student = textOneLine(tds[1]);
 
     // td[2]: <span italic>тип</span><br>название
     final typeSpan = tds[2].querySelector('span');
-    final workType = typeSpan != null ? _textOneLine(typeSpan) : '';
+    final workType = typeSpan != null ? textOneLine(typeSpan) : '';
     final title = _afterBreakText(tds[2]);
 
     result.add(ReportCourseWork(
@@ -104,7 +105,7 @@ List<ReportWork> parseOtherWorks(Document doc) {
     final fileId = ids[0];
     final fnpp = ids.length > 1 ? ids[1] : '';
 
-    final date = _parseDdMmYyyy(_textOneLine(tds[0]));
+    final date = parseSiteDate(textOneLine(tds[0]));
 
     // td[1] устроен так:
     //   <span style="font-style: italic; font-size: 80%;">
@@ -120,7 +121,7 @@ List<ReportWork> parseOtherWorks(Document doc) {
     //   <div …>Комментарий: {текст} (<i>{ФИО}</i>)</div>  ← опц.
     final infoTd = tds[1];
     final headerSpan = infoTd.querySelector('span');
-    final headerText = headerSpan != null ? _textOneLine(headerSpan) : '';
+    final headerText = headerSpan != null ? textOneLine(headerSpan) : '';
     final (discipline, semester, workNumber) = _parseHeader(headerText);
 
     final title = _afterBreakText(infoTd);
@@ -132,7 +133,7 @@ List<ReportWork> parseOtherWorks(Document doc) {
     ReportWorkStatus status = ReportWorkStatus.pending;
 
     for (final div in inlineDivs) {
-      final raw = _textOneLine(div);
+      final raw = textOneLine(div);
       if (raw.startsWith('Статус')) {
         status = _statusFromDiv(div);
         teacher = _lastItalic(div);
@@ -177,18 +178,26 @@ List<ReportUploadDiscipline> parseUploadDisciplines(Document doc) {
         .take(4)
         .map((m) => _unescapeJs(m.group(1) ?? m.group(2) ?? '').trim())
         .toList();
-    if (args.isEmpty || args[0].isEmpty || !seen.add(args[0])) continue;
+    if (args.isEmpty || args[0].isEmpty) continue;
 
-    var name = args.length > 1 ? _normalize(args[1]) : '';
+    final group = args.length > 2 ? args[2] : '';
+    final semester = args.length > 3 ? args[3] : '';
+    // Ключ дубля — hexnrec + группа + семестр, а не один hexnrec: одна и та же
+    // дисциплина может идти несколько семестров, и это разные строки формы,
+    // а не повторы. Название в ключ не берём — у настоящего дубля оно
+    // отличается («Дубль» вместо полного имени).
+    if (!seen.add('${args[0]}|$group|$semester')) continue;
+
+    var name = args.length > 1 ? normalizeSpaces(args[1]) : '';
     if (name.isEmpty) {
       // Текст строки: «Физика (гр. ИСТ-241, сем. 3)» → «Физика».
-      name = _textOneLine(el).replaceFirst(RegExp(r'\s*\(гр\..*$'), '');
+      name = textOneLine(el).replaceFirst(RegExp(r'\s*\(гр\..*$'), '');
     }
     result.add(ReportUploadDiscipline(
       hexnrec: args[0],
       name: name,
-      group: args.length > 2 ? args[2] : '',
-      semester: args.length > 3 ? args[3] : '',
+      group: group,
+      semester: semester,
     ));
   }
   return result;
@@ -299,7 +308,7 @@ String _lastItalic(Element scope) {
   for (final el in scope.querySelectorAll('i')) {
     last = el;
   }
-  return last == null ? '' : _textOneLine(last);
+  return last == null ? '' : textOneLine(last);
 }
 
 /// Тело комментария: «Комментарий: <текст> (<i>ФИО</i>)» → <текст>.
@@ -313,16 +322,6 @@ String _commentBody(Element div) {
   return body.trim();
 }
 
-DateTime? _parseDdMmYyyy(String raw) {
-  final m =
-      RegExp(r'(\d{1,2})\.(\d{1,2})\.(\d{4})').firstMatch(raw);
-  if (m == null) return null;
-  return DateTime(
-    int.parse(m.group(3)!),
-    int.parse(m.group(2)!),
-    int.parse(m.group(1)!),
-  );
-}
 
 /// Активный учебный год: в HTML у активной вкладки `<div id="laYYYY" class="ytd aytd">`.
 int? detectActiveYear(Document doc) {
@@ -350,7 +349,7 @@ Element? _nextSibling(Element el) {
 String _afterBreakText(Element el) {
   final inner = el.innerHtml;
   final brIdx = inner.indexOf(RegExp(r'<br\s*/?>'));
-  if (brIdx < 0) return _textOneLine(el);
+  if (brIdx < 0) return textOneLine(el);
   // Берём всё после первого <br>, но обрезаем первый встретившийся <div>
   // (это, например, статус-блок или комментарий — они не часть названия).
   String tail = inner.substring(brIdx);
@@ -358,13 +357,7 @@ String _afterBreakText(Element el) {
   final divIdx = tail.indexOf('<div');
   if (divIdx >= 0) tail = tail.substring(0, divIdx);
   final fragment = html_parser.parseFragment(tail);
-  return _normalize(fragment.text ?? '');
-}
-
-String _textOneLine(Element el) {
-  final inner = el.innerHtml.replaceAll(RegExp(r'<br\s*/?>'), ' ');
-  final tmp = html_parser.parseFragment(inner);
-  return _normalize(tmp.text ?? '');
+  return normalizeSpaces(fragment.text ?? '');
 }
 
 String _textMultiline(Element el) {
@@ -378,4 +371,3 @@ String _textMultiline(Element el) {
       .join('\n');
 }
 
-String _normalize(String s) => s.replaceAll(RegExp(r'\s+'), ' ').trim();

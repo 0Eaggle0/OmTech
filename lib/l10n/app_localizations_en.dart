@@ -77,6 +77,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lessonDetailReviews => 'Reviews';
 
   @override
+  String get lessonDetailComingSoon => 'In development';
+
+  @override
   String get lessonDetailOpenMaps => 'Open in maps';
 
   @override
@@ -157,13 +160,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String gradesSemesterLabel(int n) {
     return 'Sem. $n';
   }
-
-  @override
-  String get materialsTitle => 'Materials';
-
-  @override
-  String get materialsDemoNote =>
-      'Demo data. Real materials will appear after connecting your personal account.';
 
   @override
   String get workTitle => 'Contact work';
@@ -704,6 +700,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardGreeting => 'Welcome!';
 
   @override
+  String get dashboardStudent => 'Student';
+
+  @override
   String dashboardHello(String name) {
     return 'Hi, $name!';
   }
@@ -990,4 +989,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noInternet => 'No internet connection';
+
+  @override
+  String updateTitle(String version) {
+    return 'Update $version available';
+  }
+
+  @override
+  String get updateBody =>
+      'The new version installs over the current one; your data and login are kept.';
+
+  @override
+  String get updateInstall => 'Update';
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
+  String updateFailed(String error) {
+    return 'Couldn\'t download the update: $error';
+  }
 }

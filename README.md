@@ -1,16 +1,102 @@
-# campus2_0
+<div align="center">
 
-A new Flutter project.
+# OmTech
 
-## Getting Started
+**Неофициальное мобильное приложение для студентов ОмГТУ**
 
-This project is a starting point for a Flutter application.
+Расписание, новости университета и личный кабинет — в одном месте.
 
-A few resources to get you started if this is your first Flutter project:
+![Flutter](https://img.shields.io/badge/Flutter-3.38-02569B?logo=flutter&logoColor=white)
+![Dart](https://img.shields.io/badge/Dart-3.10-0175C2?logo=dart&logoColor=white)
+![Android](https://img.shields.io/badge/Android-APK-3DDC84?logo=android&logoColor=white)
+[![Release](https://img.shields.io/github/v/release/0Eaggle0/campus2_0?label=%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F)](https://github.com/0Eaggle0/campus2_0/releases/latest)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+[**⬇ Скачать последнюю версию**](https://github.com/0Eaggle0/campus2_0/releases/latest)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+</div>
+
+---
+
+## Возможности
+
+| | |
+|---|---|
+| 📅 **Расписание** | Любая группа, преподаватель или аудитория с [rasp.omgtu.ru](https://rasp.omgtu.ru). Фильтр по подгруппе, работает офлайн из кэша. |
+| 🏠 **Главная** | Следующая пара, учебная неделя, сводка по оценкам и заданиям. |
+| 📰 **Новости** | Лента [omgtu.ru/news](https://omgtu.ru/news/) с полным текстом статей, сохраняется для офлайна. |
+| 🎓 **Оценки** | Зачётка из личного кабинета с итогами по семестрам. |
+| 📝 **Задания** | Контактная работа от преподавателей, файлы открываются и сохраняются прямо из приложения. |
+| 📤 **Отчёты** | Список отчётных работ со статусами и загрузка своих PDF. |
+| 👤 **Контакты преподавателей** | Почта, Telegram, VK и телефон, найденные в заданиях преподавателя. |
+| 🔔 **Уведомления** | Новые задания, оценки и изменения статуса отчётов проверяются в фоне раз в час. |
+| 🌗 **Оформление** | Светлая и тёмная тема, русский и английский языки. |
+
+## Установка
+
+1. Откройте страницу [последнего релиза](https://github.com/0Eaggle0/campus2_0/releases/latest) с телефона.
+2. Скачайте файл `OmTech-vX.Y.Z.apk`.
+3. Откройте его и разрешите установку из этого источника, если Android спросит.
+
+Нужен Android 7.0 или новее. Сборки для iOS пока нет.
+
+### Обновления
+
+При запуске приложение само проверяет, вышла ли новая версия. Если вышла, оно предлагает обновиться: APK скачивается и ставится поверх текущей версии. Вход в личный кабинет, выбранная группа и настройки сохраняются.
+
+## Конфиденциальность
+
+- Логин и пароль от личного кабинета хранятся только на устройстве, в системном защищённом хранилище (Android Keystore).
+- Приложение обращается только к серверам ОмГТУ (`omgtu.ru`, `up.omgtu.ru`, `rasp.omgtu.ru`), к [Open-Meteo](https://open-meteo.com) за погодой и к GitHub для проверки обновлений.
+- Отчёт об ошибке отправляется только вручную, через почту. Пароли и cookies из него вырезаются.
+
+> Приложение не связано с ОмГТУ официально. Данные личного кабинета приложение берёт со страниц сайта, поэтому изменения на сайте могут временно ломать отдельные разделы.
+
+## Для разработчиков
+
+### Сборка
+
+```bash
+flutter pub get
+flutter run                  # на подключённом устройстве или эмуляторе
+flutter analyze && flutter test
+flutter build apk --release
+```
+
+Для релизной подписи нужны `android/key.properties` и `android/app/release.jks`. Оба файла в `.gitignore`. Без них релиз подписывается debug-ключом.
+
+```properties
+storeFile=release.jks
+storePassword=...
+keyAlias=...
+keyPassword=...
+```
+
+### Выпуск новой версии
+
+1. Поднимите `version:` в `pubspec.yaml`, а также `kAppVersion` и `kAppBuild` в `lib/app_version.dart`. Номер сборки после `+` должен расти, иначе Android не поставит обновление поверх.
+2. Закоммитьте и поставьте тег с той же версией:
+   ```bash
+   git tag v1.2.1
+   git push origin master --tags
+   ```
+3. GitHub Actions ([release.yml](.github/workflows/release.yml)) соберёт подписанный APK и опубликует релиз. Установленные приложения предложат обновиться при следующем запуске.
+
+Секреты репозитория для CI: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
+
+> ⚠️ Каждый релиз нужно подписывать **одним и тем же ключом**. Если ключ потерян, обновить уже установленные копии будет нельзя: пользователям придётся удалить приложение и поставить его заново.
+
+### Структура
+
+```
+lib/
+├── controllers/   состояние (Provider): тема, язык, группа, личный кабинет
+├── services/      API расписания, парсер новостей, уведомления, фоновые задачи
+│   └── lk/        сессия и парсеры личного кабинета (SSO omgtu.ru → up.omgtu.ru)
+├── models/        модели данных
+├── screens/       экраны: главная, расписание, новости, задания, профиль
+├── widgets/       общие виджеты (стеклянные карточки, анимации, шиммеры)
+├── theme/         Material 3 тема, цвета
+└── l10n/          локализация ru / en
+```
+
+Стек: Flutter, Provider, Dio + CookieJar, `package:html`, sqflite, flutter_local_notifications, workmanager.

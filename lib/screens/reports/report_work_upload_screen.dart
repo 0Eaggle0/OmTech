@@ -14,6 +14,7 @@ import '../../services/cache_manager.dart';
 import '../../services/lk/lk_report_work_api.dart';
 import '../../theme/app_glass.dart';
 import '../../theme/app_metrics.dart';
+import '../../widgets/pill_filter_row.dart';
 import '../../widgets/status_banners.dart';
 import '../../widgets/status_pill.dart';
 import '../settings/bug_report_sheet.dart';
@@ -772,6 +773,9 @@ class _DisciplinePickerSheet extends StatefulWidget {
 class _DisciplinePickerSheetState extends State<_DisciplinePickerSheet> {
   String _query = '';
 
+  /// `null` — все семестры.
+  String? _semester;
+
   late final List<ReportUploadDiscipline> _sorted = () {
     final indexed = widget.items.indexed.toList()
       ..sort((a, b) {
@@ -781,18 +785,33 @@ class _DisciplinePickerSheetState extends State<_DisciplinePickerSheet> {
     return [for (final (_, d) in indexed) d];
   }();
 
+  /// Семестры, которые реально встречаются в списке, — свежие первыми.
+  /// Пустых не бывает: строка без семестра в фильтр не попадает.
+  late final List<String> _semesters = () {
+    final set = {
+      for (final d in _sorted)
+        if (d.semester.isNotEmpty) d.semester
+    };
+    return set.toList()
+      ..sort((a, b) =>
+          (int.tryParse(b) ?? 0).compareTo(int.tryParse(a) ?? 0));
+  }();
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final glass = context.glass;
     final q = _query.trim().toLowerCase();
-    final filtered = q.isEmpty
+    final semester = _semester;
+    final filtered = (q.isEmpty && semester == null)
         ? _sorted
         : _sorted
             .where((d) =>
-                d.name.toLowerCase().contains(q) ||
-                d.group.toLowerCase().contains(q))
+                (semester == null || d.semester == semester) &&
+                (q.isEmpty ||
+                    d.name.toLowerCase().contains(q) ||
+                    d.group.toLowerCase().contains(q)))
             .toList();
 
     return DraggableScrollableSheet(
@@ -827,6 +846,23 @@ class _DisciplinePickerSheetState extends State<_DisciplinePickerSheet> {
               ),
             ),
           ),
+          // Ряд семестров показываем, только если их больше одного:
+          // на одном семестре фильтр ничего не делает.
+          if (_semesters.length > 1) ...[
+            const SizedBox(height: 10),
+            PillFilterRow(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              items: [
+                PillFilterItem(l.reportFilterAll),
+                for (final s in _semesters)
+                  PillFilterItem('$s ${l.reportSemesterLabel}'),
+              ],
+              selected:
+                  _semester == null ? 0 : _semesters.indexOf(_semester!) + 1,
+              onSelected: (i) => setState(
+                  () => _semester = i == 0 ? null : _semesters[i - 1]),
+            ),
+          ],
           const SizedBox(height: 8),
           Expanded(
             child: filtered.isEmpty
@@ -855,7 +891,7 @@ class _DisciplinePickerSheetState extends State<_DisciplinePickerSheet> {
   Widget _row(BuildContext context, AppLocalizations l, ReportUploadDiscipline d) {
     final theme = Theme.of(context);
     final glass = context.glass;
-    final isSelected = d.hexnrec == widget.selected?.hexnrec;
+    final isSelected = d.key == widget.selected?.key;
     final shape = BorderRadius.circular(AppRadius.tile);
 
     return Material(

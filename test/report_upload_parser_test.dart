@@ -22,6 +22,17 @@ void main() {
     expect(list[2].name, 'Физика');
   });
 
+  test('одна дисциплина в разных семестрах — разные строки, не дубли', () {
+    const html = '''
+<div id="disclistcont">
+  <div class="discline" onclick="seldisc('8000000A1B2C','Физическая культура','ИСТ-241','1')">сем. 1</div>
+  <div class="discline" onclick="seldisc('8000000A1B2C','Физическая культура','ИСТ-241','2')">сем. 2</div>
+  <div class="discline" onclick="seldisc('8000000A1B2C','Физическая культура','ИСТ-241','2')">повтор сем. 2</div>
+</div>''';
+    final list = parseUploadDisciplines(html_parser.parse(html));
+    expect(list.map((d) => d.semester), ['1', '2']);
+  });
+
   test('parseOtherDeleteId берёт id у кнопки, а не у определения функции', () {
     const withButton = r'''
 <script>function otherdel(id) { $.ajax({data: {'del': id}}); }</script>

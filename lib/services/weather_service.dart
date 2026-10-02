@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Текущая погода в Омске.
@@ -42,7 +42,7 @@ class WeatherInfo {
 }
 
 /// Погода в Омске с сайта Open-Meteo — без ключа API, без новой зависимости
-/// (используется уже подключённый `http`).
+/// (используется уже подключённый `dio`).
 ///
 /// Кэшируется на 30 минут в `SharedPreferences`; при любой ошибке сети
 /// вызывающий получает `null` и просто не показывает строку погоды.
@@ -52,9 +52,9 @@ class WeatherService {
   static const _cacheKey = 'weather_cache_v1';
   static const _ttl = Duration(minutes: 30);
 
-  final http.Client _client;
+  final Dio _client;
 
-  WeatherService({http.Client? client}) : _client = client ?? http.Client();
+  WeatherService({Dio? client}) : _client = client ?? Dio();
 
   Future<WeatherInfo?> fetch() async {
     final prefs = await SharedPreferences.getInstance();
@@ -71,10 +71,18 @@ class WeatherService {
         'current': 'temperature_2m,weather_code',
         'timezone': 'Asia/Omsk',
       });
-      final res = await _client.get(uri).timeout(const Duration(seconds: 8));
+      final res = await _client.getUri<String>(
+        uri,
+        options: Options(
+          responseType: ResponseType.plain,
+          receiveTimeout: const Duration(seconds: 8),
+          sendTimeout: const Duration(seconds: 8),
+          validateStatus: (_) => true,
+        ),
+      );
       if (res.statusCode != 200) return cached;
 
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      final data = jsonDecode(res.data ?? '') as Map<String, dynamic>;
       final current = data['current'] as Map<String, dynamic>;
       final info = WeatherInfo(
         tempC: (current['temperature_2m'] as num).toDouble(),

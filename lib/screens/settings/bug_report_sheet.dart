@@ -70,9 +70,13 @@ class _BugReportSheetState extends State<BugReportSheet> {
 
   Future<void> _pickScreenshots() async {
     try {
+      // `limit: 1` image_picker не принимает (кидает ArgumentError), поэтому
+      // на последнем свободном слоте просим два, а лишнее отсекаем ниже.
+      final free = _maxScreenshots - _screenshots.length;
+      if (free <= 0) return;
       final picked = await ImagePicker().pickMultiImage(
         imageQuality: 85,
-        limit: _maxScreenshots - _screenshots.length,
+        limit: free < 2 ? 2 : free,
       );
       if (picked.isEmpty || !mounted) return;
       setState(() {

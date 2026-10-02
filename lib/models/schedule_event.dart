@@ -60,10 +60,12 @@ class ScheduleEvent {
     return m?.group(1) ?? '';
   }
 
-  /// Отображаемый лейбл подгруппы. Пустой если пара для всех.
-  String get subgroupLabel {
+  /// Пара видна выбранной подгруппе: [subgroup] `null` — видно всё,
+  /// иначе общие пары плюс пары этой подгруппы.
+  bool visibleTo(int? subgroup) {
+    if (subgroup == null) return true;
     final n = subgroupNumber;
-    return n.isEmpty ? '' : '$n-я подгруппа';
+    return n.isEmpty || n == subgroup.toString();
   }
 
   /// Stream без суффикса подгруппы для отображения («ИСТ-241/1-я подгруппа» → «ИСТ-241»).

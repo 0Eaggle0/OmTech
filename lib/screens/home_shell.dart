@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +8,8 @@ import '../controllers/app_nav_controller.dart';
 import '../controllers/lk_controller.dart';
 import '../l10n/app_localizations.dart';
 import '../services/lk/lk_credentials_storage.dart';
+import '../services/lk/lk_file_downloader.dart';
+import '../services/update_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/floating_nav_bar.dart';
 import '../widgets/lk_login_sheet.dart';
@@ -32,9 +34,9 @@ class _HomeShellState extends State<HomeShell>
 
   int _index = 0;
 
-  /// Р’РєР»Р°РґРєРё Р¶РёРІСѓС‚ РІ РґРµСЂРµРІРµ Рё РЅРµ РїРµСЂРµСЃРѕР·РґР°СЋС‚СЃСЏ РїСЂРё РїРµСЂРµРєР»СЋС‡РµРЅРёРё, РёРЅР°С‡Рµ
-  /// РєР°Р¶РґС‹Р№ РІРѕР·РІСЂР°С‚ РЅР° В«Р Р°СЃРїРёСЃР°РЅРёРµВ» С‚РµСЂСЏР» СЃРѕСЃС‚РѕСЏРЅРёРµ Рё Р»РµР· РІ СЃРµС‚СЊ Р·Р°РЅРѕРІРѕ.
-  /// РЎС‚СЂРѕРёРј РёС… Р»РµРЅРёРІРѕ: РЅРµРїРѕСЃРµС‰С‘РЅРЅР°СЏ РІРєР»Р°РґРєР° РЅРёС‡РµРіРѕ РЅРµ РіСЂСѓР·РёС‚.
+  /// Вкладки живут в дереве и не пересоздаются при переключении, иначе
+  /// каждый возврат на «Расписание» терял состояние и лез в сеть заново.
+  /// Строим их лениво: непосещённая вкладка ничего не грузит.
   late final List<Widget> _pages;
   final _visited = <int>{0};
 
@@ -61,9 +63,9 @@ class _HomeShellState extends State<HomeShell>
     _tabAnim.forward(from: 0);
   }
 
-  /// Р­РєСЂР°РЅС‹, Р·Р°РїСѓС€РµРЅРЅС‹Рµ РїРѕРІРµСЂС… С€РµР»Р»Р° (РЅР°РїСЂРёРјРµСЂ, РїРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹Р№ РїРѕРёСЃРє), РЅРµ
-  /// СЏРІР»СЏСЋС‚СЃСЏ РїРѕС‚РѕРјРєР°РјРё `_pages` Рё РЅРµ РјРѕРіСѓС‚ РґС‘СЂРЅСѓС‚СЊ `_open` РЅР°РїСЂСЏРјСѓСЋ вЂ”
-  /// РІРјРµСЃС‚Рѕ СЌС‚РѕРіРѕ РѕРЅРё РїСЂРѕСЃСЏС‚ С‡РµСЂРµР· РїСЂРѕРІР°Р№РґРµСЂ, Р° С€РµР»Р» СЃР»СѓС€Р°РµС‚ Рё РїРµСЂРµРєР»СЋС‡Р°РµС‚.
+  /// Экраны, запушенные поверх шелла (например, полноэкранный поиск), не
+  /// являются потомками `_pages` и не могут дёрнуть `_open` напрямую —
+  /// вместо этого они просят через провайдер, а шелл слушает и переключает.
   void _onAppNavChanged() {
     final tab = _appNav?.consumeTab();
     if (tab != null) _open(tab);
@@ -79,7 +81,9 @@ class _HomeShellState extends State<HomeShell>
       const WorkHubScreen(),
       const ProfileScreen(),
     ];
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstLaunch());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _checkFirstLaunch().then((_) => _checkUpdate()),
+    );
   }
 
   @override
@@ -109,13 +113,56 @@ class _HomeShellState extends State<HomeShell>
     await prefs.setBool('credential_prompt_shown', true);
 
     final creds = await LkCredentialsStorage().read();
-    if (creds != null) return; // РЈР¶Рµ РµСЃС‚СЊ РґР°РЅРЅС‹Рµ
+    if (creds != null) return; // Уже есть данные
 
     if (!mounted) return;
     await Future.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
-    // РћРґРЅР° С€С‚РѕСЂРєР° РІРјРµСЃС‚Рѕ РґРІСѓС…: РїСЂРёРІРµС‚СЃС‚РІРёРµ Рё РїРѕР»СЏ РІС…РѕРґР° С‚РµРїРµСЂСЊ РІ РЅРµР№ Р¶Рµ.
+    // Одна шторка вместо двух: приветствие и поля входа теперь в ней же.
     await LkLoginSheet.show(context, allowSkip: true);
+  }
+
+  Future<void> _checkUpdate() async {
+    final release = await UpdateService.checkLatest();
+    if (release == null || !mounted) return;
+    final l = AppLocalizations.of(context)!;
+    final install = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.updateTitle(release.version)),
+        content: Text(l.updateBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l.updateLater),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l.updateInstall),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (install != true) {
+      await UpdateService.skip(release);
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const DownloadProgressDialog(),
+    );
+    try {
+      await UpdateService.downloadAndInstall(release);
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(l.updateFailed('$e'))));
+    } finally {
+      if (navigator.canPop()) navigator.pop();
+    }
   }
 
   @override
@@ -147,8 +194,8 @@ class _HomeShellState extends State<HomeShell>
     ];
 
     return Scaffold(
-      // РЎРѕРґРµСЂР¶РёРјРѕРµ РІРєР»Р°РґРєРё СѓС…РѕРґРёС‚ РїРѕРґ РїР»Р°РІР°СЋС‰СѓСЋ РїР°РЅРµР»СЊ, Р° РµС‘ РІС‹СЃРѕС‚Р° РїРѕРїР°РґР°РµС‚
-      // РІ `MediaQuery.padding.bottom` С‚РµР»Р° вЂ” РѕС‚С‚СѓРґР° РµС‘ Р±РµСЂС‘С‚ `navBottomPadding`.
+      // Содержимое вкладки уходит под плавающую панель, а её высота попадает
+      // в `MediaQuery.padding.bottom` тела — оттуда её берёт `navBottomPadding`.
       extendBody: true,
       body: Stack(
         children: [
@@ -161,11 +208,11 @@ class _HomeShellState extends State<HomeShell>
                     Offstage(
                       key: ValueKey<int>(i),
                       offstage: i != _index,
-                      // РЎРєСЂС‹С‚Р°СЏ РІРєР»Р°РґРєР° РЅРµ РґРѕР»Р¶РЅР° РєСЂСѓС‚РёС‚СЊ СЃРІРѕРё Р°РЅРёРјР°С†РёРё.
+                      // Скрытая вкладка не должна крутить свои анимации.
                       child: TickerMode(
                         enabled: i == _index,
-                        // РћР±С‘СЂС‚РєРё РѕРґРёРЅР°РєРѕРІС‹Рµ РґР»СЏ РІСЃРµС… РІРєР»Р°РґРѕРє: РјРµРЅСЏСЋС‚СЃСЏ С‚РѕР»СЊРєРѕ
-                        // СЃР°РјРё Р°РЅРёРјР°С†РёРё, РїРѕСЌС‚РѕРјСѓ РїРѕРґРґРµСЂРµРІРѕ РЅРµ РїРµСЂРµСЃРѕР·РґР°С‘С‚СЃСЏ.
+                        // Обёртки одинаковые для всех вкладок: меняются только
+                        // сами анимации, поэтому поддерево не пересоздаётся.
                         child: FadeTransition(
                           opacity: i == _index ? _fade : _staticOpacity,
                           child: SlideTransition(
@@ -195,7 +242,7 @@ class _HomeShellState extends State<HomeShell>
   }
 }
 
-// в”Ђв”Ђв”Ђ Р‘Р°РЅРЅРµСЂ СЃС‚Р°С‚СѓСЃР° РїРѕРґРєР»СЋС‡РµРЅРёСЏ Р›Рљ в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+// ─── Баннер статуса подключения ЛК ───────────────────────────────────────────
 
 class _LkConnectionBanner extends StatefulWidget {
   const _LkConnectionBanner();

@@ -84,13 +84,14 @@ class LessonCard extends StatelessWidget {
                     _row(context, Icons.person_outline, event.lecturer),
                   if (event.streamDisplay.isNotEmpty)
                     _row(context, Icons.groups_2_outlined, event.streamDisplay),
-                  if (event.subgroupLabel.isNotEmpty || showRoute) ...[
+                  if (event.subgroupNumber.isNotEmpty || showRoute) ...[
                     const SizedBox(height: 9),
                     Row(
                       children: [
-                        if (event.subgroupLabel.isNotEmpty)
+                        if (event.subgroupNumber.isNotEmpty)
                           StatusPill(
-                            event.subgroupLabel,
+                            l.scheduleSubgroupN(
+                                int.parse(event.subgroupNumber)),
                             color: accent,
                             icon: Icons.people,
                             dense: true,

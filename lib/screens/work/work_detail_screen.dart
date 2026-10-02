@@ -181,22 +181,28 @@ class _WorkDetailScreenState extends State<WorkDetailScreen> {
   /// показываем найденное там. Ничего не нашли — блока нет.
   List<Widget> _lecturerContacts() {
     final discipline = widget.discipline;
-    return [
-      for (final teacher in discipline.teachers)
-        if (scanTasksForContacts(_items, teacher) case final items
-            when items.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: TeacherContactsCard(
-              contacts: TeacherContacts(
-                items: items,
-                discipline: discipline.discipline,
-              ),
-              name: teacher,
-              showSource: false,
-            ),
+    // Задания без автора `scanTasksForContacts` отдаёт любому преподавателю
+    // дисциплины. Если у дисциплины их двое, один и тот же набор контактов
+    // иначе выводится дважды под разными именами — второй раз пропускаем.
+    final shown = <String>{};
+    final cards = <Widget>[];
+    for (final teacher in discipline.teachers) {
+      final items = scanTasksForContacts(_items, teacher);
+      if (items.isEmpty) continue;
+      if (!shown.add(items.map((c) => c.uri).join('|'))) continue;
+      cards.add(Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TeacherContactsCard(
+          contacts: TeacherContacts(
+            items: items,
+            discipline: discipline.discipline,
           ),
-    ];
+          name: teacher,
+          showSource: false,
+        ),
+      ));
+    }
+    return cards;
   }
 
   Widget _itemCard(

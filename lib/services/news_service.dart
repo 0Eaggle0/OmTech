@@ -1,7 +1,7 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:html/parser.dart' as html_parser;
-import 'package:http/http.dart' as http;
 
 import '../models/news_item.dart';
 import 'news_database.dart';
@@ -10,14 +10,43 @@ class NewsService {
   static const newsPageUrl = 'https://www.omgtu.ru/news/';
   static const _baseUrl = 'https://www.omgtu.ru';
 
+  static const _pageHeaders = {
+    'Accept': 'text/html,application/xhtml+xml',
+    'Accept-Language': 'ru-RU,ru;q=0.9',
+    'User-Agent':
+        'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+  };
+
   final NewsDatabase db;
+  final Dio _client;
 
   List<NewsItem>? _listCache;
   DateTime? _listCacheTime;
 
-  NewsService({NewsDatabase? database}) : db = database ?? NewsDatabase();
+  NewsService({NewsDatabase? database, Dio? client})
+      : db = database ?? NewsDatabase(),
+        _client = client ?? Dio();
 
   Future<void> init() => db.init();
+
+  /// Страницу забираем байтами: кодировку у Bitrix определяем сами
+  /// ([_decodeBody]), автодекодер dio тут только мешает.
+  Future<Response<List<int>>> _getPage(String url, Duration timeout) =>
+      _client.get<List<int>>(
+        url,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: _pageHeaders,
+          receiveTimeout: timeout,
+          sendTimeout: timeout,
+          validateStatus: (_) => true,
+        ),
+      );
+
+  static String _bodyOf(Response<List<int>> res) => _decodeBody(
+        res.data ?? const <int>[],
+        res.headers.value('content-type') ?? '',
+      );
 
   Future<List<NewsItem>> fetchNews({bool forceRefresh = false}) async {
     await db.init();
@@ -28,18 +57,10 @@ class NewsService {
     }
 
     try {
-      final response = await http.get(
-        Uri.parse(newsPageUrl),
-        headers: {
-          'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'ru-RU,ru;q=0.9',
-          'User-Agent':
-              'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-        },
-      ).timeout(const Duration(seconds: 12));
+      final response = await _getPage(newsPageUrl, const Duration(seconds: 12));
 
       if (response.statusCode == 200) {
-        final body = _decodeBody(response);
+        final body = _bodyOf(response);
         final items = _parseHtml(body);
         if (items.isNotEmpty && _looksValid(items)) {
           await db.upsertList(items);
@@ -68,19 +89,11 @@ class NewsService {
     if (cached != null && cached.fullText.isNotEmpty) return cached;
 
     try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'ru-RU,ru;q=0.9',
-          'User-Agent':
-              'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-        },
-      ).timeout(const Duration(seconds: 15));
+      final response = await _getPage(url, const Duration(seconds: 15));
 
       if (response.statusCode != 200) return null;
 
-      final body = _decodeBody(response);
+      final body = _bodyOf(response);
       final parsed = _parseArticle(url, body, cached);
       if (parsed != null) {
         await db.upsertArticle(parsed);
@@ -315,22 +328,22 @@ class NewsService {
 
   // Детектирует кодировку из заголовка Content-Type и мета-тега charset.
   // Bitrix CMS может отдавать страницы как в UTF-8, так и в Windows-1251.
-  String _decodeBody(http.Response response) {
-    final ct = (response.headers['content-type'] ?? '').toLowerCase();
-    if (ct.contains('1251')) return _win1251(response.bodyBytes);
+  static String _decodeBody(List<int> bytes, String contentType) {
+    final ct = contentType.toLowerCase();
+    if (ct.contains('1251')) return _win1251(bytes);
     if (ct.contains('utf-8') || ct.contains('utf8')) {
-      return utf8.decode(response.bodyBytes, allowMalformed: true);
+      return utf8.decode(bytes, allowMalformed: true);
     }
 
     // Первые 2 КБ совместимы с Latin-1 — ищем charset в мета-теге
-    final end = response.bodyBytes.length.clamp(0, 2048);
-    final peek = latin1.decode(response.bodyBytes.sublist(0, end)).toLowerCase();
-    if (peek.contains('1251')) return _win1251(response.bodyBytes);
+    final end = bytes.length.clamp(0, 2048);
+    final peek = latin1.decode(bytes.sublist(0, end)).toLowerCase();
+    if (peek.contains('1251')) return _win1251(bytes);
 
     try {
-      return utf8.decode(response.bodyBytes);
+      return utf8.decode(bytes);
     } catch (_) {
-      return _win1251(response.bodyBytes);
+      return _win1251(bytes);
     }
   }
 

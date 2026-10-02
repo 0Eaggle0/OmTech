@@ -2,6 +2,7 @@ import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import '../../models/contact_work.dart';
+import 'lk_parse_utils.dart';
 
 /// Парсер HTML страниц раздела «Контактная работа» ЛК ОмГТУ.
 ///
@@ -28,11 +29,11 @@ List<WorkDiscipline> parseDisciplines(String html) {
     final tds = _tds(tr);
     if (tds.length < 4) continue;
 
-    final discipline = _textOneLine(tds[0]);
+    final discipline = textOneLine(tds[0]);
     if (discipline.isEmpty) continue;
 
-    final teachers = _splitTeachers(_textOneLine(tds[1]));
-    final taskCount = int.tryParse(_textOneLine(tds[2])) ?? 0;
+    final teachers = _splitTeachers(textOneLine(tds[1]));
+    final taskCount = int.tryParse(textOneLine(tds[2])) ?? 0;
 
     final id = _disciplineIdIn(tds[3]) ?? _disciplineIdIn(tr);
     if (id == null) continue;
@@ -69,7 +70,7 @@ List<ContactWorkItem> parseTasks(String html) {
     if (tds.length < 5) continue;
 
     final number =
-        int.tryParse(_textOneLine(tds[0])) ?? (result.length + 1);
+        int.tryParse(textOneLine(tds[0])) ?? (result.length + 1);
 
     // Комментарий: предпочтительно из <div class="force-select-all">,
     // т.к. там лежит сам текст; иначе — всё содержимое ячейки.
@@ -77,8 +78,8 @@ List<ContactWorkItem> parseTasks(String html) {
     final comment = _textMultiline(commentEl);
 
     final files = _parseFiles(tds[2]);
-    final createdAt = _parseDate(_textOneLine(tds[3]));
-    final teacher = _textOneLine(tds[4]);
+    final createdAt = parseSiteDate(textOneLine(tds[3]));
+    final teacher = textOneLine(tds[4]);
 
     // Совсем пустые строки пропускаем.
     if (comment.isEmpty && files.isEmpty && teacher.isEmpty) continue;
@@ -106,7 +107,7 @@ Element? _pickTable(Document doc, {required String expectedHeader}) {
     if (headerRow == null) continue;
     final ths = headerRow.querySelectorAll('th');
     final found = ths.any(
-        (th) => _textOneLine(th).toLowerCase().contains(expectedHeader));
+        (th) => textOneLine(th).toLowerCase().contains(expectedHeader));
     if (found && _dataRows(t).isNotEmpty) return t;
   }
   // Фолбэк: явно table#List.
@@ -132,17 +133,6 @@ List<Element> _dataRows(Element table) {
 
 List<Element> _tds(Element tr) =>
     tr.children.where((c) => c.localName == 'td').toList();
-
-/// Текст в одну строку: схлопывает любые пробелы (включая переводы строк
-/// и `&nbsp;`) в один пробел и обрезает пробельные края. Также корректно
-/// «склеивает» содержимое, разорванное тегами `<br>`.
-String _textOneLine(Element el) {
-  // dom.text не вставляет пробел вокруг <br>, поэтому соседние слова
-  // могут слипнуться: добавляем пробел перед текстом каждого <br>.
-  final inner = el.innerHtml.replaceAll(RegExp(r'<br\s*/?>'), ' ');
-  final tmp = html_parser.parseFragment(inner);
-  return tmp.text!.replaceAll(RegExp(r'\s+'), ' ').trim();
-}
 
 /// Многострочный текст: `<br>` → перевод строки, лишние пробелы в каждой
 /// строке схлопываются.
@@ -206,7 +196,7 @@ List<WorkFile> _parseFiles(Element scope) {
             ? 'https://up.omgtu.ru$href'
             : 'https://up.omgtu.ru/$href');
 
-    final h4 = _textOneLine(a.querySelector('h4') ?? a);
+    final h4 = textOneLine(a.querySelector('h4') ?? a);
     final tooltip =
         a.querySelector('span[data-original-title]')?.attributes['data-original-title'];
     final name = h4.isNotEmpty
@@ -260,33 +250,3 @@ String _typeFromExt(String ext) {
   return 'link';
 }
 
-DateTime? _parseDate(String raw) {
-  if (raw.isEmpty) return null;
-  // Формат сайта: «2026-04-17 15:28:44».
-  var m = RegExp(
-          r'(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?')
-      .firstMatch(raw);
-  if (m != null) {
-    return DateTime(
-      int.parse(m.group(1)!),
-      int.parse(m.group(2)!),
-      int.parse(m.group(3)!),
-      int.parse(m.group(4)!),
-      int.parse(m.group(5)!),
-      m.group(6) != null ? int.parse(m.group(6)!) : 0,
-    );
-  }
-  // Запасной формат: «17.04.2026 15:28».
-  m = RegExp(r'(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2}))?')
-      .firstMatch(raw);
-  if (m != null) {
-    return DateTime(
-      int.parse(m.group(3)!),
-      int.parse(m.group(2)!),
-      int.parse(m.group(1)!),
-      m.group(4) != null ? int.parse(m.group(4)!) : 0,
-      m.group(5) != null ? int.parse(m.group(5)!) : 0,
-    );
-  }
-  return null;
-}

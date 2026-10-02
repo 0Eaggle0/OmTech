@@ -347,22 +347,44 @@ class LkReportWorkApi {
   static bool _isOk(String answer) =>
       answer == 'ok' || (answer.length <= 6 && answer.endsWith('ok'));
 
+  /// Отдельная папка под дампы: в них лежат ФИО, группа и статусы работ,
+  /// поэтому их надо уметь стереть целиком — при выходе из ЛК и при очистке
+  /// кэша. В корне временной папки это было не отличить от чужих файлов.
+  static const dumpsDirName = 'lk_dumps';
+
+  static Future<Directory> dumpsDir() async {
+    final dir = await getTemporaryDirectory();
+    return Directory('${dir.path}${Platform.pathSeparator}$dumpsDirName');
+  }
+
+  /// Удаляет все сохранённые дампы страниц ЛК.
+  static Future<void> clearDumps() async {
+    try {
+      final dir = await dumpsDir();
+      if (await dir.exists()) await dir.delete(recursive: true);
+    } catch (_) {
+      // Файл может быть занят — очистка не должна падать.
+    }
+  }
+
   /// Путь к сохранённому дампу HTML страницы otherpage.php для [fileId].
   /// Возвращает `null`, если дамп ещё не сохранён.
   Future<String?> lastDumpPath(String fileId) async {
     if (fileId.isEmpty) return null;
-    final dir = await getTemporaryDirectory();
-    final path = '${dir.path}${Platform.pathSeparator}otherpage_$fileId.html';
-    final f = File(path);
+    final f = File(await _dumpPath(fileId));
     if (!await f.exists()) return null;
-    return path;
+    return f.path;
+  }
+
+  static Future<String> _dumpPath(String fileId) async {
+    final dir = await dumpsDir();
+    return '${dir.path}${Platform.pathSeparator}otherpage_$fileId.html';
   }
 
   Future<void> _saveHtmlDump(String fileId, String html) async {
     try {
-      final dir = await getTemporaryDirectory();
-      final path = '${dir.path}${Platform.pathSeparator}otherpage_$fileId.html';
-      await File(path).writeAsString(html, flush: true);
+      await (await dumpsDir()).create(recursive: true);
+      await File(await _dumpPath(fileId)).writeAsString(html, flush: true);
     } catch (_) {
       // Дамп — best-effort; если упало — это не должно ломать загрузку файлов.
     }

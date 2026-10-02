@@ -6,7 +6,11 @@ import '../services/link_launcher.dart';
 final _urlRegex = RegExp(r'https?://[^\s]+', caseSensitive: false);
 
 /// Текстовый виджет, автоматически делающий URL кликабельными.
-class LinkText extends StatelessWidget {
+///
+/// Stateful, потому что [TapGestureRecognizer] нужно диспозить: созданный в
+/// `build` и брошенный, он течёт на каждой перерисовке. Держим по одному
+/// распознавателю на ссылку и пересоздаём их только когда текст изменился.
+class LinkText extends StatefulWidget {
   final String text;
   final TextStyle? style;
   final int? maxLines;
@@ -21,7 +25,34 @@ class LinkText extends StatelessWidget {
   });
 
   @override
+  State<LinkText> createState() => _LinkTextState();
+}
+
+class _LinkTextState extends State<LinkText> {
+  final _recognizers = <String, TapGestureRecognizer>{};
+
+  @override
+  void didUpdateWidget(LinkText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) _disposeRecognizers();
+  }
+
+  @override
+  void dispose() {
+    _disposeRecognizers();
+    super.dispose();
+  }
+
+  void _disposeRecognizers() {
+    for (final r in _recognizers.values) {
+      r.dispose();
+    }
+    _recognizers.clear();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final text = widget.text;
     final linkColor = Theme.of(context).colorScheme.primary;
     final spans = <InlineSpan>[];
     int last = 0;
@@ -38,8 +69,11 @@ class LinkText extends StatelessWidget {
           decoration: TextDecoration.underline,
           decorationColor: linkColor,
         ),
-        recognizer: TapGestureRecognizer()
-          ..onTap = () => openExternal(context, url),
+        recognizer: _recognizers.putIfAbsent(
+          url,
+          () => TapGestureRecognizer()
+            ..onTap = () => openExternal(context, url),
+        ),
       ));
       last = match.end;
     }
@@ -49,9 +83,11 @@ class LinkText extends StatelessWidget {
     }
 
     return RichText(
-      text: TextSpan(style: style ?? DefaultTextStyle.of(context).style, children: spans),
-      maxLines: maxLines,
-      overflow: overflow ?? TextOverflow.clip,
+      text: TextSpan(
+          style: widget.style ?? DefaultTextStyle.of(context).style,
+          children: spans),
+      maxLines: widget.maxLines,
+      overflow: widget.overflow ?? TextOverflow.clip,
     );
   }
 }

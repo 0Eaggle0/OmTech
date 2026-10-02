@@ -29,11 +29,21 @@ class NotificationService {
 
   static const _keyReportSnapshot = 'notif_report_snapshot';
   static const _keyGradesSnapshot = 'notif_grades_snapshot';
+  static const _keyTasksSnapshot = 'notif_tasks_snapshot';
   static const _keyPermAsked = 'notif_perm_asked';
+  static const _keyNextId = 'notif_next_id';
 
-  // Счётчик ID уведомлений (автоинкремент в памяти — достаточно для сессии).
-  int _nextId = 100;
-  int _id() => _nextId++;
+  /// Счётчик ID уведомлений. Живёт в prefs, а не в памяти: фоновый изолят
+  /// стартует заново на каждый прогон и с памятным счётчиком каждый раз брал
+  /// бы один и тот же id, затирая прошлое непрочитанное уведомление.
+  /// Диапазон 100..999 по кругу — больше уведомлений в шторке и не держат.
+  Future<int> _id() async {
+    final prefs = await SharedPreferences.getInstance();
+    final current = prefs.getInt(_keyNextId) ?? 100;
+    final next = current >= 999 ? 100 : current + 1;
+    await prefs.setInt(_keyNextId, next);
+    return current;
+  }
 
   Future<void> init() => _initFuture ??= _doInit();
 
@@ -98,7 +108,7 @@ class NotificationService {
       ),
       iOS: const DarwinNotificationDetails(),
     );
-    await _plugin.show(_id(), title, body, details);
+    await _plugin.show(await _id(), title, body, details);
   }
 
   // ─────────────────────── checks ─────────────────────────────
@@ -140,8 +150,11 @@ class NotificationService {
   }
 
   /// Проверяет новые задания в контактной работе.
-  /// Использует существующий `calcNewCount`, который сам сравнивает
-  /// с сохранённым baseline и обновляет его.
+  ///
+  /// Baseline у уведомлений свой, отдельный от `calcNewCount`: тот обнуляется
+  /// только когда пользователь откроет дисциплину, и на нём проверка слала бы
+  /// одно и то же «+1» каждый час. Значок «+N» в списке работ при этом должен
+  /// остаться, поэтому чужой baseline мы не трогаем.
   Future<void> checkContactWork(LkController lk) =>
       _checkContactWorkApi(lk.contactWorkApi);
 
@@ -150,14 +163,37 @@ class NotificationService {
       final disciplines = await api.readDisciplinesCache();
       if (disciplines == null || disciplines.isEmpty) return;
 
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_keyTasksSnapshot);
+      final current = {
+        for (final d in disciplines)
+          if (d.id != null) d.id!: d.taskCount
+      };
+
+      // Первый запуск — только фиксируем baseline, иначе прилетит пачка
+      // уведомлений обо всех заданиях за семестр.
+      if (raw == null) {
+        await prefs.setString(_keyTasksSnapshot, jsonEncode(current));
+        return;
+      }
+
+      final snapshot = (jsonDecode(raw) as Map).map(
+        (k, v) => MapEntry(k.toString(), (v as num).toInt()),
+      );
+
       final updates = <String>[];
       for (final d in disciplines) {
-        if (d.id == null) continue;
-        final newCount = await api.calcNewCount(d);
-        if (newCount > 0) {
-          updates.add('${d.discipline}: +$newCount');
-        }
+        final id = d.id;
+        if (id == null) continue;
+        final prev = snapshot[id];
+        if (prev == null) continue; // новая дисциплина — не новое задание
+        final diff = d.taskCount - prev;
+        if (diff > 0) updates.add('${d.discipline}: +$diff');
       }
+
+      // Baseline двигаем всегда, даже если уведомление не показали:
+      // иначе следующий час принесёт то же самое ещё раз.
+      await prefs.setString(_keyTasksSnapshot, jsonEncode(current));
 
       if (updates.isEmpty) return;
 

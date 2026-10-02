@@ -197,18 +197,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   bool _hasUpcoming(List<ScheduleEvent> events) {
     final now = DateTime.now();
-    return events.any((e) => _parseTime(e.date, e.endLesson).isAfter(now));
+    final subgroup = context.read<GroupController>().subgroup;
+    return events.any((e) =>
+        e.visibleTo(subgroup) && _parseTime(e.date, e.endLesson).isAfter(now));
   }
 
-  String get _greetingName {
-    if (_firstName.isNotEmpty) return _firstName;
-    return 'Студент';
+  /// Имя из ЛК, пока его нет — нейтральное «Студент» на языке интерфейса.
+  String _greetingName(AppLocalizations l) =>
+      _firstName.isNotEmpty ? _firstName : l.dashboardStudent;
+
+  /// Пары обеих недель, отфильтрованные по выбранной подгруппе. Подгруппа
+  /// одна на всё приложение ([GroupController]), поэтому «ближайшая пара» и
+  /// счётчик на главной показывают ровно то же, что экран расписания.
+  /// Фильтруем при чтении, а не при загрузке: смена подгруппы не должна
+  /// заново дёргать сеть.
+  List<ScheduleEvent> get _visibleEvents {
+    final subgroup = context.read<GroupController>().subgroup;
+    final all = [..._thisWeek, ..._nextWeek];
+    if (subgroup == null) return all;
+    return all.where((e) => e.visibleTo(subgroup)).toList();
   }
 
   int get _lessonsToday {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    return [..._thisWeek, ..._nextWeek]
+    return _visibleEvents
         .where((e) =>
             e.date.year == today.year &&
             e.date.month == today.month &&
@@ -286,9 +299,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _header(BuildContext context, AppLocalizations l) {
     final theme = Theme.of(context);
     final glass = context.glass;
-    final initial = _greetingName.isNotEmpty
-        ? _greetingName[0].toUpperCase()
-        : 'O';
+    final name = _greetingName(l);
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'O';
 
     return Row(
       children: [
@@ -361,7 +373,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              l.dashboardHello(_greetingName),
+              l.dashboardHello(_greetingName(l)),
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: Colors.white,
               ),
@@ -459,7 +471,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (_scheduleLoading && _thisWeek.isEmpty && _nextWeek.isEmpty) {
       return const ShimmerGreeting();
     }
-    final next = _findNextOrCurrent([..._thisWeek, ..._nextWeek]);
+    final next = _findNextOrCurrent(_visibleEvents);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

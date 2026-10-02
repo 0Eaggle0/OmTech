@@ -34,10 +34,6 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  /// Старый ключ: bool «только моя подгруппа». Заменён на выбор подгруппы,
-  /// читаем один раз ради переноса настройки.
-  static const _prefKeyOnlyMySubgroup = 'schedule_only_my_subgroup';
-  static const _prefKeySubgroupFilter = 'schedule_subgroup_filter';
   static const _prefKeyHideRetake = 'schedule_hide_retake';
 
   final _api = ScheduleApi.instance;
@@ -52,8 +48,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   DateTime? _dateFilter;
   bool _weekView = false;
 
-  /// null — показывать все подгруппы, иначе номер подгруппы.
-  int? _subgroupFilter;
   bool _hideRetake = false;
   double _dragDx = 0;
 
@@ -73,39 +67,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _loadFilterPrefs() async {
-    final profileSubgroup = context.read<GroupController>().subgroup;
     final prefs = await SharedPreferences.getInstance();
     final hideRetake = prefs.getBool(_prefKeyHideRetake) ?? false;
-
-    int? subgroup = prefs.getInt(_prefKeySubgroupFilter);
-    // Перенос старой настройки «только моя подгруппа» на выбор подгруппы.
-    if (subgroup == null && (prefs.getBool(_prefKeyOnlyMySubgroup) ?? false)) {
-      subgroup = profileSubgroup;
-      await prefs.remove(_prefKeyOnlyMySubgroup);
-      if (subgroup != null) {
-        await prefs.setInt(_prefKeySubgroupFilter, subgroup);
-      }
-    }
-
-    if (!mounted) return;
-    if (subgroup == _subgroupFilter && hideRetake == _hideRetake) return;
-    setState(() {
-      _subgroupFilter = subgroup;
-      _hideRetake = hideRetake;
-      // Если фильтр уже был настроен раньше — сразу показываем панель,
-      // чтобы не прятать активный выбор.
-      if (subgroup != null || hideRetake) _filtersExpanded = true;
-    });
-  }
-
-  Future<void> _setSubgroupFilter(int? value) async {
-    setState(() => _subgroupFilter = value);
-    final prefs = await SharedPreferences.getInstance();
-    if (value == null) {
-      await prefs.remove(_prefKeySubgroupFilter);
-    } else {
-      await prefs.setInt(_prefKeySubgroupFilter, value);
-    }
+    if (!mounted || hideRetake == _hideRetake) return;
+    setState(() => _hideRetake = hideRetake);
   }
 
   Future<void> _saveFilterBool(String key, bool value) async {
@@ -280,14 +245,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         return d == _dateFilter;
       }).toList();
     }
-    // Фильтр по подгруппе.
-    final subgroup = _subgroupFilter;
-    if (subgroup != null) {
-      final wanted = subgroup.toString();
-      filtered = filtered.where((e) {
-        if (e.subgroupNumber.isEmpty) return true; // общие для всех
-        return e.subgroupNumber == wanted;
-      }).toList();
+    // Фильтр по подгруппе — та же настройка, что в профиле и на главной.
+    // Только для своей группы: в расписании преподавателя или аудитории
+    // «моя подгруппа» смысла не имеет. Перерисовку при смене подгруппы даёт
+    // `context.watch` в `_filterToggleRow` — он рисуется в том же режиме.
+    if (_mode == _ScheduleMode.group) {
+      final subgroup = context.read<GroupController>().subgroup;
+      if (subgroup != null) {
+        filtered = filtered.where((e) => e.visibleTo(subgroup)).toList();
+      }
     }
     // Фильтр пересдач.
     if (_hideRetake) {
@@ -624,7 +590,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final theme = Theme.of(context);
     final glass = context.glass;
     final primary = theme.colorScheme.primary;
-    final active = _subgroupFilter != null || _hideRetake;
+    final active =
+        context.watch<GroupController>().subgroup != null || _hideRetake;
     final shape = BorderRadius.circular(AppRadius.pill);
 
     return Padding(
@@ -688,9 +655,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  /// Все подгруппы / 1-я / 2-я — независимо от подгруппы в профиле.
+  /// Все подгруппы / 1-я / 2-я. Настройка общая с профилем и главным экраном,
+  /// поэтому живёт в [GroupController], а не в локальном состоянии экрана.
   Widget _subgroupFilterRow(AppLocalizations l) {
-    final selected = switch (_subgroupFilter) {
+    final groupCtrl = context.watch<GroupController>();
+    final selected = switch (groupCtrl.subgroup) {
       1 => 1,
       2 => 2,
       _ => 0,
@@ -704,7 +673,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           PillFilterItem(l.scheduleSubgroupN(2)),
         ],
         selected: selected,
-        onSelected: (i) => _setSubgroupFilter(i == 0 ? null : i),
+        onSelected: (i) => groupCtrl.setSubgroup(i == 0 ? null : i),
       ),
     );
   }

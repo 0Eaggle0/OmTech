@@ -3,6 +3,7 @@ import 'package:html/parser.dart' as html_parser;
 
 import '../../models/grade.dart';
 import '../../models/student_record.dart';
+import 'lk_parse_utils.dart';
 
 /// Парсит HTML страницы `up.omgtu.ru/index.php?r=student/index` в
 /// [StudentRecord]. Чистая функция — не делает сетевых запросов.
@@ -41,12 +42,12 @@ StudentProfile _parseProfile(Document doc) {
     doc.querySelector('h2')?.text,
   ]);
   return StudentProfile(
-    fullName: _normalize(fullName),
-    bookNumber: _normalize(_extractAfterLabel(doc, ['Номер книжки'])),
-    specialty: _normalize(_extractAfterLabel(doc, ['Специальность'])),
-    groupLabel: _normalize(_extractAfterLabel(doc, ['Группа'])),
-    studyForm: _normalize(_extractAfterLabel(doc, ['Форма обучения'])),
-    libraryCardNumber: _normalize(_extractLibraryCard(doc)),
+    fullName: normalizeSpaces(fullName),
+    bookNumber: normalizeSpaces(_extractAfterLabel(doc, ['Номер книжки'])),
+    specialty: normalizeSpaces(_extractAfterLabel(doc, ['Специальность'])),
+    groupLabel: normalizeSpaces(_extractAfterLabel(doc, ['Группа'])),
+    studyForm: normalizeSpaces(_extractAfterLabel(doc, ['Форма обучения'])),
+    libraryCardNumber: normalizeSpaces(_extractLibraryCard(doc)),
   );
 }
 
@@ -157,7 +158,7 @@ Element? _nextTable(Element start) {
 List<Grade> _parseTable(Element table, String sectionTitle) {
   final headers = table
       .querySelectorAll('thead th')
-      .map((th) => _normalize(th.text).toLowerCase())
+      .map((th) => normalizeSpaces(th.text).toLowerCase())
       .toList();
   if (headers.isEmpty) return const [];
 
@@ -202,7 +203,7 @@ List<Grade> _parseTable(Element table, String sectionTitle) {
     if (cells.length < headers.length - 1) continue;
 
     String cell(int? i) =>
-        (i == null || i >= cells.length) ? '' : _normalize(cells[i].text);
+        (i == null || i >= cells.length) ? '' : normalizeSpaces(cells[i].text);
 
     final discipline = cell(iName);
     if (discipline.isEmpty) continue;
@@ -211,7 +212,7 @@ List<Grade> _parseTable(Element table, String sectionTitle) {
     final rankByCK = iRankCK == null ? null : int.tryParse(cell(iRankCK));
     final score = int.tryParse(cell(iScore));
     final mark = cell(iMark);
-    final date = _parseDate(cell(iDate));
+    final date = parseSiteDate(cell(iDate));
     final teacher = cell(iTeacher);
     final inDiploma = cell(iDiploma).toLowerCase().contains('да');
 
@@ -247,16 +248,6 @@ String _controlTypeForSection(String title) {
   return title;
 }
 
-DateTime? _parseDate(String raw) {
-  if (raw.isEmpty) return null;
-  final m = RegExp(r'(\d{1,2})\.(\d{1,2})\.(\d{4})').firstMatch(raw);
-  if (m == null) return null;
-  return DateTime(
-    int.parse(m.group(3)!),
-    int.parse(m.group(2)!),
-    int.parse(m.group(1)!),
-  );
-}
 
 String _firstNonEmpty(Iterable<String?> values) {
   for (final v in values) {
@@ -265,5 +256,3 @@ String _firstNonEmpty(Iterable<String?> values) {
   return '';
 }
 
-String _normalize(String value) =>
-    value.replaceAll(RegExp(r'\s+'), ' ').trim();
