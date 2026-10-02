@@ -1916,17 +1916,47 @@ abstract class AppLocalizations {
   /// **'Нет подключения к интернету'**
   String get noInternet;
 
-  /// No description provided for @updateTitle.
+  /// No description provided for @updateEyebrow.
   ///
   /// In ru, this message translates to:
-  /// **'Доступно обновление {version}'**
-  String updateTitle(String version);
+  /// **'Новая версия'**
+  String get updateEyebrow;
+
+  /// No description provided for @updateCurrent.
+  ///
+  /// In ru, this message translates to:
+  /// **'у вас {version}'**
+  String updateCurrent(String version);
 
   /// No description provided for @updateBody.
   ///
   /// In ru, this message translates to:
-  /// **'Новая версия установится поверх текущей, данные и вход сохранятся.'**
+  /// **'Встанет поверх текущей — удалять ничего не нужно.'**
   String get updateBody;
+
+  /// No description provided for @updateSize.
+  ///
+  /// In ru, this message translates to:
+  /// **'{size} МБ'**
+  String updateSize(String size);
+
+  /// No description provided for @updateSizeCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'загрузка'**
+  String get updateSizeCaption;
+
+  /// No description provided for @updateKeeps.
+  ///
+  /// In ru, this message translates to:
+  /// **'Всё на месте'**
+  String get updateKeeps;
+
+  /// No description provided for @updateKeepsCaption.
+  ///
+  /// In ru, this message translates to:
+  /// **'вход и настройки'**
+  String get updateKeepsCaption;
 
   /// No description provided for @updateInstall.
   ///
@@ -1940,11 +1970,23 @@ abstract class AppLocalizations {
   /// **'Позже'**
   String get updateLater;
 
+  /// No description provided for @updateDownloading.
+  ///
+  /// In ru, this message translates to:
+  /// **'Скачивание'**
+  String get updateDownloading;
+
+  /// No description provided for @updateOpening.
+  ///
+  /// In ru, this message translates to:
+  /// **'Открываю установщик'**
+  String get updateOpening;
+
   /// No description provided for @updateFailed.
   ///
   /// In ru, this message translates to:
-  /// **'Не удалось скачать обновление: {error}'**
-  String updateFailed(String error);
+  /// **'Не удалось скачать. Проверьте интернет и попробуйте ещё раз.'**
+  String get updateFailed;
 }
 
 class _AppLocalizationsDelegate

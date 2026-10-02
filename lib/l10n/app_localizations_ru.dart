@@ -994,13 +994,29 @@ class AppLocalizationsRu extends AppLocalizations {
   String get noInternet => 'Нет подключения к интернету';
 
   @override
-  String updateTitle(String version) {
-    return 'Доступно обновление $version';
+  String get updateEyebrow => 'Новая версия';
+
+  @override
+  String updateCurrent(String version) {
+    return 'у вас $version';
   }
 
   @override
-  String get updateBody =>
-      'Новая версия установится поверх текущей, данные и вход сохранятся.';
+  String get updateBody => 'Встанет поверх текущей — удалять ничего не нужно.';
+
+  @override
+  String updateSize(String size) {
+    return '$size МБ';
+  }
+
+  @override
+  String get updateSizeCaption => 'загрузка';
+
+  @override
+  String get updateKeeps => 'Всё на месте';
+
+  @override
+  String get updateKeepsCaption => 'вход и настройки';
 
   @override
   String get updateInstall => 'Обновить';
@@ -1009,7 +1025,12 @@ class AppLocalizationsRu extends AppLocalizations {
   String get updateLater => 'Позже';
 
   @override
-  String updateFailed(String error) {
-    return 'Не удалось скачать обновление: $error';
-  }
+  String get updateDownloading => 'Скачивание';
+
+  @override
+  String get updateOpening => 'Открываю установщик';
+
+  @override
+  String get updateFailed =>
+      'Не удалось скачать. Проверьте интернет и попробуйте ещё раз.';
 }

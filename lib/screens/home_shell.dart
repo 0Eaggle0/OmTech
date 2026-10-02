@@ -8,11 +8,11 @@ import '../controllers/app_nav_controller.dart';
 import '../controllers/lk_controller.dart';
 import '../l10n/app_localizations.dart';
 import '../services/lk/lk_credentials_storage.dart';
-import '../services/lk/lk_file_downloader.dart';
 import '../services/update_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/floating_nav_bar.dart';
 import '../widgets/lk_login_sheet.dart';
+import '../widgets/update_sheet.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'news/news_screen.dart';
 import 'profile/profile_screen.dart';
@@ -125,44 +125,7 @@ class _HomeShellState extends State<HomeShell>
   Future<void> _checkUpdate() async {
     final release = await UpdateService.checkLatest();
     if (release == null || !mounted) return;
-    final l = AppLocalizations.of(context)!;
-    final install = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.updateTitle(release.version)),
-        content: Text(l.updateBody),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l.updateLater),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l.updateInstall),
-          ),
-        ],
-      ),
-    );
-    if (!mounted) return;
-    if (install != true) {
-      await UpdateService.skip(release);
-      return;
-    }
-
-    final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context, rootNavigator: true);
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const DownloadProgressDialog(),
-    );
-    try {
-      await UpdateService.downloadAndInstall(release);
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(l.updateFailed('$e'))));
-    } finally {
-      if (navigator.canPop()) navigator.pop();
-    }
+    await UpdateSheet.show(context, release);
   }
 
   @override

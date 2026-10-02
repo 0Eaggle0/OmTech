@@ -388,9 +388,16 @@
   "retry": "Retry",
   "noInternet": "No internet connection",
 
-  "updateTitle": "Update {version} available",
-  "updateBody": "The new version installs over the current one; your data and login are kept.",
+  "updateEyebrow": "New version",
+  "updateCurrent": "you have {version}",
+  "updateBody": "Installs over the current one — nothing to uninstall.",
+  "updateSize": "{size} MB",
+  "updateSizeCaption": "download",
+  "updateKeeps": "Nothing lost",
+  "updateKeepsCaption": "login & settings",
   "updateInstall": "Update",
   "updateLater": "Later",
-  "updateFailed": "Couldn't download the update: {error}"
+  "updateDownloading": "Downloading",
+  "updateOpening": "Opening installer",
+  "updateFailed": "Download failed. Check your connection and try again."
 }

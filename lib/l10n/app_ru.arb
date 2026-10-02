@@ -388,15 +388,22 @@
   "retry": "Повторить",
   "noInternet": "Нет подключения к интернету",
 
-  "updateTitle": "Доступно обновление {version}",
-  "@updateTitle": {
+  "updateEyebrow": "Новая версия",
+  "updateCurrent": "у вас {version}",
+  "@updateCurrent": {
     "placeholders": { "version": { "type": "String" } }
   },
-  "updateBody": "Новая версия установится поверх текущей, данные и вход сохранятся.",
+  "updateBody": "Встанет поверх текущей — удалять ничего не нужно.",
+  "updateSize": "{size} МБ",
+  "@updateSize": {
+    "placeholders": { "size": { "type": "String" } }
+  },
+  "updateSizeCaption": "загрузка",
+  "updateKeeps": "Всё на месте",
+  "updateKeepsCaption": "вход и настройки",
   "updateInstall": "Обновить",
   "updateLater": "Позже",
-  "updateFailed": "Не удалось скачать обновление: {error}",
-  "@updateFailed": {
-    "placeholders": { "error": { "type": "String" } }
-  }
+  "updateDownloading": "Скачивание",
+  "updateOpening": "Открываю установщик",
+  "updateFailed": "Не удалось скачать. Проверьте интернет и попробуйте ещё раз."
 }

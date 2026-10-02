@@ -13,13 +13,17 @@ import 'lk/lk_file_downloader.dart';
 /// versionCode), поэтому данные и вход в ЛК сохраняются.
 class UpdateService {
   static const repo = '0Eaggle0/OmTech';
-  static const _skippedKey = 'update_skipped_version';
+  static const _snoozeKey = 'update_snoozed_until';
 
   /// Новый релиз или null: не Android, нет сети, нет APK, версия не новее
-  /// или пользователь уже отказался от именно этой версии.
+  /// или пользователь недавно нажал «Позже».
   static Future<AppRelease?> checkLatest() async {
     if (!Platform.isAndroid) return null;
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final snoozedUntil = prefs.getInt(_snoozeKey) ?? 0;
+      if (DateTime.now().millisecondsSinceEpoch < snoozedUntil) return null;
+
       final r = await Dio().get<Map<String, dynamic>>(
         'https://api.github.com/repos/$repo/releases/latest',
       );
@@ -27,31 +31,37 @@ class UpdateService {
       final version = (data['tag_name'] as String).replaceFirst('v', '');
       if (!isNewer(version, kAppVersion)) return null;
 
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.getString(_skippedKey) == version) return null;
-
       final apk = (data['assets'] as List).cast<Map<String, dynamic>>().where(
             (a) => (a['name'] as String).endsWith('.apk'),
           );
       if (apk.isEmpty) return null;
-      return AppRelease(version, apk.first['browser_download_url'] as String);
+      return AppRelease(
+        version,
+        apk.first['browser_download_url'] as String,
+        apk.first['size'] as int? ?? 0,
+      );
     } catch (e) {
       debugPrint('[Update] check failed: $e');
       return null;
     }
   }
 
-  static Future<void> skip(AppRelease release) async {
+  /// «Позже» — не спрашивать сутки.
+  static Future<void> snooze() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_skippedKey, release.version);
+    final until = DateTime.now().add(const Duration(days: 1));
+    await prefs.setInt(_snoozeKey, until.millisecondsSinceEpoch);
   }
 
   /// Качает APK в нашу временную папку и отдаёт системному установщику.
-  static Future<void> downloadAndInstall(AppRelease release) async {
+  static Future<void> downloadAndInstall(
+    AppRelease release, {
+    void Function(int received, int total)? onProgress,
+  }) async {
     final dir = await lkFilesDir();
     await dir.create(recursive: true);
     final path = '${dir.path}${Platform.pathSeparator}omtech-update.apk';
-    await Dio().download(release.apkUrl, path);
+    await Dio().download(release.apkUrl, path, onReceiveProgress: onProgress);
     final result = await OpenFilex.open(
       path,
       type: 'application/vnd.android.package-archive',
@@ -79,5 +89,9 @@ class UpdateService {
 class AppRelease {
   final String version;
   final String apkUrl;
-  const AppRelease(this.version, this.apkUrl);
+
+  /// Размер APK в байтах (0 — GitHub не сообщил).
+  final int size;
+
+  const AppRelease(this.version, this.apkUrl, this.size);
 }

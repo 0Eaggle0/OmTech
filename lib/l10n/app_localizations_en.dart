@@ -991,13 +991,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noInternet => 'No internet connection';
 
   @override
-  String updateTitle(String version) {
-    return 'Update $version available';
+  String get updateEyebrow => 'New version';
+
+  @override
+  String updateCurrent(String version) {
+    return 'you have $version';
   }
 
   @override
   String get updateBody =>
-      'The new version installs over the current one; your data and login are kept.';
+      'Installs over the current one — nothing to uninstall.';
+
+  @override
+  String updateSize(String size) {
+    return '$size MB';
+  }
+
+  @override
+  String get updateSizeCaption => 'download';
+
+  @override
+  String get updateKeeps => 'Nothing lost';
+
+  @override
+  String get updateKeepsCaption => 'login & settings';
 
   @override
   String get updateInstall => 'Update';
@@ -1006,7 +1023,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateLater => 'Later';
 
   @override
-  String updateFailed(String error) {
-    return 'Couldn\'t download the update: $error';
-  }
+  String get updateDownloading => 'Downloading';
+
+  @override
+  String get updateOpening => 'Opening installer';
+
+  @override
+  String get updateFailed =>
+      'Download failed. Check your connection and try again.';
 }

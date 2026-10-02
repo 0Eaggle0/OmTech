@@ -30,7 +30,7 @@ Future<void> openWorkFile(
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const DownloadProgressDialog(),
+    builder: (_) => const _DownloadProgressDialog(),
   );
 
   try {
@@ -72,7 +72,7 @@ Future<void> saveWorkFile(
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const DownloadProgressDialog(),
+    builder: (_) => const _DownloadProgressDialog(),
   );
 
   try {
@@ -141,8 +141,8 @@ String _displayPath(String path) {
   return segs.sublist(segs.length - 2).join('/');
 }
 
-class DownloadProgressDialog extends StatelessWidget {
-  const DownloadProgressDialog({super.key});
+class _DownloadProgressDialog extends StatelessWidget {
+  const _DownloadProgressDialog();
 
   @override
   Widget build(BuildContext context) {
