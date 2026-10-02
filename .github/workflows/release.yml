@@ -41,7 +41,9 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.jks
+          [ -n "$KEYSTORE_BASE64" ] || { echo "secret KEYSTORE_BASE64 is empty"; exit 1; }
+          # Буфер обмена Windows добавляет \r\n — выкидываем всё, кроме base64.
+          printf '%s' "$KEYSTORE_BASE64" | tr -cd 'A-Za-z0-9+/=' | base64 -d > android/app/release.jks
           cat > android/key.properties <<EOF
           storeFile=release.jks
           storePassword=${{ secrets.KEYSTORE_PASSWORD }}
