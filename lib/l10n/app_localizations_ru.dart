@@ -77,6 +77,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lessonDetailReviews => 'Отзывы';
 
   @override
+  String get lessonDetailComingSoon => 'В разработке';
+
+  @override
   String get lessonDetailOpenMaps => 'Открыть на карте';
 
   @override
@@ -157,13 +160,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String gradesSemesterLabel(int n) {
     return '$n сем';
   }
-
-  @override
-  String get materialsTitle => 'Материалы';
-
-  @override
-  String get materialsDemoNote =>
-      'Демонстрационные данные. Реальные материалы появятся после подключения личного кабинета.';
 
   @override
   String get workTitle => 'Контактная работа';
@@ -707,6 +703,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get dashboardGreeting => 'Добро пожаловать!';
 
   @override
+  String get dashboardStudent => 'Студент';
+
+  @override
   String dashboardHello(String name) {
     return 'Привет, $name!';
   }
@@ -993,4 +992,24 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get noInternet => 'Нет подключения к интернету';
+
+  @override
+  String updateTitle(String version) {
+    return 'Доступно обновление $version';
+  }
+
+  @override
+  String get updateBody =>
+      'Новая версия установится поверх текущей, данные и вход сохранятся.';
+
+  @override
+  String get updateInstall => 'Обновить';
+
+  @override
+  String get updateLater => 'Позже';
+
+  @override
+  String updateFailed(String error) {
+    return 'Не удалось скачать обновление: $error';
+  }
 }

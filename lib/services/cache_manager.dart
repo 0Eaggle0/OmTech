@@ -1,9 +1,10 @@
 import 'dart:io';
 
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/lk_controller.dart';
+import 'lk/lk_file_downloader.dart';
+import 'lk/lk_report_work_api.dart';
 import 'news_database.dart';
 import 'schedule_cache.dart';
 import 'search_history.dart';
@@ -34,6 +35,7 @@ class CacheManager {
   static const _snapshotKeys = [
     'notif_report_snapshot',
     'notif_grades_snapshot',
+    'notif_tasks_snapshot',
   ];
 
   final NewsDatabase newsDb;
@@ -78,34 +80,37 @@ class CacheManager {
   static bool _isCacheKey(String key) =>
       _cachePrefixes.any((prefix) => key.startsWith(prefix));
 
-  /// Скачанные из ЛК файлы лежат прямо в корне временной папки.
-  /// Подкаталоги не трогаем — они принадлежат плагинам.
+  /// Наши временные папки: скачанные из ЛК файлы и HTML-дампы страниц.
+  /// Корень временной папки не трогаем — там лежат и чужие файлы, например
+  /// PDF, скопированный туда системным диалогом выбора файла для загрузки.
+  Future<List<Directory>> _ownTempDirs() async => [
+        await lkFilesDir(),
+        await LkReportWorkApi.dumpsDir(),
+      ];
+
   Future<int> _tempFilesSize() async {
-    try {
-      final dir = await getTemporaryDirectory();
-      var total = 0;
-      await for (final entity in dir.list()) {
-        if (entity is File) total += await entity.length();
+    var total = 0;
+    for (final dir in await _ownTempDirs()) {
+      try {
+        if (!await dir.exists()) continue;
+        await for (final entity in dir.list(recursive: true)) {
+          if (entity is File) total += await entity.length();
+        }
+      } catch (_) {
+        // Папка могла исчезнуть между проверкой и обходом — не страшно.
       }
-      return total;
-    } catch (_) {
-      return 0;
     }
+    return total;
   }
 
   Future<void> _clearTempFiles() async {
-    try {
-      final dir = await getTemporaryDirectory();
-      await for (final entity in dir.list()) {
-        if (entity is File) {
-          try {
-            await entity.delete();
-          } catch (_) {
-            // Файл может быть занят — пропускаем, очистка не должна падать.
-          }
-        }
+    for (final dir in await _ownTempDirs()) {
+      try {
+        if (await dir.exists()) await dir.delete(recursive: true);
+      } catch (_) {
+        // Файл может быть занят — пропускаем, очистка не должна падать.
       }
-    } catch (_) {}
+    }
   }
 
   /// «1.2 MB» / «340 KB» — для подписи в настройках. Единицы латиницей:

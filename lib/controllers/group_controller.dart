@@ -9,6 +9,13 @@ class GroupController extends ChangeNotifier {
   static const _labelKey = 'group_label';
   static const _subgroupKey = 'user_subgroup';
 
+  /// Старый отдельный фильтр подгруппы с экрана расписания. Теперь подгруппа
+  /// одна на всё приложение, поэтому ключ читаем один раз ради переноса.
+  static const _legacyScheduleFilterKey = 'schedule_subgroup_filter';
+
+  /// Ещё более старая настройка «только моя подгруппа» (bool).
+  static const _legacyOnlyMineKey = 'schedule_only_my_subgroup';
+
   Group? _group;
   int? _subgroup; // null = все подгруппы, 1 или 2 = конкретная
 
@@ -23,9 +30,32 @@ class GroupController extends ChangeNotifier {
     if (id != null && label != null) {
       _group = Group(id: id, label: label, description: '');
     }
-    final sg = prefs.getInt(_subgroupKey);
-    _subgroup = (sg == 1 || sg == 2) ? sg : null;
+    _subgroup = await _readSubgroup(prefs);
     notifyListeners();
+  }
+
+  /// Подгруппа с переносом двух старых настроек экрана расписания.
+  /// Переносим только один раз: после переноса старые ключи удаляем, иначе
+  /// они каждый запуск перетирали бы выбор, сделанный в профиле.
+  Future<int?> _readSubgroup(SharedPreferences prefs) async {
+    final own = prefs.getInt(_subgroupKey);
+    if (own == 1 || own == 2) {
+      await _dropLegacyKeys(prefs);
+      return own;
+    }
+
+    // Старый bool «только моя подгруппа» переносить не из чего: он опирался
+    // на эту же `_subgroupKey`, которой тут нет. Просто убираем ключ.
+    final legacy = prefs.getInt(_legacyScheduleFilterKey);
+    await _dropLegacyKeys(prefs);
+    if (legacy != 1 && legacy != 2) return null;
+    await prefs.setInt(_subgroupKey, legacy!);
+    return legacy;
+  }
+
+  Future<void> _dropLegacyKeys(SharedPreferences prefs) async {
+    await prefs.remove(_legacyScheduleFilterKey);
+    await prefs.remove(_legacyOnlyMineKey);
   }
 
   Future<void> select(Group group) async {

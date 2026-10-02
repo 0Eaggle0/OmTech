@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/group.dart';
 import '../models/student_record.dart';
@@ -173,9 +174,27 @@ class LkController extends ChangeNotifier {
     await contactWorkApi.clearCache();
     await reportWorkApi.clearCache();
     await TeacherContactsService.clearCache();
+    // Дампы страниц ЛК содержат ФИО, группу и статусы работ — после выхода
+    // им на диске делать нечего.
+    await LkReportWorkApi.clearDumps();
+    await _clearLocalProfileTraces();
     _status = LkStatus.disconnected;
     _profile = null;
     _errorMessage = null;
     notifyListeners();
+  }
+
+  /// Данные, приехавшие из ЛК и осевшие в обычных prefs. Аватар не трогаем:
+  /// его пользователь выбрал сам, из ЛК он не приходит.
+  Future<void> _clearLocalProfileTraces() async {
+    final prefs = await SharedPreferences.getInstance();
+    for (final key in const [
+      'user_first_name',
+      'notif_report_snapshot',
+      'notif_grades_snapshot',
+      'notif_tasks_snapshot',
+    ]) {
+      await prefs.remove(key);
+    }
   }
 }

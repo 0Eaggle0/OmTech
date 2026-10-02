@@ -27,6 +27,7 @@
   "lessonDetailShare": "Поделиться заметкой",
   "lessonDetailTeacherOptions": "Действия с преподавателем",
   "lessonDetailReviews": "Отзывы",
+  "lessonDetailComingSoon": "В разработке",
   "lessonDetailOpenMaps": "Открыть на карте",
   "lessonDetailStream": "поток",
 
@@ -72,8 +73,6 @@
     "placeholders": { "n": { "type": "int" } }
   },
 
-  "materialsTitle": "Материалы",
-  "materialsDemoNote": "Демонстрационные данные. Реальные материалы появятся после подключения личного кабинета.",
 
   "workTitle": "Контактная работа",
   "workSearch": "Дисциплина",
@@ -272,6 +271,7 @@
   },
 
   "dashboardGreeting": "Добро пожаловать!",
+  "dashboardStudent": "Студент",
   "dashboardHello": "Привет, {name}!",
   "@dashboardHello": {
     "placeholders": { "name": { "type": "String" } }
@@ -386,5 +386,17 @@
   "loading": "Загрузка...",
   "error": "Ошибка",
   "retry": "Повторить",
-  "noInternet": "Нет подключения к интернету"
+  "noInternet": "Нет подключения к интернету",
+
+  "updateTitle": "Доступно обновление {version}",
+  "@updateTitle": {
+    "placeholders": { "version": { "type": "String" } }
+  },
+  "updateBody": "Новая версия установится поверх текущей, данные и вход сохранятся.",
+  "updateInstall": "Обновить",
+  "updateLater": "Позже",
+  "updateFailed": "Не удалось скачать обновление: {error}",
+  "@updateFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  }
 }

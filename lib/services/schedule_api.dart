@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 import '../models/group.dart';
 import '../models/schedule_entity.dart';
@@ -33,24 +33,41 @@ class ScheduleApi {
   static const _freshTtl = Duration(minutes: 30);
   static const _pastTtl = Duration(hours: 12);
 
-  final http.Client _client;
+  final Dio _client;
   final ScheduleCache _cache;
   final Map<String, Future<String>> _inFlight = {};
 
-  ScheduleApi({http.Client? client, ScheduleCache? cache})
-      : _client = client ?? http.Client(),
+  ScheduleApi({Dio? client, ScheduleCache? cache})
+      : _client = client ?? Dio(),
         _cache = cache ?? ScheduleCache();
+
+  /// Тело ответа всегда забираем байтами и декодим сами: API отдаёт UTF-8,
+  /// но заголовок charset бывает пустым, и dio тогда гадает по-своему.
+  /// [errorPrefix] попадает в текст исключения, видимый на экране ошибки.
+  Future<String> _getText(Uri uri, Duration timeout, String errorPrefix) async {
+    final res = await _client.getUri<List<int>>(
+      uri,
+      options: Options(
+        responseType: ResponseType.bytes,
+        receiveTimeout: timeout,
+        sendTimeout: timeout,
+        validateStatus: (_) => true,
+      ),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('$errorPrefix (${res.statusCode})');
+    }
+    return utf8.decode(res.data ?? const <int>[]);
+  }
 
   // ─────────────────────────────── Поиск ─────────────────────────────────
 
   /// Поиск групп по части названия.
   Future<List<Group>> searchGroups(String term) async {
     final uri = Uri.https(_host, '/api/search', {'term': term, 'type': 'group'});
-    final res = await _client.get(uri).timeout(const Duration(seconds: 15));
-    if (res.statusCode != 200) {
-      throw Exception('Ошибка поиска групп (${res.statusCode})');
-    }
-    final data = jsonDecode(utf8.decode(res.bodyBytes)) as List<dynamic>;
+    final body = await _getText(
+        uri, const Duration(seconds: 15), 'Ошибка поиска групп');
+    final data = jsonDecode(body) as List<dynamic>;
     return data
         .whereType<Map<String, dynamic>>()
         .map(Group.fromJson)
@@ -69,11 +86,9 @@ class ScheduleApi {
     EntityType entityType,
   ) async {
     final uri = Uri.https(_host, '/api/search', {'term': term, 'type': type});
-    final res = await _client.get(uri).timeout(const Duration(seconds: 15));
-    if (res.statusCode != 200) {
-      throw Exception('Ошибка поиска ($type): ${res.statusCode}');
-    }
-    final data = jsonDecode(utf8.decode(res.bodyBytes)) as List<dynamic>;
+    final body = await _getText(
+        uri, const Duration(seconds: 15), 'Ошибка поиска ($type)');
+    final data = jsonDecode(body) as List<dynamic>;
     return data
         .whereType<Map<String, dynamic>>()
         .map((j) => ScheduleEntity.fromJson(j, entityType))
@@ -187,11 +202,8 @@ class ScheduleApi {
       'finish': _fmt(finish),
       'lng': '1',
     });
-    final res = await _client.get(uri).timeout(const Duration(seconds: 20));
-    if (res.statusCode != 200) {
-      throw Exception('Ошибка загрузки расписания (${res.statusCode})');
-    }
-    return utf8.decode(res.bodyBytes);
+    return _getText(
+        uri, const Duration(seconds: 20), 'Ошибка загрузки расписания');
   }
 
   static String _apiType(EntityType type) => switch (type) {

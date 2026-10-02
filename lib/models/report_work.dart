@@ -199,4 +199,8 @@ class ReportUploadDiscipline {
   });
 
   int get semesterNumber => int.tryParse(semester) ?? 0;
+
+  /// Идентификатор строки формы. Одного `hexnrec` мало: одна дисциплина
+  /// может идти несколько семестров и занимает столько же строк.
+  String get key => '$hexnrec|$group|$semester';
 }

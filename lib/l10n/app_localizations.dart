@@ -224,6 +224,12 @@ abstract class AppLocalizations {
   /// **'Отзывы'**
   String get lessonDetailReviews;
 
+  /// No description provided for @lessonDetailComingSoon.
+  ///
+  /// In ru, this message translates to:
+  /// **'В разработке'**
+  String get lessonDetailComingSoon;
+
   /// No description provided for @lessonDetailOpenMaps.
   ///
   /// In ru, this message translates to:
@@ -361,18 +367,6 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'{n} сем'**
   String gradesSemesterLabel(int n);
-
-  /// No description provided for @materialsTitle.
-  ///
-  /// In ru, this message translates to:
-  /// **'Материалы'**
-  String get materialsTitle;
-
-  /// No description provided for @materialsDemoNote.
-  ///
-  /// In ru, this message translates to:
-  /// **'Демонстрационные данные. Реальные материалы появятся после подключения личного кабинета.'**
-  String get materialsDemoNote;
 
   /// No description provided for @workTitle.
   ///
@@ -1376,6 +1370,12 @@ abstract class AppLocalizations {
   /// **'Добро пожаловать!'**
   String get dashboardGreeting;
 
+  /// No description provided for @dashboardStudent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Студент'**
+  String get dashboardStudent;
+
   /// No description provided for @dashboardHello.
   ///
   /// In ru, this message translates to:
@@ -1915,6 +1915,36 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Нет подключения к интернету'**
   String get noInternet;
+
+  /// No description provided for @updateTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Доступно обновление {version}'**
+  String updateTitle(String version);
+
+  /// No description provided for @updateBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Новая версия установится поверх текущей, данные и вход сохранятся.'**
+  String get updateBody;
+
+  /// No description provided for @updateInstall.
+  ///
+  /// In ru, this message translates to:
+  /// **'Обновить'**
+  String get updateInstall;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In ru, this message translates to:
+  /// **'Позже'**
+  String get updateLater;
+
+  /// No description provided for @updateFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не удалось скачать обновление: {error}'**
+  String updateFailed(String error);
 }
 
 class _AppLocalizationsDelegate
