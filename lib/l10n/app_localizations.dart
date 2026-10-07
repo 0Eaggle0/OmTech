@@ -212,24 +212,6 @@ abstract class AppLocalizations {
   /// **'Поделиться заметкой'**
   String get lessonDetailShare;
 
-  /// No description provided for @lessonDetailTeacherOptions.
-  ///
-  /// In ru, this message translates to:
-  /// **'Действия с преподавателем'**
-  String get lessonDetailTeacherOptions;
-
-  /// No description provided for @lessonDetailReviews.
-  ///
-  /// In ru, this message translates to:
-  /// **'Отзывы'**
-  String get lessonDetailReviews;
-
-  /// No description provided for @lessonDetailComingSoon.
-  ///
-  /// In ru, this message translates to:
-  /// **'В разработке'**
-  String get lessonDetailComingSoon;
-
   /// No description provided for @lessonDetailOpenMaps.
   ///
   /// In ru, this message translates to:

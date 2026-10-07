@@ -71,15 +71,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lessonDetailShare => 'Поделиться заметкой';
 
   @override
-  String get lessonDetailTeacherOptions => 'Действия с преподавателем';
-
-  @override
-  String get lessonDetailReviews => 'Отзывы';
-
-  @override
-  String get lessonDetailComingSoon => 'В разработке';
-
-  @override
   String get lessonDetailOpenMaps => 'Открыть на карте';
 
   @override

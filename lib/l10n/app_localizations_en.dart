@@ -71,15 +71,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lessonDetailShare => 'Share note';
 
   @override
-  String get lessonDetailTeacherOptions => 'Teacher actions';
-
-  @override
-  String get lessonDetailReviews => 'Reviews';
-
-  @override
-  String get lessonDetailComingSoon => 'In development';
-
-  @override
   String get lessonDetailOpenMaps => 'Open in maps';
 
   @override

@@ -109,7 +109,7 @@ class LessonDetailSheet extends StatelessWidget {
               _buildingRow(context, l, e.building, address, accent),
 
             if (e.lecturer.isNotEmpty)
-              _teacherRow(context, l, e.lecturer, accent),
+              _teacherRow(context, e.lecturer, accent),
 
             // Контакты из контактной работы — только если что-то нашлось.
             for (final name in lecturers)
@@ -196,7 +196,7 @@ class LessonDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _teacherRow(BuildContext context, AppLocalizations l, String lecturer, Color accent) {
+  Widget _teacherRow(BuildContext context, String lecturer, Color accent) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -218,43 +218,7 @@ class LessonDetailSheet extends StatelessWidget {
               style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
-          IconButton(
-            onPressed: () => _showTeacherOptions(context, l, lecturer),
-            icon: Icon(Icons.more_vert, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-          ),
         ],
-      ),
-    );
-  }
-
-  void _showTeacherOptions(BuildContext context, AppLocalizations l, String lecturer) {
-    final theme = Theme.of(context);
-    final dimColor = theme.colorScheme.onSurface.withValues(alpha: 0.35);
-    showModalBottomSheet(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-              child: Text(
-                lecturer,
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.star_outline, color: dimColor),
-              title: Text(l.lessonDetailReviews, style: TextStyle(color: dimColor)),
-              subtitle: Text(l.lessonDetailComingSoon,
-                  style: TextStyle(color: dimColor, fontSize: 12)),
-              enabled: false,
-              onTap: null,
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
       ),
     );
   }
