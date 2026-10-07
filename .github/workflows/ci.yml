@@ -1,0 +1,30 @@
+# Every push and PR: lint + tests, so breakage shows up before a release tag.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['v*']   # release.yml runs the tests for tags itself
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.9'
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Generated l10n is committed: an .arb edit without regenerating
+      # would leave the app on stale strings.
+      - name: Generated localizations are up to date
+        run: git diff --exit-code -- lib/l10n
+
+      - run: flutter analyze
+      - run: flutter test
