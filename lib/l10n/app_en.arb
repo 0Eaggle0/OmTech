@@ -246,24 +246,23 @@
   "settingsCacheCleared": "Cache cleared",
 
   "bugReportAction": "Report a problem",
-  "bugReportSettingsHint": "Message the developer with a diagnostics file",
+  "bugReportSettingsHint": "Email the developer with a diagnostics file",
   "bugReportTitle": "Report a problem",
-  "bugReportSubtitle": "The report goes to the developer at {email}",
+  "bugReportSubtitle": "The email goes to {email}",
   "@bugReportSubtitle": {
     "placeholders": { "email": { "type": "String" } }
   },
   "bugReportHint": "What went wrong? What were you doing before that?",
-  "bugReportIncluded": "The report will include",
+  "bugReportIncluded": "The email will include",
   "bugReportIncDevice": "App version, OS, group and account status",
   "bugReportIncLog": "Recent activity log — without login or password",
   "bugReportAttachPages": "Attach account pages",
-  "bugReportAttachPagesHint": "Helps fix data parsing. They contain your name, grades and list of works. The report goes through the FormSubmit service and is kept there for up to 30 days",
+  "bugReportAttachPagesHint": "Helps fix data parsing. They contain your name and list of works",
   "bugReportScreens": "Screenshots",
   "bugReportAddScreen": "Add",
   "bugReportScreensHint": "A snapshot of the screen you reported from is attached. Remove it if it shows something private",
-  "bugReportSent": "Report sent, thank you!",
-  "bugReportSend": "Send",
-  "bugReportFailed": "Couldn't send. The address {email} was copied",
+  "bugReportSend": "Compose email",
+  "bugReportFailed": "Couldn't open email. The address {email} was copied",
   "@bugReportFailed": {
     "placeholders": { "email": { "type": "String" } }
   },

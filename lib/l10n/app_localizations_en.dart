@@ -638,14 +638,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bugReportSettingsHint =>
-      'Message the developer with a diagnostics file';
+      'Email the developer with a diagnostics file';
 
   @override
   String get bugReportTitle => 'Report a problem';
 
   @override
   String bugReportSubtitle(String email) {
-    return 'The report goes to the developer at $email';
+    return 'The email goes to $email';
   }
 
   @override
@@ -653,7 +653,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'What went wrong? What were you doing before that?';
 
   @override
-  String get bugReportIncluded => 'The report will include';
+  String get bugReportIncluded => 'The email will include';
 
   @override
   String get bugReportIncDevice => 'App version, OS, group and account status';
@@ -667,7 +667,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bugReportAttachPagesHint =>
-      'Helps fix data parsing. They contain your name, grades and list of works. The report goes through the FormSubmit service and is kept there for up to 30 days';
+      'Helps fix data parsing. They contain your name and list of works';
 
   @override
   String get bugReportScreens => 'Screenshots';
@@ -680,14 +680,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'A snapshot of the screen you reported from is attached. Remove it if it shows something private';
 
   @override
-  String get bugReportSent => 'Report sent, thank you!';
-
-  @override
-  String get bugReportSend => 'Send';
+  String get bugReportSend => 'Compose email';
 
   @override
   String bugReportFailed(String email) {
-    return 'Couldn\'t send. The address $email was copied';
+    return 'Couldn\'t open email. The address $email was copied';
   }
 
   @override

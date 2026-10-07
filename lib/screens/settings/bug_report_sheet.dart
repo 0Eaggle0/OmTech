@@ -13,8 +13,7 @@ import '../../theme/app_glass.dart';
 import '../../theme/app_metrics.dart';
 
 /// Шторка «Сообщить об ошибке»: описание от пользователя и файл диагностики,
-/// дальше — отправка разработчику прямо из приложения (почтовый клиент —
-/// только запасной путь).
+/// дальше — почтовый клиент с готовым письмом разработчику.
 class BugReportSheet extends StatefulWidget {
   /// Дополнительные HTML-дампы (имена для `LkReportWorkApi.lastDumpPath`).
   final List<String> extraDumps;
@@ -115,9 +114,7 @@ class _BugReportSheetState extends State<BugReportSheet> {
     );
     if (!mounted) return;
     navigator.pop();
-    if (delivery == BugReportDelivery.direct) {
-      messenger.showSnackBar(SnackBar(content: Text(l.bugReportSent)));
-    } else if (delivery == BugReportDelivery.failed) {
+    if (delivery == BugReportDelivery.failed) {
       await Clipboard.setData(
           const ClipboardData(text: BugReportService.recipient));
       messenger.showSnackBar(SnackBar(

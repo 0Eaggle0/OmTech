@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:intl/intl.dart';
@@ -19,7 +18,7 @@ import 'app_log.dart';
 import 'background_worker.dart';
 import 'lk/lk_report_work_api.dart';
 
-enum BugReportDelivery { direct, email, share, failed }
+enum BugReportDelivery { email, share, failed }
 
 /// Сборка и отправка отчёта об ошибке разработчику.
 ///
@@ -30,13 +29,6 @@ class BugReportService {
   BugReportService._();
 
   static const recipient = 'eaggleVlad@outlook.com';
-
-  /// Отправка без почтового клиента: FormSubmit пересылает форму письмом
-  /// на [recipient]. Первая отправка приходит не отчётом, а письмом
-  /// «Activate Form» — после клика по ссылке форма заработает, а вместо
-  /// адреса в URL можно подставить выданный сервисом случайный алиас.
-  /// Отчёт и вложения хранятся у FormSubmit до 30 дней.
-  static const _directEndpoint = 'https://formsubmit.co/ajax/$recipient';
 
   /// Дампы, которые [LkReportWorkApi] пишет при каждом обращении к сайту.
   static const _pageDumps = [
@@ -64,8 +56,8 @@ class BugReportService {
     ].join('\n');
   }
 
-  /// Отправляет отчёт напрямую (см. [_directEndpoint]). Не вышло —
-  /// почтовый клиент с готовым письмом, нет клиента — «Поделиться».
+  /// Открывает почтовый клиент с готовым письмом. Нет клиента (или
+  /// платформа без плагина) — системное «Поделиться» с теми же файлами.
   static Future<BugReportDelivery> send({
     required String state,
     required LkReportWorkApi reportApi,
@@ -94,10 +86,6 @@ class BugReportService {
     final body = '${text.isEmpty ? '' : '$text\n\n'}—\n$state\n'
         'Файл диагностики во вложении.';
 
-    if (await _sendDirect(subject, body, attachments)) {
-      return BugReportDelivery.direct;
-    }
-
     try {
       await FlutterEmailSender.send(Email(
         subject: subject,
@@ -120,48 +108,6 @@ class BugReportService {
     } catch (e) {
       debugPrint('[BugReport] «Поделиться» недоступно: $e');
       return BugReportDelivery.failed;
-    }
-  }
-
-  static Future<bool> _sendDirect(
-      String subject, String body, List<String> attachments) async {
-    try {
-      final form = FormData.fromMap({
-        '_subject': subject,
-        '_captcha': 'false',
-        '_template': 'box',
-        'message': body,
-      });
-      for (var i = 0; i < attachments.length; i++) {
-        form.files.add(MapEntry(
-          'attachment${i + 1}',
-          await MultipartFile.fromFile(attachments[i],
-              filename: p.basename(attachments[i])),
-        ));
-      }
-      final res = await Dio().post<Map<String, dynamic>>(
-        _directEndpoint,
-        data: form,
-        options: Options(
-          responseType: ResponseType.json,
-          sendTimeout: const Duration(minutes: 2),
-          receiveTimeout: const Duration(seconds: 60),
-          // Без Origin/Referer сервис отвечает «откройте через веб-сервер».
-          headers: {
-            'Accept': 'application/json',
-            'Origin': 'https://github.com',
-            'Referer': 'https://github.com/0Eaggle0/campus2_0',
-          },
-        ),
-      );
-      final ok = '${res.data?['success']}' == 'true';
-      if (!ok) {
-        debugPrint('[BugReport] прямая отправка: ${res.data?['message']}');
-      }
-      return ok;
-    } catch (e) {
-      debugPrint('[BugReport] прямая отправка не удалась: $e');
-      return false;
     }
   }
 

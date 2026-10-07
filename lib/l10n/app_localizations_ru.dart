@@ -641,21 +641,21 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get bugReportSettingsHint =>
-      'Сообщение разработчику с файлом диагностики';
+      'Письмо разработчику с файлом диагностики';
 
   @override
   String get bugReportTitle => 'Сообщить об ошибке';
 
   @override
   String bugReportSubtitle(String email) {
-    return 'Отчёт уйдёт разработчику на $email';
+    return 'Письмо уйдёт на $email';
   }
 
   @override
   String get bugReportHint => 'Что пошло не так? Что вы делали перед этим?';
 
   @override
-  String get bugReportIncluded => 'В отчёт попадёт';
+  String get bugReportIncluded => 'В письмо попадёт';
 
   @override
   String get bugReportIncDevice =>
@@ -670,7 +670,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get bugReportAttachPagesHint =>
-      'Помогает починить разбор данных. В них ваше ФИО, оценки и список работ. Отчёт идёт через сервис FormSubmit и хранится там до 30 дней';
+      'Помогает починить разбор данных. В них есть ваше ФИО и список работ';
 
   @override
   String get bugReportScreens => 'Скриншоты';
@@ -683,14 +683,11 @@ class AppLocalizationsRu extends AppLocalizations {
       'Снимок экрана, где вы открыли отчёт, уже приложен. Уберите его, если на нём личное';
 
   @override
-  String get bugReportSent => 'Отчёт отправлен, спасибо!';
-
-  @override
-  String get bugReportSend => 'Отправить';
+  String get bugReportSend => 'Составить письмо';
 
   @override
   String bugReportFailed(String email) {
-    return 'Не удалось отправить. Адрес $email скопирован';
+    return 'Не удалось открыть почту. Адрес $email скопирован';
   }
 
   @override
