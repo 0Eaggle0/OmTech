@@ -30,25 +30,40 @@ class LkController extends ChangeNotifier {
   LkStatus _status = LkStatus.disconnected;
   StudentProfile? _profile;
   String? _errorMessage;
+  bool _interactiveLogin = false;
+  DateTime? _lastSessionCheck;
+
+  /// Чаще этого сессию при возврате в приложение не проверяем.
+  static const _resumeCheckInterval = Duration(minutes: 10);
 
   LkController({
     LkSession? session,
     LkCredentialsStorage? credentials,
   })  : _session = session ?? LkSession(),
-        _credentials = credentials ?? LkCredentialsStorage();
+        _credentials = credentials ?? LkCredentialsStorage() {
+    _session.onCredentialsRejected = _onCredentialsRejected;
+  }
 
   /// Создаёт контроллер с персистентной сессией (cookies на диске) и
   /// сразу подтягивает кэшированный профиль, чтобы UI заполнялся без сети.
+  ///
+  /// Если креды сохранены, ЛК сразу считается подключённым: экраны работают
+  /// на кэше, а протухшую сессию [LkSession] сама восстановит при первом
+  /// запросе. «Подключение…» при каждом запуске больше не показываем.
   static Future<LkController> create({
     LkCredentialsStorage? credentials,
   }) async {
-    final session = await LkSession.create();
-    final ctrl = LkController(session: session, credentials: credentials);
+    final storage = credentials ?? LkCredentialsStorage();
+    final session = await LkSession.create(credentials: storage.read);
+    final ctrl = LkController(session: session, credentials: storage);
     try {
       final cached = await ctrl.gradesApi.readCache();
       if (cached != null) {
         ctrl._profile = cached.profile;
       }
+    } catch (_) {}
+    try {
+      if (await storage.read() != null) ctrl._status = LkStatus.connected;
     } catch (_) {}
     return ctrl;
   }
@@ -59,37 +74,58 @@ class LkController extends ChangeNotifier {
   bool get isConnected => _status == LkStatus.connected;
   LkSession get session => _session;
 
-  /// Пытается восстановить сессию: читает креды из secure storage и логинится.
-  /// Запускается из main.dart при старте приложения.
-  ///
-  /// Быстрый путь: если cookies на диске ещё валидны, переходим в `connected`
-  /// после одного HTTP-запроса (~300мс) вместо полного цикла логина (~3 сек).
+  /// Текущий/последний вход начат пользователем (форма входа), а не
+  /// автологином. Плашка подключения показывается только для таких.
+  bool get interactiveLogin => _interactiveLogin;
+
+  /// Тихо восстанавливает сессию при старте приложения. Статус не трогает:
+  /// при сохранённых кредах он уже `connected` (см. [create]). Сеть
+  /// недоступна — ничего страшного, работаем на кэше. Выход в «войдите
+  /// заново» — только если сервер отверг пароль.
   Future<void> tryAutoLogin() async {
     final creds = await _credentials.read();
     if (creds == null) return;
-
-    _status = LkStatus.connecting;
-    _errorMessage = null;
-    notifyListeners();
-
-    final check = await _session.checkSession();
-    if (check == SessionCheck.valid) {
+    if (_status != LkStatus.connected) {
       _status = LkStatus.connected;
       notifyListeners();
-      // Подтягиваем профиль в фоне, чтобы обновить кэш.
-      unawaited(_refreshProfileSilently());
-      return;
     }
-    if (check == SessionCheck.unknown) {
-      // Сеть не ответила — о сессии судить нельзя, полный логин только
-      // потратит время. Ждём ручного входа.
-      _status = LkStatus.disconnected;
-      notifyListeners();
-      return;
-    }
+    await _validateSilently();
+  }
 
-    await _doLogin(creds.username, creds.password,
-        persist: false, silent: true);
+  /// Вызывается при возврате приложения на экран: прогреваем сессию заранее,
+  /// чтобы первый тап по оценкам не ждал SSO-мост.
+  Future<void> refreshIfStale() async {
+    if (!isConnected) return;
+    final last = _lastSessionCheck;
+    if (last != null &&
+        DateTime.now().difference(last) < _resumeCheckInterval) {
+      return;
+    }
+    await _validateSilently();
+  }
+
+  Future<void> _validateSilently() async {
+    _lastSessionCheck = DateTime.now();
+    final check = await _session.checkSession();
+    if (check == SessionCheck.unknown) return; // офлайн — живём на кэше
+    if (check == SessionCheck.invalid) {
+      try {
+        if (!await _session.reauthenticate()) return;
+      } catch (_) {
+        // Отвергнутый пароль обработает _onCredentialsRejected, сетевой
+        // сбой — не повод выкидывать пользователя из ЛК.
+        return;
+      }
+    }
+    if (_profile == null) unawaited(_refreshProfileSilently());
+  }
+
+  /// Пароль сменили на сайте — дальше без пользователя не войти.
+  void _onCredentialsRejected() {
+    _interactiveLogin = false;
+    _status = LkStatus.error;
+    _errorMessage = 'Пароль от ЛК не подходит — войдите заново';
+    notifyListeners();
   }
 
   Future<void> _refreshProfileSilently() async {
@@ -100,27 +136,19 @@ class LkController extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Вызывается из UI диалога логина.
+  /// Вход из формы: креды сохраняются только после успешного логина.
   Future<bool> login(String username, String password) async {
-    return _doLogin(username, password, persist: true);
-  }
-
-  /// [silent] — вход инициирован не пользователем (авто-логин при старте).
-  /// Такой сбой не должен всплывать баннером: просто остаёмся не подключены,
-  /// экраны ЛК сами покажут кнопку входа.
-  Future<bool> _doLogin(String username, String password,
-      {required bool persist, bool silent = false}) async {
+    _interactiveLogin = true;
     _status = LkStatus.connecting;
     _errorMessage = null;
     notifyListeners();
 
     try {
       await _session.login(username, password);
-      if (persist) {
-        await _credentials.save(
-          LkCredentials(username: username, password: password),
-        );
-      }
+      await _credentials.save(
+        LkCredentials(username: username, password: password),
+      );
+      _lastSessionCheck = DateTime.now();
       // Сессия активна — сразу переходим в connected, не дожидаясь профиля.
       // Профиль подтянем в фоне (UI умеет рендериться с _profile == null).
       _status = LkStatus.connected;
@@ -129,18 +157,18 @@ class LkController extends ChangeNotifier {
       return true;
     } on LkLoginException catch (e) {
       debugPrint('[LK] логин не удался: ${e.diagnostics ?? e.result.name}');
-      _fail(e.message, silent: silent);
+      _fail(e.message);
       return false;
     } catch (e) {
       debugPrint('[LK] логин не удался: $e');
-      _fail('Не удалось войти, попробуйте позже', silent: silent);
+      _fail('Не удалось войти, попробуйте позже');
       return false;
     }
   }
 
-  void _fail(String message, {required bool silent}) {
-    _status = silent ? LkStatus.disconnected : LkStatus.error;
-    _errorMessage = silent ? null : message;
+  void _fail(String message) {
+    _status = LkStatus.error;
+    _errorMessage = message;
     notifyListeners();
   }
 

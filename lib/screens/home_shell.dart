@@ -250,14 +250,19 @@ class _LkConnectionBannerState extends State<_LkConnectionBanner> {
     _lastStatus = status;
     _hideTimer?.cancel();
 
+    // Тихое восстановление сессии плашку не трогает — только вход из формы
+    // и отвергнутый пароль (он приходит и без «подключения»).
     if (status == LkStatus.connecting) {
+      if (!lk.interactiveLogin) return;
       setState(() => _bannerState = _BannerState.connecting);
-    } else if (prev == LkStatus.connecting && status == LkStatus.connected) {
+    } else if (prev == LkStatus.connecting &&
+        status == LkStatus.connected &&
+        lk.interactiveLogin) {
       setState(() => _bannerState = _BannerState.success);
       _hideTimer = Timer(const Duration(seconds: 2), () {
         if (mounted) setState(() => _bannerState = _BannerState.hidden);
       });
-    } else if (prev == LkStatus.connecting && status == LkStatus.error) {
+    } else if (status == LkStatus.error) {
       setState(() {
         _bannerState = _BannerState.error;
         _errorMessage = lk.errorMessage;

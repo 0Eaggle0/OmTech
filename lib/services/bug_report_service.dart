@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app_version.dart';
 import '../controllers/group_controller.dart';
@@ -14,6 +15,7 @@ import '../controllers/lk_controller.dart';
 import '../controllers/locale_controller.dart';
 import '../controllers/theme_controller.dart';
 import 'app_log.dart';
+import 'background_worker.dart';
 import 'lk/lk_report_work_api.dart';
 
 enum BugReportDelivery { email, share, failed }
@@ -109,6 +111,22 @@ class BugReportService {
     }
   }
 
+  /// Когда и с каким итогом последний раз отработал фоновый воркер —
+  /// главный вопрос, если «уведомления не приходят».
+  static Future<String> _backgroundState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      final ms = prefs.getInt(bgLastRunKey);
+      if (ms == null) return 'Фон: ни разу не запускался';
+      final at = DateTime.fromMillisecondsSinceEpoch(ms);
+      return 'Фон: ${at.toIso8601String()} — '
+          '${prefs.getString(bgLastResultKey) ?? '?'}';
+    } catch (_) {
+      return 'Фон: —';
+    }
+  }
+
   static Future<List<String>> _buildAttachments({
     required String state,
     required LkReportWorkApi reportApi,
@@ -130,6 +148,7 @@ class BugReportService {
       ..writeln('OmTech — отчёт об ошибке')
       ..writeln('Время: ${now.toIso8601String()}')
       ..writeln(state)
+      ..writeln(await _backgroundState())
       ..writeln()
       ..writeln('── Описание ──')
       ..writeln(text.isEmpty ? '(не заполнено)' : text)

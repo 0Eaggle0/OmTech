@@ -115,6 +115,9 @@ class NotificationService {
 
   Future<void> checkAll(LkController lk) async {
     if (!lk.isConnected) return;
+    // Снимки-baseline мог обновить фоновый изолят — без reload UI сравнил бы
+    // с устаревшей копией из своего кэша prefs и повторил уведомление.
+    await (await SharedPreferences.getInstance()).reload();
     await Future.wait([
       checkContactWork(lk),
       checkReportWorks(lk),

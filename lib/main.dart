@@ -59,19 +59,22 @@ Future<void> main() async {
   // настроек, а фоновые проверки берут те же значения прямо из prefs.
   unawaited(settingsController.load());
 
-  // Ежечасная фоновая проверка уведомлений. На Android реальная периодичность
+  // Фоновая проверка уведомлений раз в полчаса. На Android реальная периодичность
   // соблюдается приближённо (Doze, App Standby). На iOS — best-effort.
   unawaited(_initBackgroundWorker());
 
   // При первом входе в ЛК — запрашиваем разрешение и проверяем обновления.
+  // С сохранёнными кредами ЛК подключён ещё до слушателя — проверяем сразу.
   var notifChecked = false;
-  lkController.addListener(() {
-    if (!notifChecked && lkController.isConnected) {
-      notifChecked = true;
-      unawaited(NotificationService.instance.requestPermission());
-      unawaited(NotificationService.instance.checkAll(lkController));
-    }
-  });
+  void checkNotificationsOnce() {
+    if (notifChecked || !lkController.isConnected) return;
+    notifChecked = true;
+    unawaited(NotificationService.instance.requestPermission());
+    unawaited(NotificationService.instance.checkAll(lkController));
+  }
+
+  lkController.addListener(checkNotificationsOnce);
+  checkNotificationsOnce();
 
   // Тихий авто-логин в ЛК — не блокирует запуск.
   unawaited(lkController.tryAutoLogin());
@@ -97,14 +100,16 @@ Future<void> _initBackgroundWorker() async {
   try {
     await Workmanager().initialize(backgroundDispatcher);
     await Workmanager().registerPeriodicTask(
-      hourlyCheckTask,
-      hourlyCheckTask,
-      frequency: const Duration(hours: 1),
+      lkCheckTask,
+      lkCheckTask,
+      frequency: backgroundCheckInterval,
       // Без задержки WorkManager выполняет первый прогон сразу после
       // регистрации — параллельно с авто-логином, в одну папку cookies.
       initialDelay: const Duration(minutes: 15),
       constraints: Constraints(networkType: NetworkType.connected),
-      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+      // update, а не keep: у уже установленных версий осталась бы старая
+      // часовая задача.
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
     );
   } catch (_) {
     // На неподдерживаемых платформах (desktop) workmanager не работает —

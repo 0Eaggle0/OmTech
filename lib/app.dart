@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'controllers/lk_controller.dart';
 import 'controllers/locale_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'l10n/app_localizations.dart';
@@ -27,14 +28,30 @@ class _CampusAppState extends State<CampusApp> {
     super.initState();
     // Отмечаем активность UI, чтобы фоновый воркер не логинился параллельно
     // и не портил cookie-jar, общий у двух изолятов.
-    unawaited(markUiActive());
+    _startHeartbeat();
     _lifecycle = AppLifecycleListener(
-      onResume: () => unawaited(markUiActive()),
+      onResume: () {
+        _startHeartbeat();
+        unawaited(context.read<LkController>().refreshIfStale());
+      },
+      onPause: () => _heartbeat?.cancel(),
     );
+  }
+
+  /// Пока приложение на экране, раз в минуту обновляем метку активности —
+  /// одной отметки при старте хватало только на первые 2 минуты.
+  Timer? _heartbeat;
+
+  void _startHeartbeat() {
+    _heartbeat?.cancel();
+    unawaited(markUiActive());
+    _heartbeat = Timer.periodic(
+        const Duration(minutes: 1), (_) => unawaited(markUiActive()));
   }
 
   @override
   void dispose() {
+    _heartbeat?.cancel();
     _lifecycle.dispose();
     super.dispose();
   }

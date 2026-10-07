@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'cp1251.dart';
+import 'lk_credentials_storage.dart';
 
 /// Возможные исходы попытки логина.
 enum LkLoginResult { ok, invalidCredentials, networkError }
@@ -27,7 +28,12 @@ class LkLoginException implements Exception {
   /// Технические подробности для debug-лога.
   final String? diagnostics;
 
-  LkLoginException(this.result, this.message, {this.diagnostics});
+  /// Запрос упёрся в форму логина: сессия протухла, но креды, скорее всего,
+  /// в порядке — такой сбой лечится перелогином.
+  final bool sessionExpired;
+
+  LkLoginException(this.result, this.message,
+      {this.diagnostics, this.sessionExpired = false});
 
   @override
   String toString() =>
@@ -61,9 +67,23 @@ class LkSession {
   final Dio _dio;
   final CookieJar _cookieJar;
 
-  LkSession({Dio? dio, CookieJar? cookieJar})
-      : _dio = dio ?? Dio(),
-        _cookieJar = cookieJar ?? CookieJar() {
+  /// Откуда брать логин/пароль для тихого перелогина, когда сессия
+  /// протухла посреди работы. `null` — перелогин только по cookies.
+  final Future<LkCredentials?> Function()? _credentials;
+
+  /// Сервер отверг сохранённый пароль при тихом перелогине (пароль сменили
+  /// на сайте). Контроллер переводит ЛК в состояние «войдите заново».
+  void Function()? onCredentialsRejected;
+
+  Future<bool>? _reauthInFlight;
+
+  LkSession({
+    Dio? dio,
+    CookieJar? cookieJar,
+    Future<LkCredentials?> Function()? credentials,
+  })  : _dio = dio ?? Dio(),
+        _cookieJar = cookieJar ?? CookieJar(),
+        _credentials = credentials {
     _dio.options
       ..connectTimeout = const Duration(seconds: 20)
       ..receiveTimeout = const Duration(seconds: 20)
@@ -84,7 +104,10 @@ class LkSession {
   /// Создаёт сессию с персистентной банкой cookies на диске.
   /// Cookies лежат в `<appSupportDir>/lk_cookies/`, что переживает перезапуск
   /// приложения. Доступно как UI-изоляту, так и фоновому worker'у.
-  static Future<LkSession> create({Dio? dio}) async {
+  static Future<LkSession> create({
+    Dio? dio,
+    Future<LkCredentials?> Function()? credentials,
+  }) async {
     final dir = await getApplicationSupportDirectory();
     final cookiesPath = p.join(dir.path, 'lk_cookies');
     await Directory(cookiesPath).create(recursive: true);
@@ -92,7 +115,7 @@ class LkSession {
       ignoreExpires: false,
       storage: FileStorage('$cookiesPath${Platform.pathSeparator}'),
     );
-    return LkSession(dio: dio, cookieJar: jar);
+    return LkSession(dio: dio, cookieJar: jar, credentials: credentials);
   }
 
   // ─────────────────────────── Проверка сессии ───────────────────────────
@@ -366,10 +389,69 @@ class LkSession {
     }
   }
 
+  // ─────────────────────────── Тихий перелогин ───────────────────────────
+
+  LkLoginException _expired() => LkLoginException(
+      LkLoginResult.invalidCredentials, _msgSessionExpired,
+      sessionExpired: true);
+
+  /// Восстанавливает сессию без участия пользователя. PHPSESSID портала живёт
+  /// минут 15, а «remember me»-cookies Bitrix (`USER_REMEMBER=Y`) — неделями,
+  /// поэтому сначала пробуем только SSO-мост по ним, без пароля. Не вышло —
+  /// полный логин с сохранёнными кредами.
+  ///
+  /// Параллельные вызовы ждут один и тот же перелогин. `false` — восстановить
+  /// нечем (кредов нет). Бросает [LkLoginException], если сеть недоступна
+  /// или сервер отверг пароль.
+  Future<bool> reauthenticate() {
+    return _reauthInFlight ??= _reauth().whenComplete(() {
+      // Блоком: стрелка вернула бы сам Future, и whenComplete ждал бы себя.
+      _reauthInFlight = null;
+    });
+  }
+
+  Future<bool> _reauth() async {
+    if (await _hasBitrixLoginCookie() &&
+        await _ensureUpSession(attempts: 1)) {
+      debugPrint('[LK SSO] перелогин по cookies: ok');
+      return true;
+    }
+    final creds = await _credentials?.call();
+    if (creds == null) return false;
+    try {
+      await login(creds.username, creds.password);
+      debugPrint('[LK SSO] перелогин паролем: ok');
+      return true;
+    } on LkLoginException catch (e) {
+      debugPrint(
+          '[LK SSO] перелогин не удался: ${e.diagnostics ?? e.result.name}');
+      if (e.result == LkLoginResult.invalidCredentials) {
+        onCredentialsRejected?.call();
+      }
+      rethrow;
+    }
+  }
+
+  /// Выполняет запрос; если он упёрся в протухшую сессию — один раз
+  /// перелогинивается и повторяет.
+  Future<T> _withReauth<T>(Future<T> Function(bool retry) send) async {
+    try {
+      return await send(false);
+    } on LkLoginException catch (e) {
+      if (!e.sessionExpired) rethrow;
+      debugPrint('[LK SSO] сессия истекла, тихий перелогин');
+      if (!await reauthenticate()) rethrow;
+      return send(true);
+    }
+  }
+
   // ───────────────────────────── Запросы ─────────────────────────────────
 
   /// GET страницы под `/index.php?r=...`, возвращает уже декодированный HTML.
-  Future<String> fetchHtml(String route) async {
+  Future<String> fetchHtml(String route) =>
+      _withReauth((_) => _fetchHtml(route));
+
+  Future<String> _fetchHtml(String route) async {
     final res = await _dio.get('$_upBaseUrl/index.php?r=$route');
     if (res.statusCode != 200) {
       throw LkLoginException(LkLoginResult.networkError, _msgServerDown,
@@ -377,8 +459,7 @@ class LkSession {
     }
     final finalUrl = res.realUri.toString();
     if (finalUrl.contains('/ecab/')) {
-      throw LkLoginException(
-          LkLoginResult.invalidCredentials, _msgSessionExpired);
+      throw _expired();
     }
     return _decodeBody(res);
   }
@@ -390,7 +471,10 @@ class LkSession {
   /// Cookie-jar после login уже содержит сессионную cookie на `.omgtu.ru`,
   /// так что отдельной авторизации не требуется. Если же страница
   /// внезапно вернула форму логина — кидаем «сессия истекла».
-  Future<String> fetchEcabHtml(String path) async {
+  Future<String> fetchEcabHtml(String path) =>
+      _withReauth((_) => _fetchEcabHtml(path));
+
+  Future<String> _fetchEcabHtml(String path) async {
     final url = _ecabUrl(path);
     final res = await _dio.get<List<int>>(
       url,
@@ -409,8 +493,7 @@ class LkSession {
     final bytes = res.data ?? const <int>[];
     final html = decodeCp1251(bytes);
     if (_looksLikeLoginPage(html)) {
-      throw LkLoginException(
-          LkLoginResult.invalidCredentials, _msgSessionExpired);
+      throw _expired();
     }
     return html;
   }
@@ -418,7 +501,10 @@ class LkSession {
   /// POST формы под `/ecab/...` (для AJAX-эндпоинтов Bitrix-портала).
   /// Используется для подгрузки секций vkr2.php, которые рендерятся
   /// jQuery `.load(url, data)` — а это именно POST с form-encoded телом.
-  Future<String> postEcabForm(String path, Map<String, String> form) async {
+  Future<String> postEcabForm(String path, Map<String, String> form) =>
+      _withReauth((_) => _postEcabForm(path, form));
+
+  Future<String> _postEcabForm(String path, Map<String, String> form) async {
     final url = _ecabUrl(path);
     final res = await _dio.post<List<int>>(
       url,
@@ -439,8 +525,7 @@ class LkSession {
     final bytes = res.data ?? const <int>[];
     final html = decodeCp1251(bytes);
     if (_looksLikeLoginPage(html)) {
-      throw LkLoginException(
-          LkLoginResult.invalidCredentials, _msgSessionExpired);
+      throw _expired();
     }
     return html;
   }
@@ -448,7 +533,21 @@ class LkSession {
   /// multipart POST под `/ecab/...` — загрузка файла отчётной работы.
   /// Таймауты шире общих: PDF до 10 МБ по мобильной сети за 20 с не уходит,
   /// а после отправки сервер ещё обрабатывает файл.
+  ///
+  /// Тело multipart после отправки не переиспользовать, поэтому для повтора
+  /// после перелогина заранее держим копию.
   Future<String> postEcabMultipart(
+    String path,
+    FormData data, {
+    ProgressCallback? onSendProgress,
+  }) {
+    final spare = data.clone();
+    return _withReauth((retry) => _postEcabMultipart(
+        path, retry ? spare : data,
+        onSendProgress: onSendProgress));
+  }
+
+  Future<String> _postEcabMultipart(
     String path,
     FormData data, {
     ProgressCallback? onSendProgress,
@@ -474,8 +573,7 @@ class LkSession {
     }
     final html = decodeCp1251(res.data ?? const <int>[]);
     if (_looksLikeLoginPage(html)) {
-      throw LkLoginException(
-          LkLoginResult.invalidCredentials, _msgSessionExpired);
+      throw _expired();
     }
     return html;
   }
@@ -498,6 +596,11 @@ class LkSession {
   /// (если внутри есть `/ecab/` — берём omgtu.ru, иначе — up.omgtu.ru).
   /// Referer по умолчанию подставляется под хост файла.
   Future<List<int>> downloadBytes(String relativeOrAbsoluteUrl,
+          {String? referer}) =>
+      _withReauth(
+          (_) => _downloadBytes(relativeOrAbsoluteUrl, referer: referer));
+
+  Future<List<int>> _downloadBytes(String relativeOrAbsoluteUrl,
       {String? referer}) async {
     final isEcab = relativeOrAbsoluteUrl.contains('/ecab/');
     final base = isEcab ? _ecabHost : _upBaseUrl;
@@ -527,8 +630,7 @@ class LkSession {
     //    (Content-Type обычно text/html, проверяем сигнатуру AUTH_FORM/USER_LOGIN).
     final finalUrl = res.realUri.toString();
     if (!isEcab && finalUrl.contains('/ecab/')) {
-      throw LkLoginException(
-          LkLoginResult.invalidCredentials, _msgSessionExpired);
+      throw _expired();
     }
     final ct = (res.headers.value('content-type') ?? '').toLowerCase();
     if (isEcab && ct.contains('text/html')) {
@@ -538,8 +640,7 @@ class LkSession {
           data.length > 4096 ? data.sublist(0, 4096) : data,
         );
         if (_looksLikeLoginPage(preview)) {
-          throw LkLoginException(
-              LkLoginResult.invalidCredentials, _msgSessionExpired);
+          throw _expired();
         }
       }
     }
