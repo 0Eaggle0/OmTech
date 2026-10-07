@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'lk/lk_credentials_storage.dart';
 import 'lk/lk_session.dart';
 import 'notification_service.dart';
+import 'app_prefs.dart';
 
 /// Имя задачи осталось с часовых времён: по нему WorkManager находит уже
 /// зарегистрированную задачу и обновляет её, а не заводит вторую.
@@ -29,7 +29,7 @@ const Duration _uiActiveWindow = Duration(minutes: 2);
 /// пока приложение открыто.
 Future<void> markUiActive() async {
   try {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setInt(_uiHeartbeatKey, DateTime.now().millisecondsSinceEpoch);
   } catch (_) {
     // Не критично: воркер просто отработает как обычно.
@@ -52,6 +52,7 @@ void backgroundDispatcher() {
 /// Итог прогона: ok / ui_active / no_creds / auth_failed / network / error.
 Future<String> _runChecks() async {
   try {
+    await migrateAppPrefs();
     if (await _uiRecentlyActive()) return 'ui_active';
 
     final storage = LkCredentialsStorage();
@@ -86,7 +87,7 @@ Future<String> _runChecks() async {
 
 Future<void> _recordRun(String result) async {
   try {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setInt(bgLastRunKey, DateTime.now().millisecondsSinceEpoch);
     await prefs.setString(bgLastResultKey, result);
   } catch (_) {}
@@ -94,8 +95,8 @@ Future<void> _recordRun(String result) async {
 
 Future<bool> _uiRecentlyActive() async {
   try {
-    final prefs = await SharedPreferences.getInstance();
-    final ms = prefs.getInt(_uiHeartbeatKey);
+    final prefs = appPrefs;
+    final ms = await prefs.getInt(_uiHeartbeatKey);
     if (ms == null) return false;
     final since =
         DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ms));

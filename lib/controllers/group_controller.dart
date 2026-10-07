@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/group.dart';
+import '../services/app_prefs.dart';
 
 /// Хранит выбранную учебную группу и сохраняет её между запусками.
 class GroupController extends ChangeNotifier {
@@ -24,9 +25,9 @@ class GroupController extends ChangeNotifier {
   bool get hasGroup => _group != null;
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final id = prefs.getInt(_idKey);
-    final label = prefs.getString(_labelKey);
+    final prefs = appPrefs;
+    final id = await prefs.getInt(_idKey);
+    final label = await prefs.getString(_labelKey);
     if (id != null && label != null) {
       _group = Group(id: id, label: label, description: '');
     }
@@ -37,8 +38,8 @@ class GroupController extends ChangeNotifier {
   /// Подгруппа с переносом двух старых настроек экрана расписания.
   /// Переносим только один раз: после переноса старые ключи удаляем, иначе
   /// они каждый запуск перетирали бы выбор, сделанный в профиле.
-  Future<int?> _readSubgroup(SharedPreferences prefs) async {
-    final own = prefs.getInt(_subgroupKey);
+  Future<int?> _readSubgroup(SharedPreferencesAsync prefs) async {
+    final own = await prefs.getInt(_subgroupKey);
     if (own == 1 || own == 2) {
       await _dropLegacyKeys(prefs);
       return own;
@@ -46,14 +47,14 @@ class GroupController extends ChangeNotifier {
 
     // Старый bool «только моя подгруппа» переносить не из чего: он опирался
     // на эту же `_subgroupKey`, которой тут нет. Просто убираем ключ.
-    final legacy = prefs.getInt(_legacyScheduleFilterKey);
+    final legacy = await prefs.getInt(_legacyScheduleFilterKey);
     await _dropLegacyKeys(prefs);
     if (legacy != 1 && legacy != 2) return null;
     await prefs.setInt(_subgroupKey, legacy!);
     return legacy;
   }
 
-  Future<void> _dropLegacyKeys(SharedPreferences prefs) async {
+  Future<void> _dropLegacyKeys(SharedPreferencesAsync prefs) async {
     await prefs.remove(_legacyScheduleFilterKey);
     await prefs.remove(_legacyOnlyMineKey);
   }
@@ -61,7 +62,7 @@ class GroupController extends ChangeNotifier {
   Future<void> select(Group group) async {
     _group = group;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setInt(_idKey, group.id);
     await prefs.setString(_labelKey, group.label);
   }
@@ -69,7 +70,7 @@ class GroupController extends ChangeNotifier {
   Future<void> setSubgroup(int? sg) async {
     _subgroup = (sg == 1 || sg == 2) ? sg : null;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     if (_subgroup != null) {
       await prefs.setInt(_subgroupKey, _subgroup!);
     } else {

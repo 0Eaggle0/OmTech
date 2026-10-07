@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/student_record.dart';
 import 'lk_grades_parser.dart';
 import 'lk_session.dart';
+import '../app_prefs.dart';
 
 /// Высокоуровневый сервис: ходит за HTML зачётки через [LkSession],
 /// парсит её, кэширует JSON в SharedPreferences.
@@ -36,8 +36,8 @@ class LkGradesApi {
   }
 
   Future<StudentRecord?> readCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_cacheKey);
+    final prefs = appPrefs;
+    final raw = await prefs.getString(_cacheKey);
     if (raw == null || raw.isEmpty) return null;
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
@@ -48,19 +48,19 @@ class LkGradesApi {
   }
 
   Future<DateTime?> readCacheTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final ms = prefs.getInt(_cacheTimeKey);
+    final prefs = appPrefs;
+    final ms = await prefs.getInt(_cacheTimeKey);
     return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
   Future<void> clearCache() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.remove(_cacheKey);
     await prefs.remove(_cacheTimeKey);
   }
 
   Future<void> _saveCache(StudentRecord record) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setString(_cacheKey, jsonEncode(record.toJson()));
     await prefs.setInt(
         _cacheTimeKey, DateTime.now().millisecondsSinceEpoch);

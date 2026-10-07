@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -85,7 +87,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _cacheSize = null;
     });
     messenger.showSnackBar(SnackBar(content: Text(l.settingsCacheCleared)));
-    _measureCache();
+    unawaited(_measureCache());
   }
 
   void _showTestMenu(AppLocalizations l) {

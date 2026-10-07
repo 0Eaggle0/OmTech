@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/app_nav_controller.dart';
 import '../../controllers/group_controller.dart';
@@ -33,6 +32,7 @@ import '../../widgets/tilt_card.dart';
 import '../grades/grades_screen.dart';
 import '../news/news_detail_screen.dart';
 import '../search/search_screen.dart';
+import '../../services/app_prefs.dart';
 
 class DashboardScreen extends StatefulWidget {
   final ValueChanged<int> onOpenTab;
@@ -71,9 +71,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadUserName() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     // Новый формат: отдельное поле имени.
-    final firstName = prefs.getString('user_first_name') ?? '';
+    final firstName = await prefs.getString('user_first_name') ?? '';
     if (firstName.isNotEmpty) {
       if (mounted) setState(() { _firstName = firstName; });
       return;
@@ -81,7 +81,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Легаси: user_name.
     // Формат из ЛК: «РОГОЗА Владислав Юрьевич» — первое слово CAPS = фамилия,
     // имя на второй позиции. Ручной ввод обычно начинается с имени.
-    final saved = prefs.getString('user_name') ?? '';
+    final saved = await prefs.getString('user_name') ?? '';
     if (saved.isNotEmpty) {
       final parts = saved.trim().split(' ');
       final name = parts.length >= 2 ? parts[1] : (parts.isNotEmpty ? parts[0] : '');

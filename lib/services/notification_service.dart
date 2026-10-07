@@ -11,6 +11,7 @@ import 'lk/lk_contact_work_api.dart';
 import 'lk/lk_grades_api.dart';
 import 'lk/lk_report_work_api.dart';
 import 'lk/lk_session.dart';
+import 'app_prefs.dart';
 
 class NotificationService {
   NotificationService._();
@@ -38,8 +39,8 @@ class NotificationService {
   /// бы один и тот же id, затирая прошлое непрочитанное уведомление.
   /// Диапазон 100..999 по кругу — больше уведомлений в шторке и не держат.
   Future<int> _id() async {
-    final prefs = await SharedPreferences.getInstance();
-    final current = prefs.getInt(_keyNextId) ?? 100;
+    final prefs = appPrefs;
+    final current = await prefs.getInt(_keyNextId) ?? 100;
     final next = current >= 999 ? 100 : current + 1;
     await prefs.setInt(_keyNextId, next);
     return current;
@@ -51,14 +52,14 @@ class NotificationService {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosInit = DarwinInitializationSettings();
     await _plugin.initialize(
-      const InitializationSettings(android: androidInit, iOS: iosInit),
+      settings: const InitializationSettings(android: androidInit, iOS: iosInit),
     );
   }
 
   Future<void> requestPermission() async {
     await init();
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_keyPermAsked) == true) return;
+    final prefs = appPrefs;
+    if (await prefs.getBool(_keyPermAsked) == true) return;
     await prefs.setBool(_keyPermAsked, true);
 
     await _plugin
@@ -91,9 +92,9 @@ class NotificationService {
     bool respectPrefs = true,
   }) async {
     if (respectPrefs) {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = appPrefs;
       final key = SettingsController.prefKeyFor(_categoryOf(channelId));
-      if (prefs.getBool(key) == false) return;
+      if (await prefs.getBool(key) == false) return;
     }
     await init();
     final details = NotificationDetails(
@@ -108,16 +109,18 @@ class NotificationService {
       ),
       iOS: const DarwinNotificationDetails(),
     );
-    await _plugin.show(await _id(), title, body, details);
+    await _plugin.show(
+      id: await _id(),
+      title: title,
+      body: body,
+      notificationDetails: details,
+    );
   }
 
   // ─────────────────────── checks ─────────────────────────────
 
   Future<void> checkAll(LkController lk) async {
     if (!lk.isConnected) return;
-    // Снимки-baseline мог обновить фоновый изолят — без reload UI сравнил бы
-    // с устаревшей копией из своего кэша prefs и повторил уведомление.
-    await (await SharedPreferences.getInstance()).reload();
     await Future.wait([
       checkContactWork(lk),
       checkReportWorks(lk),
@@ -166,8 +169,8 @@ class NotificationService {
       final disciplines = await api.readDisciplinesCache();
       if (disciplines == null || disciplines.isEmpty) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_keyTasksSnapshot);
+      final prefs = appPrefs;
+      final raw = await prefs.getString(_keyTasksSnapshot);
       final current = {
         for (final d in disciplines)
           if (d.id != null) d.id!: d.taskCount
@@ -229,8 +232,8 @@ class NotificationService {
       final result = await api.readCache();
       if (result == null) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_keyReportSnapshot);
+      final prefs = appPrefs;
+      final raw = await prefs.getString(_keyReportSnapshot);
 
       // Первый запуск — просто фиксируем baseline.
       if (raw == null) {
@@ -269,7 +272,7 @@ class NotificationService {
   }
 
   Future<void> _saveReportSnapshot(
-      SharedPreferences prefs, List<ReportWork> works) async {
+      SharedPreferencesAsync prefs, List<ReportWork> works) async {
     final map = {for (final w in works) w.fileId: w.status.name};
     await prefs.setString(_keyReportSnapshot, jsonEncode(map));
   }
@@ -283,8 +286,8 @@ class NotificationService {
       final record = await api.readCache();
       if (record == null) return;
 
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_keyGradesSnapshot);
+      final prefs = appPrefs;
+      final raw = await prefs.getString(_keyGradesSnapshot);
 
       if (raw == null) {
         await _saveGradesSnapshot(prefs, record.panels
@@ -321,7 +324,7 @@ class NotificationService {
       panel.sections.expand((s) => s.grades).length;
 
   Future<void> _saveGradesSnapshot(
-      SharedPreferences prefs, List<MapEntry<int, int>> entries) async {
+      SharedPreferencesAsync prefs, List<MapEntry<int, int>> entries) async {
     final map = {for (final e in entries) '${e.key}': e.value};
     await prefs.setString(_keyGradesSnapshot, jsonEncode(map));
   }

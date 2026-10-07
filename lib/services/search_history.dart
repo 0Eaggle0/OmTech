@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/schedule_entity.dart';
+import 'app_prefs.dart';
 
 /// Запись истории поиска — то же, что `ScheduleEntity`, но с собственной
 /// сериализацией: `ScheduleEntity` не обязана уметь превращаться в JSON.
@@ -61,8 +61,8 @@ class SearchHistoryService {
   }
 
   Future<List<SearchHistoryEntry>> _readStored() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getStringList(_key) ?? const [];
+    final prefs = appPrefs;
+    final raw = await prefs.getStringList(_key) ?? const [];
     return raw
         .map((s) {
           try {
@@ -92,7 +92,7 @@ class SearchHistoryService {
   /// [type] — стереть только записи этого типа; `null` — всю историю.
   Future<void> clearAll({EntityType? type}) async {
     if (type == null) {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = appPrefs;
       await prefs.remove(_key);
       return;
     }
@@ -102,7 +102,7 @@ class SearchHistoryService {
   }
 
   Future<void> _write(List<SearchHistoryEntry> list) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setStringList(
       _key,
       list.map((e) => jsonEncode(e.toJson())).toList(),

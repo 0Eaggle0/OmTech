@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/group_controller.dart';
 import '../../controllers/lk_controller.dart';
@@ -23,6 +23,7 @@ import '../../widgets/sliding_toggle.dart';
 import '../../widgets/status_pill.dart';
 import '../search/search_screen.dart';
 import '../settings/settings_screen.dart';
+import '../../services/app_prefs.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -70,13 +71,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final avatarPath = prefs.getString(_avatarKey);
+    final prefs = appPrefs;
+    final avatarPath = await prefs.getString(_avatarKey);
 
     // Новый формат: три отдельных поля.
-    final fn = prefs.getString(_firstNameKey) ?? '';
-    final ln = prefs.getString(_lastNameKey) ?? '';
-    final pt = prefs.getString(_patronymicKey) ?? '';
+    final fn = await prefs.getString(_firstNameKey) ?? '';
+    final ln = await prefs.getString(_lastNameKey) ?? '';
+    final pt = await prefs.getString(_patronymicKey) ?? '';
 
     if (fn.isNotEmpty || ln.isNotEmpty) {
       if (!mounted) return;
@@ -90,7 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     // Легаси: user_name — попробуем разбить и авто-мигрировать в новые ключи.
-    final legacy = prefs.getString(_legacyNameKey) ?? '';
+    final legacy = await prefs.getString(_legacyNameKey) ?? '';
     if (legacy.isNotEmpty) {
       final parts = legacy.trim().split(' ');
       final ln = parts.isNotEmpty ? parts[0] : '';
@@ -131,7 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveName(String lastName, String firstName, String patronymic) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setString(_lastNameKey, lastName);
     await prefs.setString(_firstNameKey, firstName);
     await prefs.setString(_patronymicKey, patronymic);
@@ -508,12 +509,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text(l.lkConnected)),
                     );
-                    _loadProfile();
+                    unawaited(_loadProfile());
                     // Автозаполнение группы после логина.
                     if (context.mounted) {
-                      context.read<LkController>().autoFillGroupIfNeeded(
+                      unawaited(context.read<LkController>().autoFillGroupIfNeeded(
                         context.read<GroupController>(),
-                      );
+                      ));
                     }
                   }
                 },
@@ -551,7 +552,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (ok == true) {
       await lk.logout();
-      if (mounted) _loadProfile();
+      if (mounted) unawaited(_loadProfile());
     }
   }
 

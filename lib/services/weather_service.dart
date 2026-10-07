@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'app_prefs.dart';
 
 /// Текущая погода в Омске.
 class WeatherInfo {
@@ -57,8 +58,8 @@ class WeatherService {
   WeatherService({Dio? client}) : _client = client ?? Dio();
 
   Future<WeatherInfo?> fetch() async {
-    final prefs = await SharedPreferences.getInstance();
-    final cached = _readCache(prefs);
+    final prefs = appPrefs;
+    final cached = await _readCache(prefs);
     if (cached != null &&
         DateTime.now().difference(cached.fetchedAt) < _ttl) {
       return cached;
@@ -96,8 +97,8 @@ class WeatherService {
     }
   }
 
-  WeatherInfo? _readCache(SharedPreferences prefs) {
-    final raw = prefs.getString(_cacheKey);
+  Future<WeatherInfo?> _readCache(SharedPreferencesAsync prefs) async {
+    final raw = await prefs.getString(_cacheKey);
     if (raw == null) return null;
     try {
       return WeatherInfo.fromJson(jsonDecode(raw) as Map<String, dynamic>);

@@ -15,6 +15,7 @@ import 'controllers/schedule_nav_controller.dart';
 import 'controllers/settings_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'services/app_log.dart';
+import 'services/app_prefs.dart';
 import 'services/background_worker.dart';
 import 'services/news_service.dart';
 import 'services/notification_service.dart';
@@ -31,6 +32,9 @@ Future<void> main() async {
   ]);
 
   await initializeDateFormatting('ru');
+
+  // До первого чтения настроек: переносит их из старого SharedPreferences.
+  await migrateAppPrefs();
 
   final themeController = ThemeController();
   final groupController = GroupController();

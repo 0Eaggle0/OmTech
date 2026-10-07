@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n/app_localizations.dart';
 import '../services/background_worker.dart';
 import '../services/battery_optimization.dart';
 import '../theme/app_glass.dart';
+import '../services/app_prefs.dart';
 
 /// Пункт настроек «Фоновая работа»: разрешена ли она системой и когда
 /// фоновая проверка ЛК последний раз отработала.
@@ -40,15 +40,13 @@ class _BackgroundWorkTileState extends State<BackgroundWorkTile> {
 
   Future<void> _refresh() async {
     final allowed = await BatteryOptimization.isIgnoring();
-    final prefs = await SharedPreferences.getInstance();
-    // Время прогона пишет фоновый изолят — кэш prefs UI о нём не знает.
-    await prefs.reload();
-    final ms = prefs.getInt(bgLastRunKey);
+    final ms = await appPrefs.getInt(bgLastRunKey);
+    final result = await appPrefs.getString(bgLastResultKey);
     if (!mounted) return;
     setState(() {
       _allowed = allowed;
       _lastRun = ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
-      _lastResult = prefs.getString(bgLastResultKey);
+      _lastResult = result;
     });
   }
 

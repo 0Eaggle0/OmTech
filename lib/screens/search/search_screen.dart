@@ -165,7 +165,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _removeRecent(SearchHistoryEntry entry) async {
     await _historyService.remove(entry);
-    _loadRecent();
+    unawaited(_loadRecent());
   }
 
   Future<void> _clearRecent() async {

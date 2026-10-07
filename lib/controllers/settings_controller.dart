@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/app_prefs.dart';
 
 /// Категория уведомлений. Совпадает с каналами `NotificationService`.
 enum NotifCategory { tasks, reports, grades }
@@ -25,9 +25,9 @@ class SettingsController extends ChangeNotifier {
   bool isEnabled(NotifCategory c) => _enabled[c] ?? true;
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     for (final c in NotifCategory.values) {
-      _enabled[c] = prefs.getBool(prefKeyFor(c)) ?? true;
+      _enabled[c] = await prefs.getBool(prefKeyFor(c)) ?? true;
     }
     notifyListeners();
   }
@@ -35,7 +35,7 @@ class SettingsController extends ChangeNotifier {
   Future<void> setEnabled(NotifCategory c, bool value) async {
     _enabled[c] = value;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setBool(prefKeyFor(c), value);
   }
 }

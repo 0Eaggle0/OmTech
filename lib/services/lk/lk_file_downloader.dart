@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -27,11 +28,12 @@ Future<void> openWorkFile(
   final messenger = ScaffoldMessenger.of(context);
   final navigator = Navigator.of(context, rootNavigator: true);
 
-  showDialog<void>(
+  // Не ждём: диалог закрывается через navigator.pop(), когда файл скачан.
+  unawaited(showDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (_) => const _DownloadProgressDialog(),
-  );
+  ));
 
   try {
     final path = await _downloadToTemp(session, file);
@@ -42,7 +44,7 @@ Future<void> openWorkFile(
     if (result.type != ResultType.done) {
       // Фолбэк: системное меню «Поделиться» — пользователь сможет
       // выбрать любое приложение, способное открыть файл.
-      await Share.shareXFiles([XFile(path)]);
+      await SharePlus.instance.share(ShareParams(files: [XFile(path)]));
     }
   } catch (e) {
     if (navigator.canPop()) navigator.pop();
@@ -69,11 +71,12 @@ Future<void> saveWorkFile(
   final messenger = ScaffoldMessenger.of(context);
   final navigator = Navigator.of(context, rootNavigator: true);
 
-  showDialog<void>(
+  // Не ждём: диалог закрывается через navigator.pop(), когда файл скачан.
+  unawaited(showDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (_) => const _DownloadProgressDialog(),
-  );
+  ));
 
   try {
     final path = await _downloadToTemp(session, file);

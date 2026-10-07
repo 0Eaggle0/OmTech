@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/lk_controller.dart';
 import 'lk/lk_file_downloader.dart';
@@ -9,6 +8,7 @@ import 'news_database.dart';
 import 'schedule_cache.dart';
 import 'search_history.dart';
 import 'teacher_contacts_service.dart';
+import 'app_prefs.dart';
 
 /// Подсчёт и очистка того, что приложение накопило на устройстве.
 ///
@@ -17,12 +17,10 @@ import 'teacher_contacts_service.dart';
 /// не должна выкидывать пользователя из ЛК и сбрасывать его настройки.
 class CacheManager {
   /// Префиксы ключей `SharedPreferences`, которые считаем кэшем.
-  /// Дублируют приватные константы владельцев (`ScheduleCache`,
-  /// `Lk*Api`, `SearchHistoryService`) — при переименовании там
-  /// поправить и здесь, иначе размер будет занижен.
+  /// Дублируют приватные константы владельцев (`Lk*Api`,
+  /// `SearchHistoryService`) — при переименовании там поправить и здесь,
+  /// иначе размер будет занижен. Кэш расписания лежит в файлах.
   static const _cachePrefixes = [
-    'sched_v1|',
-    'sched_index_v1',
     'lk_grades_cache',
     'lk_report_works_cache',
     'lk_work_',
@@ -45,16 +43,16 @@ class CacheManager {
   Future<int> totalSize() async {
     var total = 0;
 
-    final prefs = await SharedPreferences.getInstance();
-    for (final key in prefs.getKeys()) {
-      if (!_isCacheKey(key)) continue;
-      final value = prefs.get(key);
+    final cached = await appPrefs.getAll(
+        allowList: (await appPrefs.getKeys()).where(_isCacheKey).toSet());
+    for (final value in cached.values) {
       if (value is String) total += value.length;
       if (value is List<String>) {
         total += value.fold<int>(0, (sum, s) => sum + s.length);
       }
     }
 
+    total += await ScheduleCache().sizeBytes();
     total += await newsDb.fileSizeBytes();
     total += await _tempFilesSize();
     return total;
@@ -69,7 +67,7 @@ class CacheManager {
     await newsDb.deleteAll();
     await SearchHistoryService().clearAll();
 
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     for (final key in _snapshotKeys) {
       await prefs.remove(key);
     }

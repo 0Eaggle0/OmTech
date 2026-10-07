@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -248,7 +250,7 @@ class _ContactWorkListViewState extends State<ContactWorkListView> {
               context,
               MaterialPageRoute(builder: (_) => WorkDetailScreen(discipline: d)),
             );
-            if (mounted) _recalcBadges();
+            if (mounted) unawaited(_recalcBadges());
           },
           child: Stack(
             children: [

@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/contact_work.dart';
 import 'lk_contact_work_parser.dart';
 import 'lk_session.dart';
+import '../app_prefs.dart';
 
 /// Высокоуровневый сервис раздела «Контактная работа».
 /// Делает HTTP-запросы через [LkSession], парсит HTML и кэширует
@@ -49,8 +49,8 @@ class LkContactWorkApi {
   }
 
   Future<List<WorkDiscipline>?> readDisciplinesCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_cacheKey);
+    final prefs = appPrefs;
+    final raw = await prefs.getString(_cacheKey);
     if (raw == null || raw.isEmpty) return null;
     try {
       final arr = jsonDecode(raw) as List;
@@ -64,13 +64,13 @@ class LkContactWorkApi {
   }
 
   Future<DateTime?> readCacheTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final ms = prefs.getInt(_cacheTimeKey);
+    final prefs = appPrefs;
+    final ms = await prefs.getInt(_cacheTimeKey);
     return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
   Future<void> _saveDisciplines(List<WorkDiscipline> list) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     final json = jsonEncode(list.map((d) => d.toJson()).toList());
     await prefs.setString(_cacheKey, json);
     await prefs.setInt(
@@ -98,8 +98,8 @@ class LkContactWorkApi {
   }
 
   Future<List<ContactWorkItem>?> readTasksCache(String disciplineId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('$_tasksCachePrefix$disciplineId');
+    final prefs = appPrefs;
+    final raw = await prefs.getString('$_tasksCachePrefix$disciplineId');
     if (raw == null || raw.isEmpty) return null;
     try {
       final arr = jsonDecode(raw) as List;
@@ -114,12 +114,12 @@ class LkContactWorkApi {
 
   Future<void> _saveTasks(
       String disciplineId, List<ContactWorkItem> items) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     final json = jsonEncode(items.map((i) => i.toJson()).toList());
     await prefs.setString('$_tasksCachePrefix$disciplineId', json);
 
     // Регистрируем id в индексе, чтобы очистить всё при logout.
-    final index = (prefs.getStringList(_tasksKeysIndex) ?? const []).toSet();
+    final index = (await prefs.getStringList(_tasksKeysIndex) ?? const []).toSet();
     index.add(disciplineId);
     await prefs.setStringList(_tasksKeysIndex, index.toList());
   }
@@ -130,16 +130,16 @@ class LkContactWorkApi {
   /// в последний раз. `null` — если для этой дисциплины baseline ещё
   /// не зафиксирован.
   Future<int?> getKnownTaskCount(String disciplineId) async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt('$_knownCountPrefix$disciplineId');
+    final prefs = appPrefs;
+    return await prefs.getInt('$_knownCountPrefix$disciplineId');
   }
 
   /// Фиксирует, что пользователь увидел задания этой дисциплины
   /// (вызываем при открытии экрана деталей и после успешной загрузки).
   Future<void> setKnownTaskCount(String disciplineId, int count) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setInt('$_knownCountPrefix$disciplineId', count);
-    final index = (prefs.getStringList(_knownCountIndex) ?? const []).toSet();
+    final index = (await prefs.getStringList(_knownCountIndex) ?? const []).toSet();
     index.add(disciplineId);
     await prefs.setStringList(_knownCountIndex, index.toList());
   }
@@ -163,15 +163,15 @@ class LkContactWorkApi {
   // ─────────────────────────── cache ──────────────────────────
 
   Future<void> clearCache() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.remove(_cacheKey);
     await prefs.remove(_cacheTimeKey);
-    final tasksIndex = prefs.getStringList(_tasksKeysIndex) ?? const [];
+    final tasksIndex = await prefs.getStringList(_tasksKeysIndex) ?? const [];
     for (final id in tasksIndex) {
       await prefs.remove('$_tasksCachePrefix$id');
     }
     await prefs.remove(_tasksKeysIndex);
-    final knownIndex = prefs.getStringList(_knownCountIndex) ?? const [];
+    final knownIndex = await prefs.getStringList(_knownCountIndex) ?? const [];
     for (final id in knownIndex) {
       await prefs.remove('$_knownCountPrefix$id');
     }

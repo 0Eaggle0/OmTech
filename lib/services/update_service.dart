@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app_version.dart';
 import 'lk/lk_file_downloader.dart';
+import 'app_prefs.dart';
 
 /// Обновление вне магазина: последний релиз GitHub с APK внутри. Android ставит
 /// его поверх текущей версии (тот же applicationId и ключ подписи, выше
@@ -20,8 +20,8 @@ class UpdateService {
   static Future<AppRelease?> checkLatest() async {
     if (!Platform.isAndroid) return null;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final snoozedUntil = prefs.getInt(_snoozeKey) ?? 0;
+      final prefs = appPrefs;
+      final snoozedUntil = await prefs.getInt(_snoozeKey) ?? 0;
       if (DateTime.now().millisecondsSinceEpoch < snoozedUntil) return null;
 
       final r = await Dio().get<Map<String, dynamic>>(
@@ -48,7 +48,7 @@ class UpdateService {
 
   /// «Позже» — не спрашивать сутки.
   static Future<void> snooze() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     final until = DateTime.now().add(const Duration(days: 1));
     await prefs.setInt(_snoozeKey, until.millisecondsSinceEpoch);
   }

@@ -4,7 +4,6 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/app_nav_controller.dart';
 import '../controllers/lk_controller.dart';
@@ -22,6 +21,7 @@ import 'news/news_screen.dart';
 import 'profile/profile_screen.dart';
 import 'schedule/schedule_screen.dart';
 import 'work/work_hub_screen.dart';
+import '../services/app_prefs.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -110,8 +110,8 @@ class _HomeShellState extends State<HomeShell>
 
   Future<void> _checkFirstLaunch() async {
     if (!mounted) return;
-    final prefs = await SharedPreferences.getInstance();
-    final alreadyShown = prefs.getBool('credential_prompt_shown') ?? false;
+    final prefs = appPrefs;
+    final alreadyShown = await prefs.getBool('credential_prompt_shown') ?? false;
     if (alreadyShown) return;
 
     await prefs.setBool('credential_prompt_shown', true);

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../controllers/group_controller.dart';
 import '../../controllers/schedule_nav_controller.dart';
@@ -22,6 +21,7 @@ import '../../widgets/sliding_toggle.dart';
 import '../../widgets/status_banners.dart';
 import '../../widgets/status_pill.dart';
 import '../search/search_screen.dart';
+import '../../services/app_prefs.dart';
 
 enum _ScheduleMode { group, teacher, auditorium }
 
@@ -66,14 +66,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _loadFilterPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hideRetake = prefs.getBool(_prefKeyHideRetake) ?? false;
+    final prefs = appPrefs;
+    final hideRetake = await prefs.getBool(_prefKeyHideRetake) ?? false;
     if (!mounted || hideRetake == _hideRetake) return;
     setState(() => _hideRetake = hideRetake);
   }
 
   Future<void> _saveFilterBool(String key, bool value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setBool(key, value);
   }
 

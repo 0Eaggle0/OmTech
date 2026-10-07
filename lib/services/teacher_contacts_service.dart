@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/lk_controller.dart';
 import '../models/contact_work.dart';
+import 'app_prefs.dart';
 
 /// Вид найденного контакта преподавателя. Порядок — порядок показа.
 enum TeacherContactKind { email, telegram, phone, vk, max }
@@ -219,8 +220,8 @@ class TeacherContactsService {
 
   Future<TeacherContacts?> _find(
       LkController lk, String key, String lecturer, String? discipline) async {
-    final prefs = await SharedPreferences.getInstance();
-    final cached = _readCache(prefs, key);
+    final prefs = appPrefs;
+    final cached = await _readCache(prefs, key);
     if (cached != null) return cached.contacts;
 
     try {
@@ -264,8 +265,9 @@ class TeacherContactsService {
     return words(a).intersection(words(b)).length;
   }
 
-  ({TeacherContacts? contacts})? _readCache(SharedPreferences prefs, String key) {
-    final raw = prefs.getString('$cachePrefix$key');
+  Future<({TeacherContacts? contacts})?> _readCache(
+      SharedPreferencesAsync prefs, String key) async {
+    final raw = await prefs.getString('$cachePrefix$key');
     if (raw == null) return null;
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
@@ -291,7 +293,7 @@ class TeacherContactsService {
   }
 
   Future<void> _writeCache(
-      SharedPreferences prefs, String key, TeacherContacts? contacts) async {
+      SharedPreferencesAsync prefs, String key, TeacherContacts? contacts) async {
     await prefs.setString(
       '$cachePrefix$key',
       jsonEncode({
@@ -303,8 +305,8 @@ class TeacherContactsService {
   }
 
   static Future<void> clearCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys().where((k) => k.startsWith(cachePrefix)).toList();
+    final prefs = appPrefs;
+    final keys = (await prefs.getKeys()).where((k) => k.startsWith(cachePrefix));
     for (final k in keys) {
       await prefs.remove(k);
     }

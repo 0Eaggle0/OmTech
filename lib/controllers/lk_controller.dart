@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/group.dart';
 import '../models/student_record.dart';
@@ -13,6 +12,7 @@ import '../services/lk/lk_session.dart';
 import '../services/schedule_api.dart';
 import '../services/teacher_contacts_service.dart';
 import 'group_controller.dart';
+import '../services/app_prefs.dart';
 
 enum LkStatus { disconnected, connecting, connected, error }
 
@@ -215,7 +215,7 @@ class LkController extends ChangeNotifier {
   /// Данные, приехавшие из ЛК и осевшие в обычных prefs. Аватар не трогаем:
   /// его пользователь выбрал сам, из ЛК он не приходит.
   Future<void> _clearLocalProfileTraces() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     for (final key in const [
       'user_first_name',
       'notif_report_snapshot',

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -46,7 +47,7 @@ class _UpdateSheetState extends State<UpdateSheet> {
   double get _progress => _size > 0 ? (_received / _size).clamp(0, 1) : 0;
 
   Future<void> _start() async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     setState(() {
       _phase = _Phase.downloading;
       _received = 0;
@@ -63,14 +64,14 @@ class _UpdateSheetState extends State<UpdateSheet> {
         },
       );
       if (!mounted) return;
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
       setState(() => _phase = _Phase.opening);
       await Future.delayed(const Duration(milliseconds: 900));
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       debugPrint('[Update] download failed: $e');
       if (!mounted) return;
-      HapticFeedback.heavyImpact();
+      unawaited(HapticFeedback.heavyImpact());
       setState(() {
         _phase = _Phase.failed;
         _failures++;

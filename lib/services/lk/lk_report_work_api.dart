@@ -6,12 +6,12 @@ import 'package:flutter/foundation.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/contact_work.dart';
 import '../../models/report_work.dart';
 import 'lk_report_work_parser.dart';
 import 'lk_session.dart';
+import '../app_prefs.dart';
 
 /// Сайт отклонил действие с отчётной работой (загрузку, удаление).
 /// [serverMessage] — ответ сервера как есть (он уже человеческий);
@@ -119,8 +119,8 @@ class LkReportWorkApi {
   }
 
   Future<ReportWorksResult?> readCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_cacheKey);
+    final prefs = appPrefs;
+    final raw = await prefs.getString(_cacheKey);
     if (raw == null || raw.isEmpty) return null;
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
@@ -131,19 +131,19 @@ class LkReportWorkApi {
   }
 
   Future<DateTime?> readCacheTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    final ms = prefs.getInt(_cacheTimeKey);
+    final prefs = appPrefs;
+    final ms = await prefs.getInt(_cacheTimeKey);
     return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
   Future<void> _save(ReportWorksResult result) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setString(_cacheKey, jsonEncode(result.toJson()));
     await prefs.setInt(_cacheTimeKey, DateTime.now().millisecondsSinceEpoch);
   }
 
   Future<void> clearCache() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.remove(_cacheKey);
     await prefs.remove(_cacheTimeKey);
   }

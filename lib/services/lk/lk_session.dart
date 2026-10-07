@@ -210,12 +210,7 @@ class LkSession {
   }
 
   Future<void> logout() async {
-    final jar = _cookieJar;
-    if (jar is PersistCookieJar) {
-      await jar.deleteAll();
-    } else {
-      jar.deleteAll();
-    }
+    await _cookieJar.deleteAll();
   }
 
   /// Повтор сетевого шага: 3 попытки с задержками 400/1200 мс.

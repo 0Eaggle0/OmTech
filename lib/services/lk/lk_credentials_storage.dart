@@ -19,9 +19,11 @@ class LkCredentialsStorage {
 
   LkCredentialsStorage({FlutterSecureStorage? storage})
       : _storage = storage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(encryptedSharedPreferences: true),
-            );
+            // v10 сам переносит данные, записанные v9 через
+            // EncryptedSharedPreferences, в свои шифры при первом чтении.
+            // На v11 не переходить, пока у пользователей может остаться
+            // непрочитанная v9-запись: v11 её уже не читает, и все разлогинятся.
+            const FlutterSecureStorage(aOptions: AndroidOptions());
 
   Future<LkCredentials?> read() async {
     final username = await _storage.read(key: _usernameKey);

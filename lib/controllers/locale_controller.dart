@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/app_prefs.dart';
 
 class LocaleController extends ChangeNotifier {
   static const _key = 'locale';
@@ -8,8 +8,8 @@ class LocaleController extends ChangeNotifier {
   Locale get locale => _locale;
 
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_key);
+    final prefs = appPrefs;
+    final saved = await prefs.getString(_key);
     if (saved != null) _locale = Locale(saved);
     notifyListeners();
   }
@@ -18,7 +18,7 @@ class LocaleController extends ChangeNotifier {
     if (_locale == locale) return;
     _locale = locale;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setString(_key, locale.languageCode);
   }
 }

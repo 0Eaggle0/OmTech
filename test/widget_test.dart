@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 import 'package:campus2_0/app.dart';
 import 'package:campus2_0/controllers/app_nav_controller.dart';
@@ -15,7 +16,8 @@ import 'package:campus2_0/widgets/floating_nav_bar.dart';
 
 void main() {
   testWidgets('Приложение запускается и показывает нижнее меню', (tester) async {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
     await initializeDateFormatting('ru');
 
     await tester.pumpWidget(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../services/app_prefs.dart';
 
 /// Управляет режимом темы (system/light/dark) и сохраняет выбор.
 class ThemeController extends ChangeNotifier {
@@ -10,8 +10,8 @@ class ThemeController extends ChangeNotifier {
 
   /// Загружает сохранённый режим. Вызывать до runApp.
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final stored = prefs.getString(_prefsKey);
+    final prefs = appPrefs;
+    final stored = await prefs.getString(_prefsKey);
     _mode = _fromString(stored);
     notifyListeners();
   }
@@ -20,7 +20,7 @@ class ThemeController extends ChangeNotifier {
     if (mode == _mode) return;
     _mode = mode;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setString(_prefsKey, mode.name);
   }
 

@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'app_prefs.dart';
 
 /// Исключение приложения из оптимизации батареи Android. Без него MIUI,
 /// EMUI и One UI часто вообще не запускают фоновую проверку ЛК, и
@@ -33,12 +33,12 @@ class BatteryOptimization {
   /// Подсказку показываем один раз — дальше пункт есть в настройках.
   static Future<bool> shouldShowHint() async {
     if (await isIgnoring()) return false;
-    final prefs = await SharedPreferences.getInstance();
-    return !(prefs.getBool(_hintShownKey) ?? false);
+    final prefs = appPrefs;
+    return !(await prefs.getBool(_hintShownKey) ?? false);
   }
 
   static Future<void> markHintShown() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = appPrefs;
     await prefs.setBool(_hintShownKey, true);
   }
 }
