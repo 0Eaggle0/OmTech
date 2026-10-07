@@ -1015,4 +1015,54 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get updateFailed =>
       'Download failed. Check your connection and try again.';
+
+  @override
+  String get settingsBackground => 'Background work';
+
+  @override
+  String get settingsBackgroundAllowed =>
+      'Allowed — notifications arrive even when the app is closed';
+
+  @override
+  String get settingsBackgroundRestricted =>
+      'Restricted by the system — notifications may not arrive';
+
+  @override
+  String get settingsBackgroundAllow => 'Allow';
+
+  @override
+  String settingsBackgroundLastRun(String time, String result) {
+    return 'Last check: $time — $result';
+  }
+
+  @override
+  String get settingsBackgroundNever => 'The background check has not run yet';
+
+  @override
+  String get bgResultOk => 'ok';
+
+  @override
+  String get bgResultUiActive => 'skipped, the app was open';
+
+  @override
+  String get bgResultNoCreds => 'not signed in';
+
+  @override
+  String get bgResultAuthFailed => 'password rejected';
+
+  @override
+  String get bgResultNetwork => 'no connection';
+
+  @override
+  String get bgResultError => 'error';
+
+  @override
+  String get batteryHintTitle => 'Notifications while the app is closed';
+
+  @override
+  String get batteryHintBody =>
+      'To hear about new tasks, grades and report reviews without opening the app, let OmTech run in the background. Otherwise the system may never run the check.';
+
+  @override
+  String get batteryHintLater => 'Not now';
 }

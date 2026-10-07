@@ -13,6 +13,7 @@ import '../services/lk/lk_credentials_storage.dart';
 import '../services/update_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_glass.dart';
+import '../widgets/background_work_tile.dart';
 import '../widgets/floating_nav_bar.dart';
 import '../widgets/lk_login_sheet.dart';
 import '../widgets/update_sheet.dart';
@@ -262,6 +263,9 @@ class _LkConnectionBannerState extends State<_LkConnectionBanner> {
       _hideTimer = Timer(const Duration(seconds: 2), () {
         if (mounted) setState(() => _bannerState = _BannerState.hidden);
       });
+      // Пользователь только что вошёл — самое время один раз попросить
+      // разрешение на фон, ради которого вход и нужен уведомлениям.
+      unawaited(showBatteryHintIfNeeded(context));
     } else if (status == LkStatus.error) {
       setState(() {
         _bannerState = _BannerState.error;

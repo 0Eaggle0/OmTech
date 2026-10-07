@@ -1017,4 +1017,54 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get updateFailed =>
       'Не удалось скачать. Проверьте интернет и попробуйте ещё раз.';
+
+  @override
+  String get settingsBackground => 'Фоновая работа';
+
+  @override
+  String get settingsBackgroundAllowed =>
+      'Разрешена — уведомления приходят и при закрытом приложении';
+
+  @override
+  String get settingsBackgroundRestricted =>
+      'Ограничена системой — уведомления могут не приходить';
+
+  @override
+  String get settingsBackgroundAllow => 'Разрешить';
+
+  @override
+  String settingsBackgroundLastRun(String time, String result) {
+    return 'Последняя проверка: $time — $result';
+  }
+
+  @override
+  String get settingsBackgroundNever => 'Фоновая проверка ещё не запускалась';
+
+  @override
+  String get bgResultOk => 'успешно';
+
+  @override
+  String get bgResultUiActive => 'пропущена, приложение было открыто';
+
+  @override
+  String get bgResultNoCreds => 'нет входа в ЛК';
+
+  @override
+  String get bgResultAuthFailed => 'пароль не подошёл';
+
+  @override
+  String get bgResultNetwork => 'нет связи';
+
+  @override
+  String get bgResultError => 'ошибка';
+
+  @override
+  String get batteryHintTitle => 'Уведомления при закрытом приложении';
+
+  @override
+  String get batteryHintBody =>
+      'Чтобы узнавать о новых заданиях, оценках и проверке отчётов, не открывая приложение, разрешите OmTech работать в фоне. Иначе система может не запускать проверку.';
+
+  @override
+  String get batteryHintLater => 'Не сейчас';
 }

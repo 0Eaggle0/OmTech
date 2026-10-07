@@ -11,6 +11,7 @@ import '../../services/cache_manager.dart';
 import '../../services/news_service.dart';
 import '../../services/notification_service.dart';
 import '../../theme/app_glass.dart';
+import '../../widgets/background_work_tile.dart';
 import 'bug_report_sheet.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -164,6 +165,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(height: 1),
                 _notifSwitch(settings, NotifCategory.grades,
                     l.settingsNotifGrades, l.settingsNotifGradesHint),
+                const Divider(height: 1),
+                const BackgroundWorkTile(),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.notifications_none_outlined),

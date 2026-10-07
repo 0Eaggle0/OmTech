@@ -394,5 +394,21 @@
   "updateLater": "Later",
   "updateDownloading": "Downloading",
   "updateOpening": "Opening installer",
-  "updateFailed": "Download failed. Check your connection and try again."
+  "updateFailed": "Download failed. Check your connection and try again.",
+
+  "settingsBackground": "Background work",
+  "settingsBackgroundAllowed": "Allowed — notifications arrive even when the app is closed",
+  "settingsBackgroundRestricted": "Restricted by the system — notifications may not arrive",
+  "settingsBackgroundAllow": "Allow",
+  "settingsBackgroundLastRun": "Last check: {time} — {result}",
+  "settingsBackgroundNever": "The background check has not run yet",
+  "bgResultOk": "ok",
+  "bgResultUiActive": "skipped, the app was open",
+  "bgResultNoCreds": "not signed in",
+  "bgResultAuthFailed": "password rejected",
+  "bgResultNetwork": "no connection",
+  "bgResultError": "error",
+  "batteryHintTitle": "Notifications while the app is closed",
+  "batteryHintBody": "To hear about new tasks, grades and report reviews without opening the app, let OmTech run in the background. Otherwise the system may never run the check.",
+  "batteryHintLater": "Not now"
 }

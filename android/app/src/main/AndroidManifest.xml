@@ -4,6 +4,9 @@
     <!-- Локальные уведомления (Android 13+). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Системный запрос исключения из оптимизации батареи — иначе фоновую
+         проверку ЛК многие прошивки не запускают (BatteryOptimization). -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <!-- Установка скачанного из GitHub Releases обновления (UpdateService). -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application

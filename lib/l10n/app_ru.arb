@@ -400,5 +400,22 @@
   "updateLater": "Позже",
   "updateDownloading": "Скачивание",
   "updateOpening": "Открываю установщик",
-  "updateFailed": "Не удалось скачать. Проверьте интернет и попробуйте ещё раз."
+  "updateFailed": "Не удалось скачать. Проверьте интернет и попробуйте ещё раз.",
+
+  "settingsBackground": "Фоновая работа",
+  "settingsBackgroundAllowed": "Разрешена — уведомления приходят и при закрытом приложении",
+  "settingsBackgroundRestricted": "Ограничена системой — уведомления могут не приходить",
+  "settingsBackgroundAllow": "Разрешить",
+  "settingsBackgroundLastRun": "Последняя проверка: {time} — {result}",
+  "@settingsBackgroundLastRun": {"placeholders": {"time": {"type": "String"}, "result": {"type": "String"}}},
+  "settingsBackgroundNever": "Фоновая проверка ещё не запускалась",
+  "bgResultOk": "успешно",
+  "bgResultUiActive": "пропущена, приложение было открыто",
+  "bgResultNoCreds": "нет входа в ЛК",
+  "bgResultAuthFailed": "пароль не подошёл",
+  "bgResultNetwork": "нет связи",
+  "bgResultError": "ошибка",
+  "batteryHintTitle": "Уведомления при закрытом приложении",
+  "batteryHintBody": "Чтобы узнавать о новых заданиях, оценках и проверке отчётов, не открывая приложение, разрешите OmTech работать в фоне. Иначе система может не запускать проверку.",
+  "batteryHintLater": "Не сейчас"
 }

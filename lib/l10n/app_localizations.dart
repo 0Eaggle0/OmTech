@@ -1957,6 +1957,96 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Не удалось скачать. Проверьте интернет и попробуйте ещё раз.'**
   String get updateFailed;
+
+  /// No description provided for @settingsBackground.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фоновая работа'**
+  String get settingsBackground;
+
+  /// No description provided for @settingsBackgroundAllowed.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разрешена — уведомления приходят и при закрытом приложении'**
+  String get settingsBackgroundAllowed;
+
+  /// No description provided for @settingsBackgroundRestricted.
+  ///
+  /// In ru, this message translates to:
+  /// **'Ограничена системой — уведомления могут не приходить'**
+  String get settingsBackgroundRestricted;
+
+  /// No description provided for @settingsBackgroundAllow.
+  ///
+  /// In ru, this message translates to:
+  /// **'Разрешить'**
+  String get settingsBackgroundAllow;
+
+  /// No description provided for @settingsBackgroundLastRun.
+  ///
+  /// In ru, this message translates to:
+  /// **'Последняя проверка: {time} — {result}'**
+  String settingsBackgroundLastRun(String time, String result);
+
+  /// No description provided for @settingsBackgroundNever.
+  ///
+  /// In ru, this message translates to:
+  /// **'Фоновая проверка ещё не запускалась'**
+  String get settingsBackgroundNever;
+
+  /// No description provided for @bgResultOk.
+  ///
+  /// In ru, this message translates to:
+  /// **'успешно'**
+  String get bgResultOk;
+
+  /// No description provided for @bgResultUiActive.
+  ///
+  /// In ru, this message translates to:
+  /// **'пропущена, приложение было открыто'**
+  String get bgResultUiActive;
+
+  /// No description provided for @bgResultNoCreds.
+  ///
+  /// In ru, this message translates to:
+  /// **'нет входа в ЛК'**
+  String get bgResultNoCreds;
+
+  /// No description provided for @bgResultAuthFailed.
+  ///
+  /// In ru, this message translates to:
+  /// **'пароль не подошёл'**
+  String get bgResultAuthFailed;
+
+  /// No description provided for @bgResultNetwork.
+  ///
+  /// In ru, this message translates to:
+  /// **'нет связи'**
+  String get bgResultNetwork;
+
+  /// No description provided for @bgResultError.
+  ///
+  /// In ru, this message translates to:
+  /// **'ошибка'**
+  String get bgResultError;
+
+  /// No description provided for @batteryHintTitle.
+  ///
+  /// In ru, this message translates to:
+  /// **'Уведомления при закрытом приложении'**
+  String get batteryHintTitle;
+
+  /// No description provided for @batteryHintBody.
+  ///
+  /// In ru, this message translates to:
+  /// **'Чтобы узнавать о новых заданиях, оценках и проверке отчётов, не открывая приложение, разрешите OmTech работать в фоне. Иначе система может не запускать проверку.'**
+  String get batteryHintBody;
+
+  /// No description provided for @batteryHintLater.
+  ///
+  /// In ru, this message translates to:
+  /// **'Не сейчас'**
+  String get batteryHintLater;
 }
 
 class _AppLocalizationsDelegate
