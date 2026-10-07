@@ -1265,7 +1265,7 @@ abstract class AppLocalizations {
   /// No description provided for @bugReportSettingsHint.
   ///
   /// In ru, this message translates to:
-  /// **'Письмо разработчику с файлом диагностики'**
+  /// **'Сообщение разработчику с файлом диагностики'**
   String get bugReportSettingsHint;
 
   /// No description provided for @bugReportTitle.
@@ -1277,7 +1277,7 @@ abstract class AppLocalizations {
   /// No description provided for @bugReportSubtitle.
   ///
   /// In ru, this message translates to:
-  /// **'Письмо уйдёт на {email}'**
+  /// **'Отчёт уйдёт разработчику на {email}'**
   String bugReportSubtitle(String email);
 
   /// No description provided for @bugReportHint.
@@ -1289,7 +1289,7 @@ abstract class AppLocalizations {
   /// No description provided for @bugReportIncluded.
   ///
   /// In ru, this message translates to:
-  /// **'В письмо попадёт'**
+  /// **'В отчёт попадёт'**
   String get bugReportIncluded;
 
   /// No description provided for @bugReportIncDevice.
@@ -1313,7 +1313,7 @@ abstract class AppLocalizations {
   /// No description provided for @bugReportAttachPagesHint.
   ///
   /// In ru, this message translates to:
-  /// **'Помогает починить разбор данных. В них есть ваше ФИО и список работ'**
+  /// **'Помогает починить разбор данных. В них ваше ФИО, оценки и список работ. Отчёт идёт через сервис FormSubmit и хранится там до 30 дней'**
   String get bugReportAttachPagesHint;
 
   /// No description provided for @bugReportScreens.
@@ -1334,16 +1334,22 @@ abstract class AppLocalizations {
   /// **'Снимок экрана, где вы открыли отчёт, уже приложен. Уберите его, если на нём личное'**
   String get bugReportScreensHint;
 
+  /// No description provided for @bugReportSent.
+  ///
+  /// In ru, this message translates to:
+  /// **'Отчёт отправлен, спасибо!'**
+  String get bugReportSent;
+
   /// No description provided for @bugReportSend.
   ///
   /// In ru, this message translates to:
-  /// **'Составить письмо'**
+  /// **'Отправить'**
   String get bugReportSend;
 
   /// No description provided for @bugReportFailed.
   ///
   /// In ru, this message translates to:
-  /// **'Не удалось открыть почту. Адрес {email} скопирован'**
+  /// **'Не удалось отправить. Адрес {email} скопирован'**
   String bugReportFailed(String email);
 
   /// No description provided for @dashboardGreeting.

@@ -246,23 +246,24 @@
   "settingsCacheCleared": "Кэш очищен",
 
   "bugReportAction": "Сообщить об ошибке",
-  "bugReportSettingsHint": "Письмо разработчику с файлом диагностики",
+  "bugReportSettingsHint": "Сообщение разработчику с файлом диагностики",
   "bugReportTitle": "Сообщить об ошибке",
-  "bugReportSubtitle": "Письмо уйдёт на {email}",
+  "bugReportSubtitle": "Отчёт уйдёт разработчику на {email}",
   "@bugReportSubtitle": {
     "placeholders": { "email": { "type": "String" } }
   },
   "bugReportHint": "Что пошло не так? Что вы делали перед этим?",
-  "bugReportIncluded": "В письмо попадёт",
+  "bugReportIncluded": "В отчёт попадёт",
   "bugReportIncDevice": "Версия приложения, система, группа и состояние ЛК",
   "bugReportIncLog": "Журнал последних действий — без логина и пароля",
   "bugReportAttachPages": "Приложить страницы ЛК",
-  "bugReportAttachPagesHint": "Помогает починить разбор данных. В них есть ваше ФИО и список работ",
+  "bugReportAttachPagesHint": "Помогает починить разбор данных. В них ваше ФИО, оценки и список работ. Отчёт идёт через сервис FormSubmit и хранится там до 30 дней",
   "bugReportScreens": "Скриншоты",
   "bugReportAddScreen": "Добавить",
   "bugReportScreensHint": "Снимок экрана, где вы открыли отчёт, уже приложен. Уберите его, если на нём личное",
-  "bugReportSend": "Составить письмо",
-  "bugReportFailed": "Не удалось открыть почту. Адрес {email} скопирован",
+  "bugReportSent": "Отчёт отправлен, спасибо!",
+  "bugReportSend": "Отправить",
+  "bugReportFailed": "Не удалось отправить. Адрес {email} скопирован",
   "@bugReportFailed": {
     "placeholders": { "email": { "type": "String" } }
   },
