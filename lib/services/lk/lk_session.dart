@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'cookie_store_lock.dart';
 import 'cp1251.dart';
 import 'lk_credentials_storage.dart';
 
@@ -65,7 +66,11 @@ class LkSession {
       '(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
 
   final Dio _dio;
-  final CookieJar _cookieJar;
+  CookieJar _cookieJar;
+
+  /// Папка cookies на диске (`null` — cookies только в памяти, в тестах).
+  final String? _cookiesDir;
+  final CookieStoreLock? _lock;
 
   /// Откуда брать логин/пароль для тихого перелогина, когда сессия
   /// протухла посреди работы. `null` — перелогин только по cookies.
@@ -81,9 +86,12 @@ class LkSession {
     Dio? dio,
     CookieJar? cookieJar,
     Future<LkCredentials?> Function()? credentials,
+    String? cookiesDir,
   })  : _dio = dio ?? Dio(),
         _cookieJar = cookieJar ?? CookieJar(),
-        _credentials = credentials {
+        _credentials = credentials,
+        _cookiesDir = cookiesDir,
+        _lock = cookiesDir == null ? null : CookieStoreLock(cookiesDir) {
     _dio.options
       ..connectTimeout = const Duration(seconds: 20)
       ..receiveTimeout = const Duration(seconds: 20)
@@ -111,11 +119,33 @@ class LkSession {
     final dir = await getApplicationSupportDirectory();
     final cookiesPath = p.join(dir.path, 'lk_cookies');
     await Directory(cookiesPath).create(recursive: true);
-    final jar = PersistCookieJar(
-      ignoreExpires: false,
-      storage: FileStorage('$cookiesPath${Platform.pathSeparator}'),
+    return LkSession(
+      dio: dio,
+      cookieJar: _diskJar(cookiesPath),
+      credentials: credentials,
+      cookiesDir: cookiesPath,
     );
-    return LkSession(dio: dio, cookieJar: jar, credentials: credentials);
+  }
+
+  static PersistCookieJar _diskJar(String dir) => PersistCookieJar(
+        ignoreExpires: false,
+        storage: FileStorage('$dir${Platform.pathSeparator}'),
+      );
+
+  /// Вход под замком папки cookies (см. [CookieStoreLock]). Под замком jar
+  /// сначала перечитывается с диска: другой изолят мог только что войти, а
+  /// PersistCookieJar держит прочитанные cookies в памяти и об этом не узнает.
+  Future<T> _underCookieLock<T>(Future<T> Function() body) {
+    final lock = _lock;
+    final dir = _cookiesDir;
+    if (lock == null || dir == null) return body();
+    return lock.run(() {
+      _cookieJar = _diskJar(dir);
+      _dio.interceptors
+        ..removeWhere((i) => i is CookieManager)
+        ..add(CookieManager(_cookieJar));
+      return body();
+    });
   }
 
   // ─────────────────────────── Проверка сессии ───────────────────────────
@@ -147,7 +177,10 @@ class LkSession {
   // ─────────────────────────────── Логин ─────────────────────────────────
 
   /// Логин через Bitrix-форму ecab. Бросает [LkLoginException] на ошибки.
-  Future<void> login(String username, String password) async {
+  Future<void> login(String username, String password) =>
+      _underCookieLock(() => _login(username, password));
+
+  Future<void> _login(String username, String password) async {
     // Шаг 1: GET страницу логина, чтобы получить начальные cookies.
     await _sendWithRetry(() => _dio.get(_ecabHomeUrl));
 
@@ -399,7 +432,7 @@ class LkSession {
   /// нечем (кредов нет). Бросает [LkLoginException], если сеть недоступна
   /// или сервер отверг пароль.
   Future<bool> reauthenticate() {
-    return _reauthInFlight ??= _reauth().whenComplete(() {
+    return _reauthInFlight ??= _underCookieLock(_reauth).whenComplete(() {
       // Блоком: стрелка вернула бы сам Future, и whenComplete ждал бы себя.
       _reauthInFlight = null;
     });
@@ -414,7 +447,8 @@ class LkSession {
     final creds = await _credentials?.call();
     if (creds == null) return false;
     try {
-      await login(creds.username, creds.password);
+      // _login, а не login: замок уже наш, повторный ждал бы сам себя.
+      await _login(creds.username, creds.password);
       debugPrint('[LK SSO] перелогин паролем: ok');
       return true;
     } on LkLoginException catch (e) {
