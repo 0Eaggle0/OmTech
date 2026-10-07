@@ -1178,6 +1178,24 @@ abstract class AppLocalizations {
   /// **'В зачётке появились новые оценки'**
   String get settingsNotifGradesHint;
 
+  /// No description provided for @settingsNotifSchedule.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменения в расписании'**
+  String get settingsNotifSchedule;
+
+  /// No description provided for @settingsNotifScheduleHint.
+  ///
+  /// In ru, this message translates to:
+  /// **'Перенос или отмена пар на этой и следующей неделе'**
+  String get settingsNotifScheduleHint;
+
+  /// No description provided for @settingsNotifTestSchedule.
+  ///
+  /// In ru, this message translates to:
+  /// **'Изменение расписания'**
+  String get settingsNotifTestSchedule;
+
   /// No description provided for @settingsNotifTest.
   ///
   /// In ru, this message translates to:

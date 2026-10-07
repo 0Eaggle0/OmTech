@@ -103,6 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               (l.settingsNotifTestAccepted, service.testReportAccepted),
               (l.settingsNotifTestRejected, service.testReportRejected),
               (l.settingsNotifTestGrade, service.testGrade),
+              (l.settingsNotifTestSchedule, service.testSchedule),
             ])
               ListTile(
                 leading: const Icon(Icons.notifications_active_outlined),
@@ -167,6 +168,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(height: 1),
                 _notifSwitch(settings, NotifCategory.grades,
                     l.settingsNotifGrades, l.settingsNotifGradesHint),
+                const Divider(height: 1),
+                _notifSwitch(settings, NotifCategory.schedule,
+                    l.settingsNotifSchedule, l.settingsNotifScheduleHint),
                 const Divider(height: 1),
                 const BackgroundWorkTile(),
                 const Divider(height: 1),

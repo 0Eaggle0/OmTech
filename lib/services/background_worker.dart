@@ -55,10 +55,13 @@ Future<String> _runChecks() async {
     await migrateAppPrefs();
     if (await _uiRecentlyActive()) return 'ui_active';
 
+    // Расписание открытое — проверяем его и без входа в ЛК.
+    await NotificationService.instance.init();
+    await NotificationService.instance.checkScheduleChanges();
+
     final storage = LkCredentialsStorage();
     if (await storage.read() == null) return 'no_creds';
 
-    await NotificationService.instance.init();
     final session = await LkSession.create(credentials: storage.read);
 
     // Сначала пробуем доехать с уже сохранёнными cookies — это бесплатно.

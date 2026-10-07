@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../services/app_prefs.dart';
 
 /// Категория уведомлений. Совпадает с каналами `NotificationService`.
-enum NotifCategory { tasks, reports, grades }
+enum NotifCategory { tasks, reports, grades, schedule }
 
 /// Пользовательские настройки уведомлений.
 ///
@@ -14,12 +14,14 @@ class SettingsController extends ChangeNotifier {
         NotifCategory.tasks => 'notif_tasks_enabled',
         NotifCategory.reports => 'notif_reports_enabled',
         NotifCategory.grades => 'notif_grades_enabled',
+        NotifCategory.schedule => 'notif_schedule_enabled',
       };
 
   final _enabled = <NotifCategory, bool>{
     NotifCategory.tasks: true,
     NotifCategory.reports: true,
     NotifCategory.grades: true,
+    NotifCategory.schedule: true,
   };
 
   bool isEnabled(NotifCategory c) => _enabled[c] ?? true;

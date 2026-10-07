@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 
 import '../models/group.dart';
 import '../models/schedule_entity.dart';
@@ -171,6 +170,21 @@ class ScheduleApi {
     }
   }
 
+  /// Всегда из сети, мимо TTL, — для фоновой проверки изменений. Заодно
+  /// кладёт свежую неделю в кэш, и экран потом открывается без сети.
+  /// Возвращает и то, что лежало в кэше до запроса.
+  Future<({CachedSchedule? before, List<ScheduleEvent> after})> refresh({
+    required EntityType type,
+    required int id,
+    required DateTime start,
+    required DateTime finish,
+  }) async {
+    final key = ScheduleCache.keyFor(type, id, start, finish);
+    final before = await _cache.read(key);
+    final raw = await _fetchRaw(type, id, start, finish, key);
+    return (before: before, after: parseRaw(raw));
+  }
+
   /// Сеть с дедупликацией: пока запрос за тем же ключом в полёте,
   /// второй вызов подписывается на тот же Future.
   Future<String> _fetchRaw(
@@ -228,7 +242,6 @@ class ScheduleApi {
 
   /// API повторяет одну и ту же пару отдельной строкой на каждый поток или
   /// группу — дубли склеиваем, а их группы собираем в одну карточку.
-  @visibleForTesting
   static List<ScheduleEvent> parseRaw(String rawJson) {
     final indexByKey = <String, int>{};
     final events = <ScheduleEvent>[];

@@ -591,6 +591,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNotifGradesHint => 'New grades appeared in your record';
 
   @override
+  String get settingsNotifSchedule => 'Schedule changes';
+
+  @override
+  String get settingsNotifScheduleHint =>
+      'Lessons moved or cancelled this week or next';
+
+  @override
+  String get settingsNotifTestSchedule => 'Schedule change';
+
+  @override
   String get settingsNotifTest => 'Send a test notification';
 
   @override

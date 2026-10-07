@@ -594,6 +594,16 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsNotifGradesHint => 'В зачётке появились новые оценки';
 
   @override
+  String get settingsNotifSchedule => 'Изменения в расписании';
+
+  @override
+  String get settingsNotifScheduleHint =>
+      'Перенос или отмена пар на этой и следующей неделе';
+
+  @override
+  String get settingsNotifTestSchedule => 'Изменение расписания';
+
+  @override
   String get settingsNotifTest => 'Проверить уведомление';
 
   @override

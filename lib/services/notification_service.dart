@@ -1,17 +1,22 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../controllers/lk_controller.dart';
 import '../controllers/settings_controller.dart';
 import '../models/report_work.dart';
+import '../models/schedule_entity.dart';
 import '../models/student_record.dart';
 import 'lk/lk_contact_work_api.dart';
 import 'lk/lk_grades_api.dart';
 import 'lk/lk_report_work_api.dart';
 import 'lk/lk_session.dart';
+import 'academic_week.dart';
 import 'app_prefs.dart';
+import 'schedule_api.dart';
+import 'schedule_changes.dart';
 
 class NotificationService {
   NotificationService._();
@@ -27,6 +32,15 @@ class NotificationService {
   static const _chTasks = 'ch_tasks';
   static const _chReports = 'ch_reports';
   static const _chGrades = 'ch_grades';
+  static const _chSchedule = 'ch_schedule';
+
+  /// Ключи выбранной группы — те же, что пишет `GroupController`.
+  static const _keyGroupId = 'group_id';
+  static const _keySubgroup = 'user_subgroup';
+
+  /// Кэш старше этого не годится как «было»: за это время пользователь
+  /// успел бы увидеть изменения сам, и уведомление о них — шум.
+  static const _scheduleBaselineMaxAge = Duration(days: 3);
 
   static const _keyReportSnapshot = 'notif_report_snapshot';
   static const _keyGradesSnapshot = 'notif_grades_snapshot';
@@ -81,6 +95,7 @@ class NotificationService {
   static NotifCategory _categoryOf(String channelId) => switch (channelId) {
         _chReports => NotifCategory.reports,
         _chGrades => NotifCategory.grades,
+        _chSchedule => NotifCategory.schedule,
         _ => NotifCategory.tasks,
       };
 
@@ -320,6 +335,50 @@ class NotificationService {
     } catch (_) {}
   }
 
+  /// Изменения расписания своей группы на этой и следующей неделе. Сеть
+  /// дёргается всегда, поэтому эта же проверка заранее кладёт в кэш
+  /// следующую неделю — расписание открывается и без интернета.
+  /// ЛК не нужен: API расписания открытое.
+  Future<void> checkScheduleChanges() async {
+    try {
+      final groupId = await appPrefs.getInt(_keyGroupId);
+      if (groupId == null) return;
+      final subgroup = await appPrefs.getInt(_keySubgroup);
+      final now = DateTime.now();
+      final changes = <ScheduleDayChange>[];
+
+      for (final weekStart in [mondayOf(now), mondayOf(now).add(const Duration(days: 7))]) {
+        // Тот же диапазон Пн–Вс, что у экранов, — один ключ кэша на всех.
+        final week = await ScheduleApi.instance.refresh(
+          type: EntityType.group,
+          id: groupId,
+          start: weekStart,
+          finish: weekStart.add(const Duration(days: 6)),
+        );
+        final before = week.before;
+        if (before == null ||
+            now.difference(before.savedAt) > _scheduleBaselineMaxAge) {
+          continue;
+        }
+        final old = ScheduleApi.parseRaw(before.rawJson);
+        // Пустая неделя с одной стороны — скорее сбой API или каникулы, чем
+        // отмена всех пар разом; уведомлять об этом не будем.
+        if (old.isEmpty || week.after.isEmpty) continue;
+        changes.addAll(diffSchedule(old, week.after, from: now, subgroup: subgroup));
+      }
+
+      if (changes.isEmpty) return;
+      await _show(
+        '📅 Расписание изменилось',
+        describeScheduleChanges(changes),
+        _chSchedule,
+        'Расписание',
+      );
+    } catch (e) {
+      debugPrint('[Notif] проверка расписания: $e');
+    }
+  }
+
   int _gradeCount(SemesterPanel panel) =>
       panel.sections.expand((s) => s.grades).length;
 
@@ -355,6 +414,14 @@ class NotificationService {
         '«Курсовая работа» — вернули на правки',
         _chReports,
         'Отчётные работы',
+        respectPrefs: false,
+      );
+
+  Future<void> testSchedule() => _show(
+        '📅 Расписание изменилось',
+        'чт 15.10 — отменено: Физика 09:40; добавлено: Физика 13:15',
+        _chSchedule,
+        'Расписание',
         respectPrefs: false,
       );
 
