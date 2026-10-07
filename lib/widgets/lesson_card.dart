@@ -13,7 +13,10 @@ class LessonCard extends StatelessWidget {
   final ScheduleEvent event;
   final VoidCallback? onTap;
 
-  const LessonCard({super.key, required this.event, this.onTap});
+  /// Группа, чьё расписание открыто, — см. [ScheduleEvent.groupsLabel].
+  final String? ownGroup;
+
+  const LessonCard({super.key, required this.event, this.onTap, this.ownGroup});
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +26,7 @@ class LessonCard extends StatelessWidget {
     final accent = AppColors.forKindOfWork(event.kindOfWork);
     final shape = BorderRadius.circular(AppRadius.card);
     final showRoute = hasCampusAddress(event.building);
+    final groups = event.groupsLabel(ownGroup: ownGroup);
 
     return Material(
       color: glass.cardFill,
@@ -82,8 +86,8 @@ class LessonCard extends StatelessWidget {
                   ],
                   if (event.lecturer.isNotEmpty)
                     _row(context, Icons.person_outline, event.lecturer),
-                  if (event.streamDisplay.isNotEmpty)
-                    _row(context, Icons.groups_2_outlined, event.streamDisplay),
+                  if (groups.isNotEmpty)
+                    _row(context, Icons.groups_2_outlined, groups),
                   if (event.subgroupNumber.isNotEmpty || showRoute) ...[
                     const SizedBox(height: 9),
                     Row(

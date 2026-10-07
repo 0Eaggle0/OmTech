@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/group.dart';
 import '../models/schedule_entity.dart';
@@ -140,7 +141,7 @@ class ScheduleApi {
       // в сеть, а не роняем весь стрим.
       List<ScheduleEvent>? cachedEvents;
       try {
-        cachedEvents = _parseRaw(cached.rawJson);
+        cachedEvents = parseRaw(cached.rawJson);
       } catch (_) {
         cachedEvents = null;
       }
@@ -158,7 +159,7 @@ class ScheduleApi {
 
     try {
       final raw = await _fetchRaw(type, id, start, finish, key);
-      yield ScheduleSnapshot(events: _parseRaw(raw), fetchedAt: DateTime.now());
+      yield ScheduleSnapshot(events: parseRaw(raw), fetchedAt: DateTime.now());
     } catch (_) {
       // Кэш на экране уже есть — молчим и живём на нём.
       if (!servedCache) rethrow;
@@ -220,10 +221,11 @@ class ScheduleApi {
     return rangeEnd.isBefore(today) ? _pastTtl : _freshTtl;
   }
 
-  static List<ScheduleEvent> _parseRaw(String rawJson) {
-    // API повторяет одну и ту же пару отдельной строкой на каждый поток или
-    // подгруппу — без этого в списке появляются визуальные дубли.
-    final seen = <String>{};
+  /// API повторяет одну и ту же пару отдельной строкой на каждый поток или
+  /// группу — дубли склеиваем, а их группы собираем в одну карточку.
+  @visibleForTesting
+  static List<ScheduleEvent> parseRaw(String rawJson) {
+    final indexByKey = <String, int>{};
     final events = <ScheduleEvent>[];
     for (final json in (jsonDecode(rawJson) as List<dynamic>)
         .whereType<Map<String, dynamic>>()) {
@@ -239,7 +241,13 @@ class ScheduleApi {
         e.kindOfWork,
         e.rawSubgroup,
       ].join('|');
-      if (seen.add(key)) events.add(e);
+      final existing = indexByKey[key];
+      if (existing == null) {
+        indexByKey[key] = events.length;
+        events.add(e);
+      } else {
+        events[existing] = events[existing].withGroups(e.groups);
+      }
     }
     events.sort((a, b) {
       final byDate = a.date.compareTo(b.date);

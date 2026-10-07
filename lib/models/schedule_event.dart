@@ -11,6 +11,10 @@ class ScheduleEvent {
   final String stream;
   final String rawSubgroup;
 
+  /// Группы на паре: «АТП-251», «АТП-252»… Для расписания препода или
+  /// аудитории это единственный способ понять, кто сидит на занятии.
+  final List<String> groups;
+
   const ScheduleEvent({
     required this.date,
     required this.beginLesson,
@@ -22,10 +26,15 @@ class ScheduleEvent {
     required this.kindOfWork,
     required this.stream,
     this.rawSubgroup = '',
+    this.groups = const [],
   });
 
   /// API отдаёт дату в формате `YYYY.MM.DD`.
   factory ScheduleEvent.fromJson(Map<String, dynamic> json) {
+    final stream = (json['stream'] ?? '').toString();
+    final group = (json['group'] ?? '').toString();
+    final rawSubgroup =
+        (json['subGroup'] ?? json['subgroupNumber'] ?? '').toString();
     return ScheduleEvent(
       date: _parseDate(json['date']?.toString()),
       beginLesson: (json['beginLesson'] ?? '').toString(),
@@ -35,9 +44,60 @@ class ScheduleEvent {
       auditorium: (json['auditorium'] ?? '').toString(),
       building: (json['building'] ?? '').toString(),
       kindOfWork: (json['kindOfWork'] ?? '').toString(),
-      stream: (json['stream'] ?? '').toString(),
-      rawSubgroup: (json['subGroup'] ?? json['subgroupNumber'] ?? '').toString(),
+      stream: stream,
+      rawSubgroup: rawSubgroup,
+      groups: parseGroups(stream: stream, group: group, subGroup: rawSubgroup),
     );
+  }
+
+  /// Та же пара, но с добавленными группами — API повторяет пару отдельной
+  /// строкой на каждую группу, и при склейке дублей группы надо сохранить.
+  ScheduleEvent withGroups(Iterable<String> more) {
+    final merged = [...groups];
+    for (final g in more) {
+      if (!merged.contains(g)) merged.add(g);
+    }
+    return ScheduleEvent(
+      date: date,
+      beginLesson: beginLesson,
+      endLesson: endLesson,
+      discipline: discipline,
+      lecturer: lecturer,
+      auditorium: auditorium,
+      building: building,
+      kindOfWork: kindOfWork,
+      stream: stream,
+      rawSubgroup: rawSubgroup,
+      groups: merged,
+    );
+  }
+
+  /// Группы из полей API. Поток приходит в разных видах:
+  /// `Поток(АТП-251, АТП-252)*`, `АТП-251;АТП-252#Метрология…`,
+  /// `ИСТ-241/1-я подгруппа`. Без потока — поле `group`, а у пары подгруппы
+  /// только `subGroup` вида `АТП-251/1`.
+  static List<String> parseGroups({
+    String stream = '',
+    String group = '',
+    String subGroup = '',
+  }) {
+    var raw = stream.trim();
+    if (raw.isEmpty) raw = group.trim();
+    if (raw.isEmpty) raw = subGroup.trim();
+    if (raw.isEmpty) return const [];
+
+    raw = raw.replaceAll(RegExp(r'\*+$'), '').trim();
+    final hash = raw.indexOf('#');
+    if (hash >= 0) raw = raw.substring(0, hash);
+    final wrapped = RegExp(r'^[^()]*\((.*)\)$').firstMatch(raw);
+    if (wrapped != null) raw = wrapped.group(1)!;
+
+    final result = <String>[];
+    for (final part in raw.split(RegExp(r'[,;]'))) {
+      final name = part.replaceAll(RegExp(r'/\d.*$'), '').trim();
+      if (name.isNotEmpty && !result.contains(name)) result.add(name);
+    }
+    return result;
   }
 
   /// Локация: «8-204 · УЛК-8».
@@ -68,9 +128,15 @@ class ScheduleEvent {
     return n.isEmpty || n == subgroup.toString();
   }
 
-  /// Stream без суффикса подгруппы для отображения («ИСТ-241/1-я подгруппа» → «ИСТ-241»).
-  String get streamDisplay {
-    return stream.replaceAll(RegExp(r'/\d.*$'), '').trim();
+  /// Группы через запятую для показа на карточке. [ownGroup] — группа,
+  /// чьё расписание открыто: пара только этой группы ничего нового не
+  /// говорит, и строку тогда не показываем.
+  String groupsLabel({String? ownGroup}) {
+    if (groups.isEmpty) return '';
+    if (ownGroup != null && groups.length == 1 && groups.first == ownGroup) {
+      return '';
+    }
+    return groups.join(', ');
   }
 
   static DateTime _parseDate(String? raw) {

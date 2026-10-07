@@ -835,6 +835,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final days = byDay.keys.toList()..sort();
     final locale = Localizations.localeOf(context).languageCode;
     final dayFmt = DateFormat('EEEE, d MMMM', locale);
+    final ownGroup = _mode == _ScheduleMode.group
+        ? context.read<GroupController>().group?.label
+        : null;
 
     return ListView.builder(
       padding: EdgeInsets.fromLTRB(16, 8, 16, navBottomPadding(context)),
@@ -867,6 +870,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 // появлялись со всё большим опозданием.
                 child: LessonCard(
                   event: lessons[j],
+                  ownGroup: ownGroup,
                   onTap: () => LessonDetailSheet.show(context, lessons[j]),
                 )
                     .animate(delay: (j * 55).ms)

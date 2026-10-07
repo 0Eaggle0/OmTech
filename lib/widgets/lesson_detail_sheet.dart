@@ -92,8 +92,8 @@ class LessonDetailSheet extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Инфо-строки
-            if (e.streamDisplay.isNotEmpty)
-              _infoRow(context, Icons.groups_2_outlined, '${l.lessonDetailStream}: ${e.streamDisplay}', accent),
+            if (e.groups.isNotEmpty)
+              _infoRow(context, Icons.groups_2_outlined, '${l.lessonDetailStream}: ${e.groups.join(', ')}', accent),
             if (e.subgroupNumber.isNotEmpty)
               _infoRow(
                   context,

@@ -502,6 +502,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         else
           LessonCard(
             event: next,
+            ownGroup: context.read<GroupController>().group?.label,
             onTap: () => LessonDetailSheet.show(context, next),
           ),
       ],
