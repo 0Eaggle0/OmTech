@@ -239,7 +239,7 @@ abstract class AppLocalizations {
   /// No description provided for @lessonDetailStream.
   ///
   /// In ru, this message translates to:
-  /// **'поток'**
+  /// **'Группы'**
   String get lessonDetailStream;
 
   /// No description provided for @teacherContactsTitle.
@@ -1490,24 +1490,6 @@ abstract class AppLocalizations {
   /// **'Введите номер группы...'**
   String get groupSearchHint;
 
-  /// No description provided for @groupSearchEmpty.
-  ///
-  /// In ru, this message translates to:
-  /// **'Группы не найдены'**
-  String get groupSearchEmpty;
-
-  /// No description provided for @groupSearchLoading.
-  ///
-  /// In ru, this message translates to:
-  /// **'Поиск...'**
-  String get groupSearchLoading;
-
-  /// No description provided for @groupSearchError.
-  ///
-  /// In ru, this message translates to:
-  /// **'Не удалось найти группы. Проверьте соединение.'**
-  String get groupSearchError;
-
   /// No description provided for @searchTitle.
   ///
   /// In ru, this message translates to:
@@ -1585,18 +1567,6 @@ abstract class AppLocalizations {
   /// In ru, this message translates to:
   /// **'Номер, например: 8-418'**
   String get entitySearchAuditoriumHint;
-
-  /// No description provided for @entitySearchNoResults.
-  ///
-  /// In ru, this message translates to:
-  /// **'Ничего не найдено'**
-  String get entitySearchNoResults;
-
-  /// No description provided for @entitySearchHintShort.
-  ///
-  /// In ru, this message translates to:
-  /// **'Введите не менее 2 символов'**
-  String get entitySearchHintShort;
 
   /// No description provided for @entitySearchError.
   ///

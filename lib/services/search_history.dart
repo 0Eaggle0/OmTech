@@ -44,12 +44,23 @@ class SearchHistoryEntry {
       };
 }
 
-/// Недавние результаты общего поиска — до 10 штук, самый свежий сверху.
+/// Недавние результаты поиска, самый свежий сверху. Хранилище одно на все
+/// типы: поиск по конкретному типу показывает только свои записи, общий — все.
 class SearchHistoryService {
   static const _key = 'search_recent_v1';
-  static const _maxEntries = 10;
+  static const _maxEntries = 30;
+  static const _maxShown = 10;
 
-  Future<List<SearchHistoryEntry>> readAll() async {
+  /// [type] — только записи этого типа; `null` — все подряд.
+  Future<List<SearchHistoryEntry>> readAll({EntityType? type}) async {
+    final all = await _readStored();
+    return all
+        .where((e) => type == null || e.type == type)
+        .take(_maxShown)
+        .toList();
+  }
+
+  Future<List<SearchHistoryEntry>> _readStored() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getStringList(_key) ?? const [];
     return raw
@@ -66,21 +77,28 @@ class SearchHistoryService {
   }
 
   Future<void> add(ScheduleEntity entity) async {
-    final list = await readAll();
+    final list = await _readStored();
     list.removeWhere((e) => e.type == entity.type && e.id == entity.id);
     list.insert(0, SearchHistoryEntry.fromEntity(entity));
     await _write(list.take(_maxEntries).toList());
   }
 
   Future<void> remove(SearchHistoryEntry entry) async {
-    final list = await readAll();
+    final list = await _readStored();
     list.removeWhere((e) => e.type == entry.type && e.id == entry.id);
     await _write(list);
   }
 
-  Future<void> clearAll() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
+  /// [type] — стереть только записи этого типа; `null` — всю историю.
+  Future<void> clearAll({EntityType? type}) async {
+    if (type == null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_key);
+      return;
+    }
+    final list = await _readStored();
+    list.removeWhere((e) => e.type == type);
+    await _write(list);
   }
 
   Future<void> _write(List<SearchHistoryEntry> list) async {

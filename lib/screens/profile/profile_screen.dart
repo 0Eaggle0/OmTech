@@ -10,16 +10,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../controllers/group_controller.dart';
 import '../../controllers/lk_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/group.dart';
+import '../../models/schedule_entity.dart';
 import '../../models/student_record.dart';
 import '../../services/avatar_store.dart';
 import '../../services/link_launcher.dart';
 import '../../theme/app_glass.dart';
 import '../../theme/app_metrics.dart';
 import '../../widgets/accent_bar.dart';
-import '../../widgets/group_search_sheet.dart';
 import '../../widgets/lk_login_sheet.dart';
 import '../../widgets/sliding_toggle.dart';
 import '../../widgets/status_pill.dart';
+import '../search/search_screen.dart';
 import '../settings/settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -261,9 +263,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _changeGroup() async {
-    final group = await GroupSearchSheet.show(context);
-    if (group != null && mounted) {
-      await context.read<GroupController>().select(group);
+    final entity = await SearchScreen.pick(context, EntityType.group);
+    if (entity != null && mounted) {
+      await context.read<GroupController>().select(Group(
+            id: entity.id,
+            label: entity.label,
+            description: entity.description,
+          ));
     }
   }
 

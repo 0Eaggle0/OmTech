@@ -16,14 +16,27 @@ import '../../theme/app_metrics.dart';
 import '../../widgets/pill_filter_row.dart';
 import '../../widgets/status_pill.dart';
 
-/// Полноэкранный поиск по группам, преподавателям и аудиториям.
+/// Полноэкранный поиск по группам, преподавателям и аудиториям — единственный
+/// поиск в приложении.
 ///
-/// Открывается с главной и с расписания. Выбор результата (или недавнего
-/// запроса) сразу применяет его — группа через [GroupController], препод/
-/// аудитория через [ScheduleNavController] — и переключает на вкладку
-/// расписания через [AppNavController], после чего экран сам закрывается.
+/// Общий режим ([lockedType] == null) открывается с главной и с расписания.
+/// Выбор результата (или недавнего запроса) сразу применяет его — группа
+/// через [GroupController], препод/аудитория через [ScheduleNavController] —
+/// и переключает на вкладку расписания через [AppNavController], после чего
+/// экран сам закрывается.
+///
+/// Режим одного типа ([pick]) ищет только группы, преподов или аудитории,
+/// показывает историю только этого типа и просто возвращает выбор.
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final EntityType? lockedType;
+
+  const SearchScreen({super.key, this.lockedType});
+
+  static Future<ScheduleEntity?> pick(BuildContext context, EntityType type) {
+    return Navigator.of(context).push<ScheduleEntity>(
+      MaterialPageRoute(builder: (_) => SearchScreen(lockedType: type)),
+    );
+  }
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -41,7 +54,12 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _loading = false;
   bool _searched = false;
   bool _hasText = false;
+  bool _failed = false;
   EntityType? _typeFilter;
+
+  /// Каждый новый запрос получает номер: ответ на устаревший запрос,
+  /// пришедший позже свежего, не должен затирать результаты.
+  int _requestId = 0;
 
   @override
   void initState() {
@@ -58,7 +76,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _loadRecent() async {
-    final recent = await _historyService.readAll();
+    final recent = await _historyService.readAll(type: widget.lockedType);
     if (!mounted) return;
     setState(() => _recent = recent);
   }
@@ -68,10 +86,12 @@ class _SearchScreenState extends State<SearchScreen> {
     final term = value.trim();
     setState(() => _hasText = value.isNotEmpty);
     if (term.length < 2) {
+      _requestId++;
       setState(() {
         _results = const [];
         _searched = false;
         _loading = false;
+        _failed = false;
         _typeFilter = null;
       });
       return;
@@ -81,19 +101,26 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _search(String term) async {
+    final id = ++_requestId;
+    final type = widget.lockedType;
     try {
-      final results = await _api.universalSearch(term);
-      if (!mounted) return;
+      final results = type == null
+          ? await _api.universalSearch(term)
+          : await _api.searchByType(type, term);
+      if (!mounted || id != _requestId) return;
       setState(() {
         _results = results;
         _loading = false;
         _searched = true;
+        _failed = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || id != _requestId) return;
       setState(() {
+        _results = const [];
         _loading = false;
         _searched = true;
+        _failed = true;
       });
     }
   }
@@ -110,17 +137,24 @@ class _SearchScreenState extends State<SearchScreen> {
     return _results.where((e) => e.type == type).toList();
   }
 
-  int _countOf(EntityType type) =>
-      _results.where((e) => e.type == type).length;
+  int _countOf(EntityType type) => _results.where((e) => e.type == type).length;
 
   Future<void> _select(ScheduleEntity entity) async {
     await _historyService.add(entity);
     if (!mounted) return;
+    if (widget.lockedType != null) {
+      Navigator.of(context).pop(entity);
+      return;
+    }
 
     if (entity.type == EntityType.group) {
       await context.read<GroupController>().select(
-            Group(id: entity.id, label: entity.label, description: entity.description),
-          );
+        Group(
+          id: entity.id,
+          label: entity.label,
+          description: entity.description,
+        ),
+      );
     } else {
       context.read<ScheduleNavController>().request(entity);
     }
@@ -135,7 +169,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _clearRecent() async {
-    await _historyService.clearAll();
+    await _historyService.clearAll(type: widget.lockedType);
     if (!mounted) return;
     setState(() => _recent = const []);
   }
@@ -143,10 +177,22 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l.searchTitle),
+    final (title, subtitle, hint) = switch (widget.lockedType) {
+      null => (l.searchTitle, l.searchSubtitle, l.searchHint),
+      EntityType.group => (l.groupSearchTitle, null, l.groupSearchHint),
+      EntityType.teacher => (
+        l.entitySearchTeacherTitle,
+        null,
+        l.entitySearchTeacherHint,
       ),
+      EntityType.auditorium => (
+        l.entitySearchAuditoriumTitle,
+        null,
+        l.entitySearchAuditoriumHint,
+      ),
+    };
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
       body: SafeArea(
         child: Column(
           children: [
@@ -155,20 +201,22 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l.searchSubtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: context.glass.textMuted,
-                        ),
-                  ),
-                  const SizedBox(height: 10),
+                  if (subtitle != null) ...[
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: context.glass.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   TextField(
                     controller: _controller,
                     focusNode: _focusNode,
                     autofocus: true,
                     onChanged: _onChanged,
                     decoration: InputDecoration(
-                      hintText: l.searchHint,
+                      hintText: hint,
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: _hasText
                           ? IconButton(
@@ -194,49 +242,64 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
+    if (_failed) {
+      return _EmptyHint(
+        text: l.entitySearchError,
+        icon: Icons.wifi_off_outlined,
+      );
+    }
     if (_results.isEmpty) {
       return _EmptyHint(text: l.searchNoResults, icon: Icons.search_off);
     }
 
     final total = _results.length;
+    final showTypePills = widget.lockedType == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: PillFilterRow(
-            items: [
-              PillFilterItem('${l.searchAll} $total'),
-              PillFilterItem(
-                  '${l.scheduleModeGroup} ${_countOf(EntityType.group)}'),
-              PillFilterItem(
-                  '${l.scheduleModeTeacher} ${_countOf(EntityType.teacher)}'),
-              PillFilterItem(
-                  '${l.scheduleModeAuditorium} ${_countOf(EntityType.auditorium)}'),
-            ],
-            selected: switch (_typeFilter) {
-              null => 0,
-              EntityType.group => 1,
-              EntityType.teacher => 2,
-              EntityType.auditorium => 3,
-            },
-            onSelected: (i) => setState(() {
-              _typeFilter = switch (i) {
-                1 => EntityType.group,
-                2 => EntityType.teacher,
-                3 => EntityType.auditorium,
-                _ => null,
-              };
-            }),
+        if (showTypePills)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: PillFilterRow(
+              items: [
+                PillFilterItem('${l.searchAll} $total'),
+                PillFilterItem(
+                  '${l.scheduleModeGroup} ${_countOf(EntityType.group)}',
+                ),
+                PillFilterItem(
+                  '${l.scheduleModeTeacher} ${_countOf(EntityType.teacher)}',
+                ),
+                PillFilterItem(
+                  '${l.scheduleModeAuditorium} ${_countOf(EntityType.auditorium)}',
+                ),
+              ],
+              selected: switch (_typeFilter) {
+                null => 0,
+                EntityType.group => 1,
+                EntityType.teacher => 2,
+                EntityType.auditorium => 3,
+              },
+              onSelected: (i) => setState(() {
+                _typeFilter = switch (i) {
+                  1 => EntityType.group,
+                  2 => EntityType.teacher,
+                  3 => EntityType.auditorium,
+                  _ => null,
+                };
+              }),
+            ),
           ),
-        ),
         const SizedBox(height: 4),
         Expanded(
           child: _filtered.isEmpty
               ? _EmptyHint(text: l.searchNoResults, icon: Icons.search_off)
               : ListView.separated(
                   padding: EdgeInsets.fromLTRB(
-                      16, 4, 16, navBottomPadding(context, extra: 8)),
+                    16,
+                    4,
+                    16,
+                    navBottomPadding(context, extra: 8),
+                  ),
                   itemCount: _filtered.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (_, i) => _ResultCard(
@@ -254,7 +317,12 @@ class _SearchScreenState extends State<SearchScreen> {
       return _EmptyHint(text: l.searchStartTyping, icon: Icons.search);
     }
     return ListView(
-      padding: EdgeInsets.fromLTRB(16, 4, 16, navBottomPadding(context, extra: 8)),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        4,
+        16,
+        navBottomPadding(context, extra: 8),
+      ),
       children: [
         Row(
           children: [
@@ -262,14 +330,11 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Text(
                 l.searchRecentTitle.toUpperCase(),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: context.glass.textMuted,
-                    ),
+                  color: context.glass.textMuted,
+                ),
               ),
             ),
-            TextButton(
-              onPressed: _clearRecent,
-              child: Text(l.searchClearAll),
-            ),
+            TextButton(onPressed: _clearRecent, child: Text(l.searchClearAll)),
           ],
         ),
         const SizedBox(height: 4),
@@ -291,10 +356,10 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   static IconData _typeIcon(EntityType type) => switch (type) {
-        EntityType.group => Icons.groups_outlined,
-        EntityType.teacher => Icons.person_outline,
-        EntityType.auditorium => Icons.place_outlined,
-      };
+    EntityType.group => Icons.groups_outlined,
+    EntityType.teacher => Icons.person_outline,
+    EntityType.auditorium => Icons.place_outlined,
+  };
 }
 
 class _EmptyHint extends StatelessWidget {
@@ -317,10 +382,9 @@ class _EmptyHint extends StatelessWidget {
             Text(
               text,
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: glass.textMuted),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: glass.textMuted),
             ),
           ],
         ),
@@ -336,12 +400,13 @@ class _ResultCard extends StatelessWidget {
   const _ResultCard({required this.entity, required this.onTap});
 
   static (IconData, AppStatus) _visual(EntityType type) => switch (type) {
-        EntityType.group => (Icons.groups_outlined, AppStatus.accent),
-        EntityType.teacher => (Icons.person_outline, AppStatus.info),
-        EntityType.auditorium => (Icons.place_outlined, AppStatus.success),
-      };
+    EntityType.group => (Icons.groups_outlined, AppStatus.accent),
+    EntityType.teacher => (Icons.person_outline, AppStatus.info),
+    EntityType.auditorium => (Icons.place_outlined, AppStatus.success),
+  };
 
-  static String _typeLabel(AppLocalizations l, EntityType type) => switch (type) {
+  static String _typeLabel(AppLocalizations l, EntityType type) =>
+      switch (type) {
         EntityType.group => l.scheduleModeGroup,
         EntityType.teacher => l.scheduleModeTeacher,
         EntityType.auditorium => l.scheduleModeAuditorium,
@@ -392,7 +457,11 @@ class _ResultCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        StatusPill(_typeLabel(l, entity.type), color: tone, dense: true),
+                        StatusPill(
+                          _typeLabel(l, entity.type),
+                          color: tone,
+                          dense: true,
+                        ),
                       ],
                     ),
                     if (entity.description.isNotEmpty) ...[
@@ -401,8 +470,9 @@ class _ResultCard extends StatelessWidget {
                         entity.description,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: glass.textMuted),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: glass.textMuted,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 6),
@@ -415,8 +485,11 @@ class _ResultCard extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        Icon(Icons.chevron_right,
-                            size: 16, color: theme.colorScheme.primary),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
                       ],
                     ),
                   ],

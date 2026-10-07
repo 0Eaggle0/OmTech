@@ -83,7 +83,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get lessonDetailOpenMaps => 'Open in maps';
 
   @override
-  String get lessonDetailStream => 'stream';
+  String get lessonDetailStream => 'Groups';
 
   @override
   String get teacherContactsTitle => 'Contacts';
@@ -766,16 +766,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get groupSearchHint => 'Enter group number...';
 
   @override
-  String get groupSearchEmpty => 'No groups found';
-
-  @override
-  String get groupSearchLoading => 'Searching...';
-
-  @override
-  String get groupSearchError =>
-      'Couldn\'t find groups. Check your connection.';
-
-  @override
   String get searchTitle => 'Search';
 
   @override
@@ -813,12 +803,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get entitySearchAuditoriumHint => 'Room number, e.g. 8-418';
-
-  @override
-  String get entitySearchNoResults => 'Nothing found';
-
-  @override
-  String get entitySearchHintShort => 'Type at least 2 characters';
 
   @override
   String get entitySearchError => 'Search failed. Check your connection.';

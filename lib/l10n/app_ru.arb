@@ -301,9 +301,6 @@
 
   "groupSearchTitle": "Поиск группы",
   "groupSearchHint": "Введите номер группы...",
-  "groupSearchEmpty": "Группы не найдены",
-  "groupSearchLoading": "Поиск...",
-  "groupSearchError": "Не удалось найти группы. Проверьте соединение.",
 
   "searchTitle": "Общий поиск",
   "searchSubtitle": "Группы, преподаватели и аудитории ОмГТУ",
@@ -318,8 +315,6 @@
   "entitySearchTeacherHint": "Фамилия, например: Иванов",
   "entitySearchAuditoriumTitle": "Поиск аудитории",
   "entitySearchAuditoriumHint": "Номер, например: 8-418",
-  "entitySearchNoResults": "Ничего не найдено",
-  "entitySearchHintShort": "Введите не менее 2 символов",
   "entitySearchError": "Не удалось выполнить поиск. Проверьте соединение.",
 
   "scheduleOnlyMySubgroup": "Только {n}-я подгруппа",

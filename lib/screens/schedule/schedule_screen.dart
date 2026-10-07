@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../controllers/group_controller.dart';
 import '../../controllers/schedule_nav_controller.dart';
 import '../../l10n/app_localizations.dart';
+import '../../models/group.dart';
 import '../../models/schedule_entity.dart';
 import '../../models/schedule_event.dart';
 import '../../services/academic_week.dart';
@@ -14,8 +15,6 @@ import '../../services/schedule_api.dart';
 import '../../theme/app_glass.dart';
 import '../../theme/app_metrics.dart';
 import '../../widgets/empty_state.dart';
-import '../../widgets/entity_search_sheet.dart';
-import '../../widgets/group_search_sheet.dart';
 import '../../widgets/lesson_card.dart';
 import '../../widgets/lesson_detail_sheet.dart';
 import '../../widgets/pill_filter_row.dart';
@@ -150,22 +149,24 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _pickEntity() async {
-    switch (_mode) {
-      case _ScheduleMode.group:
-        final group = await GroupSearchSheet.show(context);
-        if (group != null && mounted) {
-          await context.read<GroupController>().select(group);
-        }
-      case _ScheduleMode.teacher:
-        final entity = await EntitySearchSheet.showForTeacher(context);
-        if (entity != null && mounted) {
-          _setEntityAndReload(teacher: entity);
-        }
-      case _ScheduleMode.auditorium:
-        final entity = await EntitySearchSheet.showForAuditorium(context);
-        if (entity != null && mounted) {
-          _setEntityAndReload(auditorium: entity);
-        }
+    final type = switch (_mode) {
+      _ScheduleMode.group => EntityType.group,
+      _ScheduleMode.teacher => EntityType.teacher,
+      _ScheduleMode.auditorium => EntityType.auditorium,
+    };
+    final entity = await SearchScreen.pick(context, type);
+    if (entity == null || !mounted) return;
+    switch (type) {
+      case EntityType.group:
+        await context.read<GroupController>().select(Group(
+              id: entity.id,
+              label: entity.label,
+              description: entity.description,
+            ));
+      case EntityType.teacher:
+        _setEntityAndReload(teacher: entity);
+      case EntityType.auditorium:
+        _setEntityAndReload(auditorium: entity);
     }
   }
 

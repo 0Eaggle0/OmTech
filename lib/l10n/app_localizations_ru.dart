@@ -83,7 +83,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get lessonDetailOpenMaps => 'Открыть на карте';
 
   @override
-  String get lessonDetailStream => 'поток';
+  String get lessonDetailStream => 'Группы';
 
   @override
   String get teacherContactsTitle => 'Контакты';
@@ -769,16 +769,6 @@ class AppLocalizationsRu extends AppLocalizations {
   String get groupSearchHint => 'Введите номер группы...';
 
   @override
-  String get groupSearchEmpty => 'Группы не найдены';
-
-  @override
-  String get groupSearchLoading => 'Поиск...';
-
-  @override
-  String get groupSearchError =>
-      'Не удалось найти группы. Проверьте соединение.';
-
-  @override
   String get searchTitle => 'Общий поиск';
 
   @override
@@ -816,12 +806,6 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get entitySearchAuditoriumHint => 'Номер, например: 8-418';
-
-  @override
-  String get entitySearchNoResults => 'Ничего не найдено';
-
-  @override
-  String get entitySearchHintShort => 'Введите не менее 2 символов';
 
   @override
   String get entitySearchError =>

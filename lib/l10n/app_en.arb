@@ -301,9 +301,6 @@
 
   "groupSearchTitle": "Search group",
   "groupSearchHint": "Enter group number...",
-  "groupSearchEmpty": "No groups found",
-  "groupSearchLoading": "Searching...",
-  "groupSearchError": "Couldn't find groups. Check your connection.",
 
   "searchTitle": "Search",
   "searchSubtitle": "Groups, teachers and rooms at OmSTU",
@@ -318,8 +315,6 @@
   "entitySearchTeacherHint": "Last name, e.g. Smith",
   "entitySearchAuditoriumTitle": "Search room",
   "entitySearchAuditoriumHint": "Room number, e.g. 8-418",
-  "entitySearchNoResults": "Nothing found",
-  "entitySearchHintShort": "Type at least 2 characters",
   "entitySearchError": "Search failed. Check your connection.",
 
   "scheduleOnlyMySubgroup": "Only subgroup {n}",

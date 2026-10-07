@@ -96,21 +96,26 @@ class ScheduleApi {
         .toList(growable: false);
   }
 
+  /// Поиск сущностей одного типа в общем виде [ScheduleEntity].
+  Future<List<ScheduleEntity>> searchByType(EntityType type, String term) =>
+      switch (type) {
+        EntityType.group => searchGroups(term).then((gs) => gs
+            .map((g) => ScheduleEntity(
+                  id: g.id,
+                  label: g.label,
+                  description: g.description,
+                  type: EntityType.group,
+                ))
+            .toList()),
+        EntityType.teacher => searchTeachers(term),
+        EntityType.auditorium => searchAuditoriums(term),
+      };
+
   /// Универсальный поиск: группы + преподаватели + аудитории одновременно.
   Future<List<ScheduleEntity>> universalSearch(String term) async {
     final results = await Future.wait([
-      searchGroups(term)
-          .then((gs) => gs
-              .map((g) => ScheduleEntity(
-                    id: g.id,
-                    label: g.label,
-                    description: g.description,
-                    type: EntityType.group,
-                  ))
-              .toList())
-          .catchError((_) => <ScheduleEntity>[]),
-      searchTeachers(term).catchError((_) => <ScheduleEntity>[]),
-      searchAuditoriums(term).catchError((_) => <ScheduleEntity>[]),
+      for (final type in EntityType.values)
+        searchByType(type, term).catchError((_) => <ScheduleEntity>[]),
     ]);
     final seen = <String>{};
     return results
